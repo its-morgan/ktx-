@@ -6,6 +6,15 @@
         <div class="text-sm text-gray-500">Admin cập nhật trạng thái từ “Chờ sửa” sang “Đã xong”.</div>
     </div>
 
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+        @foreach (['Tất cả', 'Chờ sửa', 'Đã xong'] as $loai)
+            <a href="{{ route('admin.quanlybaohong', ['status' => $loai]) }}"
+               class="rounded-lg px-3 py-2 text-sm font-medium {{ (isset($status) && $status === $loai) || (!isset($status) && $loai === 'Tất cả') ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700' }}">
+                {{ $loai }}
+            </a>
+        @endforeach
+    </div>
+
     @php
         $mapsinhvien = $danhsachsinhvien->keyBy('id');
         $mapphong = $danhsachphong->keyBy('id');
@@ -53,7 +62,7 @@
                     </tr>
                 @empty
                     <tr class="border-t border-gray-200">
-                        <td class="px-6 py-4 text-gray-500" colspan="6">Chưa có báo hỏng.</td>
+                        <td class="px-6 py-4 text-center text-gray-400" colspan="6">Hiện tại chưa có dữ liệu nào trong danh sách này.</td>
                     </tr>
                 @endforelse
                 </tbody>

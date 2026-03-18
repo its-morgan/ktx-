@@ -3,6 +3,7 @@
 use App\Http\Controllers\BaohongController;
 use App\Http\Controllers\DangkyController;
 use App\Http\Controllers\HoadonController;
+use App\Http\Controllers\KyluatController;
 use App\Http\Controllers\PhongController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SinhvienController;
@@ -11,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
-    return redirect()->route('login');
+    return view('welcome');
 });
 
 /**
@@ -32,6 +33,7 @@ Route::prefix('admin')
 
         Route::get('/quanlysinhvien', [SinhvienController::class, 'danhsachsinhvien'])->name('quanlysinhvien');
         Route::post('/chuyenphong/{id}', [SinhvienController::class, 'chuyenphongsinhvien'])->name('chuyenphong');
+        Route::post('/choroiophong/{id}', [SinhvienController::class, 'choroiophong'])->name('choroiophong');
 
         Route::get('/duyetdangky', [DangkyController::class, 'danhsachdangky'])->name('duyetdangky');
         Route::post('/duyetdangky/{id}', [DangkyController::class, 'duyetdangky'])->name('xulyduyetdangky');
@@ -39,9 +41,20 @@ Route::prefix('admin')
 
         Route::get('/quanlyhoadon', [HoadonController::class, 'danhsachhoadonquantri'])->name('quanlyhoadon');
         Route::post('/xulyhoadon', [HoadonController::class, 'xulyhoadon'])->name('xulyhoadon');
+        Route::post('/xacnhanthanhtoan/{id}', [HoadonController::class, 'xacnhanthanhtoan'])->name('xacnhanthanhtoan');
 
         Route::get('/quanlybaohong', [BaohongController::class, 'danhsachbaohongquantri'])->name('quanlybaohong');
         Route::post('/capnhatbaohong/{id}', [BaohongController::class, 'capnhatbaohong'])->name('capnhatbaohong');
+
+        // Quản lý kỷ luật
+        Route::get('/quanlykyluat', [KyluatController::class, 'danhsachkyluat'])->name('quanlykyluat');
+        Route::post('/them/kyluat', [KyluatController::class, 'themkyluat'])->name('themkyluat');
+
+        // Quản lý tài sản phòng
+        Route::get('/quanlyphong/{id}', [PhongController::class, 'chitietphong'])->name('chitietphong');
+        Route::post('/quanlyphong/{id}/themtaisan', [PhongController::class, 'themtaisan'])->name('themtaisan');
+        Route::post('/quanlyphong/{id}/capnhattaisan/{taisanId}', [PhongController::class, 'capnhattaisan'])->name('capnhattaisan');
+        Route::post('/quanlyphong/{id}/xoataisan/{taisanId}', [PhongController::class, 'xoataisan'])->name('xoataisan');
     });
 
 /**
@@ -57,6 +70,7 @@ Route::prefix('student')
 
         Route::get('/danhsachphong', [PhongController::class, 'danhsachphong'])->name('danhsachphong');
         Route::post('/dangkyphong', [DangkyController::class, 'themdangky'])->name('dangkyphong');
+        Route::post('/yeucautraphong', [DangkyController::class, 'yeucautraphong'])->name('yeucautraphong');
 
         Route::get('/hoadoncuaem', [HoadonController::class, 'hoadoncuatoi'])->name('hoadoncuaem');
 
@@ -83,5 +97,10 @@ Route::get('/dieuhuong', function () {
 
     // Nếu là sinh viên thì đẩy vào khu vực student
     return redirect()->route('student.trangchu');
-})->middleware(['auth']);
+})->middleware(['auth'])->name('dieuhuong');
+
+// Route mặc định của Breeze: chuyển về dieuhuong
+Route::get('/dashboard', function () {
+    return redirect()->route('dieuhuong');
+})->middleware(['auth'])->name('dashboard');
 require __DIR__.'/auth.php';

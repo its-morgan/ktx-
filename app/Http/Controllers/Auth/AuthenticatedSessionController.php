@@ -34,13 +34,8 @@ class AuthenticatedSessionController extends Controller
          * - Nếu admin: chuyển về /admin/trangchu
          * - Nếu sinhvien: chuyển về /student/trangchu
          */
-        $vaitro = Auth::user()->vaitro ?? 'sinhvien';
-
-        if ($vaitro === 'admin') {
-            return redirect()->intended(route('admin.trangchu', absolute: false));
-        }
-
-        return redirect()->intended(route('student.trangchu', absolute: false));
+        // Về dashboard chung để các route và test Breeze mặc định không bị vỡ.
+        return redirect()->intended(route('dashboard', absolute: false));
     }
 
     /**

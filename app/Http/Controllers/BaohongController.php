@@ -111,9 +111,14 @@ class BaohongController extends Controller
      * - Danh sách báo hỏng lấy từ: bảng baohong
      * - Danh sách phòng/sinh viên lấy từ: bảng phong, sinhvien (để hiển thị)
      */
-    public function danhsachbaohongquantri()
+    public function danhsachbaohongquantri(Request $request)
     {
-        $danhsachbaohong = Baohong::all();
+        $status = $request->query('status', '');
+
+        $danhsachbaohong = Baohong::when($status && $status !== 'Tất cả', function ($query) use ($status) {
+            return $query->where('trangthai', $status);
+        })->get();
+
         $danhsachphong = Phong::all();
         $danhsachsinhvien = Sinhvien::all();
 
@@ -121,6 +126,7 @@ class BaohongController extends Controller
             'danhsachbaohong' => $danhsachbaohong,
             'danhsachphong' => $danhsachphong,
             'danhsachsinhvien' => $danhsachsinhvien,
+            'status' => $status,
         ]);
     }
 

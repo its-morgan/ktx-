@@ -1,11 +1,17 @@
 @extends('admin.layouts.quantri')
 
 @section('noidung')
-    <div class="mb-6 flex items-end justify-between">
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
             <div class="text-2xl font-bold text-gray-900">Quản lý phòng</div>
             <div class="text-sm text-gray-500">Admin thêm/sửa/xóa phòng bằng modal.</div>
         </div>
+
+        <form method="GET" action="{{ route('admin.quanlyphong') }}" class="flex items-center gap-2">
+            <input name="q" value="{{ old('q', $tuKhoa ?? '') }}" type="text" placeholder="Tìm theo tên phòng"
+                   class="rounded-lg border border-gray-300 p-2 text-sm" />
+            <button type="submit" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">Tìm</button>
+        </form>
 
         <button type="button"
                 data-modal-target="modal-themphong" data-modal-toggle="modal-themphong"

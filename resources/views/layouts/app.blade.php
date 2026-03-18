@@ -31,6 +31,8 @@
             <main>
                 {{ $slot }}
             </main>
+
+            @include('student.partials.toast')
         </div>
     </body>
 </html>

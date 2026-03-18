@@ -6,6 +6,15 @@
         <div class="text-sm text-gray-500">Admin duyệt / từ chối đăng ký phòng.</div>
     </div>
 
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+        @foreach (['Tất cả', 'Chờ xử lý', 'Đã duyệt', 'Từ chối'] as $loai)
+            <a href="{{ route('admin.duyetdangky', ['status' => $loai]) }}"
+               class="rounded-lg px-3 py-2 text-sm font-medium {{ (isset($status) && $status === $loai) || (!isset($status) && $loai === 'Tất cả') ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700' }}">
+                {{ $loai }}
+            </a>
+        @endforeach
+    </div>
+
     @php
         $mapsinhvien = $danhsachsinhvien->keyBy('id');
         $mapphong = $danhsachphong->keyBy('id');
@@ -17,6 +26,7 @@
                 <thead class="bg-gray-50 text-xs uppercase text-gray-700">
                 <tr>
                     <th class="px-6 py-3">Sinh viên</th>
+                    <th class="px-6 py-3">Loại đăng ký</th>
                     <th class="px-6 py-3">Phòng</th>
                     <th class="px-6 py-3">Trạng thái</th>
                     <th class="px-6 py-3">Ghi chú</th>
@@ -32,6 +42,9 @@
                     <tr class="border-t border-gray-200">
                         <td class="px-6 py-4 font-medium text-gray-900">
                             {{ $sinhvien?->masinhvien ?? 'N/A' }}
+                        </td>
+                        <td class="px-6 py-4 font-medium text-gray-900">
+                            {{ $dangky->loaidangky ?? 'Thuê phòng' }}
                         </td>
                         <td class="px-6 py-4">{{ $phong?->tenphong ?? 'N/A' }}</td>
                         <td class="px-6 py-4">
@@ -97,7 +110,7 @@
                     </div>
                 @empty
                     <tr class="border-t border-gray-200">
-                        <td class="px-6 py-4 text-gray-500" colspan="5">Chưa có đăng ký.</td>
+                        <td class="px-6 py-4 text-center text-gray-400" colspan="6">Hiện tại chưa có dữ liệu nào trong danh sách này.</td>
                     </tr>
                 @endforelse
                 </tbody>

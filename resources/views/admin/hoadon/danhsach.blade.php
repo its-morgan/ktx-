@@ -31,6 +31,7 @@
                     <th class="px-6 py-3">Nước (cũ→mới)</th>
                     <th class="px-6 py-3">Tổng tiền</th>
                     <th class="px-6 py-3">Trạng thái</th>
+                    <th class="px-6 py-3 text-right">Thao tác</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -42,8 +43,30 @@
                         <td class="px-6 py-4">{{ $hoadon->thang }}/{{ $hoadon->nam }}</td>
                         <td class="px-6 py-4">{{ $hoadon->chisodiencu }} → {{ $hoadon->chisodienmoi }}</td>
                         <td class="px-6 py-4">{{ $hoadon->chisonuoccu }} → {{ $hoadon->chisonuocmoi }}</td>
-                        <td class="px-6 py-4">{{ number_format($hoadon->tongtien) }} đ</td>
-                        <td class="px-6 py-4">{{ $hoadon->trangthaithanhtoan }}</td>
+                        <td class="px-6 py-4 font-bold text-gray-900">{{ number_format($hoadon->tongtien) }} đ</td>
+                        <td class="px-6 py-4">
+                            @if ($hoadon->trangthaithanhtoan === 'Đã thanh toán')
+                                <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                    Đã thanh toán
+                                </span>
+                            @else
+                                <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+                                    Chưa thanh toán
+                                </span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            @if ($hoadon->trangthaithanhtoan === 'Chưa thanh toán')
+                                <form method="POST" action="{{ route('admin.xacnhanthanhtoan', $hoadon->id) }}" onsubmit="return confirm('Xác nhận hóa đơn này đã được thanh toán?')">
+                                    @csrf
+                                    <button type="submit" class="text-sm font-medium text-blue-600 hover:underline">
+                                        Xác nhận thanh toán
+                                    </button>
+                                </form>
+                            @else
+                                <span class="text-sm text-gray-400">N/A</span>
+                            @endif
+                        </td>
                     </tr>
                 @empty
                     <tr class="border-t border-gray-200">

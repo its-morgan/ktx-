@@ -165,4 +165,29 @@ class HoadonController extends Controller
             'danhsachhoadon' => $danhsachhoadon,
         ]);
     }
+
+    /**
+     * Hàm này xử lý admin xác nhận đã thanh toán cho hóa đơn.
+     * - $id lấy từ route (id của hoadon)
+     */
+    public function xacnhanthanhtoan(int $id)
+    {
+        $hoadon = Hoadon::find($id);
+
+        if (! $hoadon) {
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Không tìm thấy hóa đơn.');
+        }
+
+        $hoadon->update([
+            'trangthaithanhtoan' => self::TRANGTHAI_DATHANHTOAN,
+        ]);
+
+        return redirect()
+            ->back()
+            ->with('toast_loai', 'thanhcong')
+            ->with('toast_noidung', 'Xác nhận thanh toán thành công.');
+    }
 }

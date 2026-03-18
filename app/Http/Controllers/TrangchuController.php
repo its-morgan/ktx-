@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Baohong;
 use App\Models\Dangky;
 use App\Models\Hoadon;
+use App\Models\Kyluat;
 use App\Models\Phong;
 use App\Models\Sinhvien;
 use Illuminate\Support\Facades\Auth;
@@ -47,6 +48,8 @@ class TrangchuController extends Controller
         $hoadonchuathanhtoan = 0;
         $danhsachdangkygannhat = collect();
         $danhsachbaohonggannhat = collect();
+        $doanhthugannhat = [];
+        $nhan = [];
 
         if ($vaitro === 'admin') {
             // Đếm phòng trống dựa theo số sinh viên hiện tại và số lượng tối đa
@@ -78,6 +81,21 @@ class TrangchuController extends Controller
                 ->orderByDesc('id')
                 ->limit(5)
                 ->get();
+
+            // Thống kê doanh thu 6 tháng gần nhất (đã thanh toán)
+            $doanhthugannhat = [];
+            $nhan = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $m = now()->subMonths($i);
+                $thang = (int)$m->format('m');
+                $nam = (int)$m->format('Y');
+                $tong = Hoadon::where('thang', $thang)
+                    ->where('nam', $nam)
+                    ->where('trangthaithanhtoan', 'Đã thanh toán')
+                    ->sum('tongtien');
+                $doanhthugannhat[] = (int)$tong;
+                $nhan[] = $m->format('m/Y');
+            }
         }
 
         /**
@@ -98,14 +116,45 @@ class TrangchuController extends Controller
                 'danhsachdangkygannhat',
                 'danhsachbaohonggannhat',
                 'thanghientai',
-                'namhientai'
+                'namhientai',
+                'doanhthugannhat',
+                'nhan'
             ));
         }
+
+        $sinhvien = Sinhvien::where('user_id', Auth::id())->first();
+        $thanhviencungphong = collect();
+        $kyluatcuaem = collect();
+        $hoadonchuathanhtoan = collect();
+
+        if ($sinhvien && $sinhvien->phong_id) {
+            $thanhviencungphong = Sinhvien::where('phong_id', $sinhvien->phong_id)
+                ->where('id', '<>', $sinhvien->id)
+                ->get();
+
+            $kyluatcuaem = Kyluat::where('sinhvien_id', $sinhvien->id)->orderByDesc('ngayvipham')->limit(5)->get();
+
+            $hoadonchuathanhtoan = Hoadon::where('phong_id', $sinhvien->phong_id)
+                ->where('trangthaithanhtoan', 'Chưa thanh toán')
+                ->orderByDesc('nam')
+                ->orderByDesc('thang')
+                ->get();
+        }
+
+        $lienhekhancap = [
+            ['title' => 'Bảo vệ', 'phone' => '0900 111 222'],
+            ['title' => 'Y tế', 'phone' => '0900 333 444'],
+        ];
 
         return view('student.trangchu', compact(
             'vaitro',
             'thanghientai',
-            'namhientai'
+            'namhientai',
+            'sinhvien',
+            'thanhviencungphong',
+            'kyluatcuaem',
+            'hoadonchuathanhtoan',
+            'lienhekhancap'
         ));
     }
 }

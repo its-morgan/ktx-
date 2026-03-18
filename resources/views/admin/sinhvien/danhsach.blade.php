@@ -1,9 +1,17 @@
 @extends('admin.layouts.quantri')
 
 @section('noidung')
-    <div class="mb-6">
-        <div class="text-2xl font-bold text-gray-900">Quản lý sinh viên</div>
-        <div class="text-sm text-gray-500">Danh sách sinh viên và chuyển phòng nhanh.</div>
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+            <div class="text-2xl font-bold text-gray-900">Quản lý sinh viên</div>
+            <div class="text-sm text-gray-500">Danh sách sinh viên và chuyển phòng nhanh.</div>
+        </div>
+
+        <form method="GET" action="{{ route('admin.quanlysinhvien') }}" class="flex items-center gap-2">
+            <input name="q" value="{{ old('q', $tuKhoa ?? '') }}" type="text" placeholder="Tìm theo mã sinh viên"
+                   class="rounded-lg border border-gray-300 p-2 text-sm" />
+            <button type="submit" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">Tìm</button>
+        </form>
     </div>
 
     @php
@@ -36,20 +44,31 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 text-right">
-                            <form method="POST" action="{{ route('admin.chuyenphong', ['id' => $sinhvien->id]) }}" class="flex items-center justify-end gap-2">
-                                @csrf
-                                <select name="phong_id" class="rounded-lg border border-gray-300 p-2 text-sm text-gray-900 focus:border-gray-900 focus:ring-gray-900">
-                                    <option value="0" {{ $sinhvien->phong_id ? '' : 'selected' }}>Chưa có</option>
-                                    @foreach ($danhsachphong as $phong)
-                                        <option value="{{ $phong->id }}" {{ (int) $sinhvien->phong_id === (int) $phong->id ? 'selected' : '' }}>
-                                            {{ $phong->tenphong }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <button type="submit" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">
-                                    Lưu
-                                </button>
-                            </form>
+                            <div class="flex flex-col gap-2 items-end">
+                                <form method="POST" action="{{ route('admin.chuyenphong', ['id' => $sinhvien->id]) }}" class="flex items-center gap-2">
+                                    @csrf
+                                    <select name="phong_id" class="rounded-lg border border-gray-300 p-2 text-sm text-gray-900 focus:border-gray-900 focus:ring-gray-900">
+                                        <option value="0" {{ $sinhvien->phong_id ? '' : 'selected' }}>Chưa có</option>
+                                        @foreach ($danhsachphong as $phong)
+                                            <option value="{{ $phong->id }}" {{ (int) $sinhvien->phong_id === (int) $phong->id ? 'selected' : '' }}>
+                                                {{ $phong->tenphong }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <button type="submit" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">
+                                        Lưu
+                                    </button>
+                                </form>
+
+                                @if($sinhvien->phong_id)
+                                    <form method="POST" action="{{ route('admin.choroiophong', ['id' => $sinhvien->id]) }}" onsubmit="return confirm('Bạn có chắc muốn cho sinh viên này rời phòng?')">
+                                        @csrf
+                                        <button type="submit" class="text-xs font-medium text-red-600 hover:underline">
+                                            Cho rời phòng
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @empty

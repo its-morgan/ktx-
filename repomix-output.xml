@@ -60,6 +60,7 @@ app/Http/Controllers/BaohongController.php
 app/Http/Controllers/Controller.php
 app/Http/Controllers/DangkyController.php
 app/Http/Controllers/HoadonController.php
+app/Http/Controllers/KyluatController.php
 app/Http/Controllers/PhongController.php
 app/Http/Controllers/ProfileController.php
 app/Http/Controllers/SinhvienController.php
@@ -80,8 +81,10 @@ app/Http/Requests/ProfileUpdateRequest.php
 app/Models/Baohong.php
 app/Models/Dangky.php
 app/Models/Hoadon.php
+app/Models/Kyluat.php
 app/Models/Phong.php
 app/Models/Sinhvien.php
+app/Models/Taisan.php
 app/Models/User.php
 app/Providers/AppServiceProvider.php
 app/Providers/AuthServiceProvider.php
@@ -121,6 +124,9 @@ database/migrations/2026_03_03_150144_hoadon.php
 database/migrations/2026_03_06_081230_baohong.php
 database/migrations/2026_03_09_170505_themvaitrovaousers.php
 database/migrations/2026_03_10_091500_capnhattrangthai.php
+database/migrations/2026_03_18_090645_add_loaidangky_to_dangky_table.php
+database/migrations/2026_03_18_114529_create_kyluat_table.php
+database/migrations/2026_03_18_114530_create_taisan_table.php
 database/seeders/DatabaseSeeder.php
 database/seeders/PhongSeeder.php
 database/seeders/SinhvienSeeder.php
@@ -130,6 +136,7 @@ phpunit.xml
 postcss.config.js
 public/.htaccess
 public/anhbaohong/1773752630_Ảnh chụp màn hình 2025-12-22 133723.png
+public/anhbaohong/1773830315_photo_2026-03-11_16-53-38.jpg
 public/favicon.ico
 public/index.php
 public/robots.txt
@@ -140,6 +147,7 @@ resources/js/bootstrap.js
 resources/views/admin/baohong/danhsach.blade.php
 resources/views/admin/dangky/danhsach.blade.php
 resources/views/admin/hoadon/danhsach.blade.php
+resources/views/admin/kyluat/danhsach.blade.php
 resources/views/admin/layouts/quantri.blade.php
 resources/views/admin/partials/navbar.blade.php
 resources/views/admin/partials/sidebar.blade.php
@@ -213,6 +221,295 @@ vite.config.js
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="app/Http/Controllers/KyluatController.php">
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Kyluat;
+use App\Models\Sinhvien;
+use Illuminate\Http\Request;
+
+class KyluatController extends Controller
+{
+    /**
+     * Danh sách kỷ luật cho admin.
+     * - Lấy tất cả kỷ luật, có hỗ trợ filter bằng sinh viên hoặc mức độ.
+     */
+    public function danhsachkyluat(Request $request)
+    {
+        $sinhviens = Sinhvien::all();
+
+        $kyluat = Kyluat::when($request->query('sinhvien_id'), function ($query) use ($request) {
+            return $query->where('sinhvien_id', $request->query('sinhvien_id'));
+        })->when($request->query('mucdo'), function ($query) use ($request) {
+            return $query->where('mucdo', $request->query('mucdo'));
+        })->orderByDesc('ngayvipham')->get();
+
+        return view('admin.kyluat.danhsach', [
+            'kyluat' => $kyluat,
+            'sinhviens' => $sinhviens,
+            'selectedSinhvien' => $request->query('sinhvien_id', ''),
+            'selectedMucDo' => $request->query('mucdo', ''),
+        ]);
+    }
+
+    /**
+     * Thêm kỷ luật cho sinh viên (admin).
+     */
+    public function themkyluat(Request $request)
+    {
+        $dulieu = $request->validate([
+            'sinhvien_id' => ['required', 'numeric', 'exists:sinhvien,id'],
+            'noidung' => ['required', 'string'],
+            'ngayvipham' => ['required', 'date'],
+            'mucdo' => ['required', 'string'],
+        ]);
+
+        Kyluat::create($dulieu);
+
+        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Thêm kỷ luật cho sinh viên thành công.');
+    }
+}
+</file>
+
+<file path="app/Models/Kyluat.php">
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Kyluat extends Model
+{
+    use HasFactory;
+
+    protected $table = 'kyluat';
+
+    protected $fillable = [
+        'sinhvien_id',
+        'noidung',
+        'ngayvipham',
+        'mucdo',
+    ];
+
+    public function sinhvien(): BelongsTo
+    {
+        return $this->belongsTo(Sinhvien::class, 'sinhvien_id');
+    }
+}
+</file>
+
+<file path="app/Models/Taisan.php">
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Taisan extends Model
+{
+    use HasFactory;
+
+    protected $table = 'taisan';
+
+    protected $fillable = [
+        'phong_id',
+        'tentaisan',
+        'soluong',
+        'tinhtrang',
+    ];
+
+    public function phong(): BelongsTo
+    {
+        return $this->belongsTo(Phong::class, 'phong_id');
+    }
+}
+</file>
+
+<file path="database/migrations/2026_03_18_090645_add_loaidangky_to_dangky_table.php">
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('dangky', function (Blueprint $table) {
+            $table->string('loaidangky')->default('Thue phong')->after('trangthai');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('dangky', function (Blueprint $table) {
+            $table->dropColumn('loaidangky');
+        });
+    }
+};
+</file>
+
+<file path="database/migrations/2026_03_18_114529_create_kyluat_table.php">
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('kyluat', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('sinhvien_id')->constrained('sinhvien')->cascadeOnDelete();
+            $table->text('noidung');
+            $table->date('ngayvipham');
+            $table->string('mucdo')->default('Trung bình');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('kyluat');
+    }
+};
+</file>
+
+<file path="database/migrations/2026_03_18_114530_create_taisan_table.php">
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('taisan', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('phong_id')->constrained('phong')->cascadeOnDelete();
+            $table->string('tentaisan');
+            $table->unsignedInteger('soluong')->default(1);
+            $table->string('tinhtrang')->default('Đang sử dụng');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('taisan');
+    }
+};
+</file>
+
+<file path="resources/views/admin/kyluat/danhsach.blade.php">
+@extends('admin.layouts.quantri')
+
+@section('noidung')
+    <div class="mb-6">
+        <div class="text-2xl font-bold text-gray-900">Quản lý kỷ luật</div>
+        <div class="text-sm text-gray-500">Admin thêm và theo dõi các vi phạm của sinh viên.</div>
+    </div>
+
+    <form method="GET" action="{{ route('admin.quanlykyluat') }}" class="mb-4 flex flex-wrap items-center gap-3">
+        <select name="sinhvien_id" class="rounded-lg border border-gray-300 px-3 py-2 text-sm">
+            <option value="">--Chọn sinh viên--</option>
+            @foreach($sinhviens as $s)
+                <option value="{{ $s->id }}" {{ $selectedSinhvien == $s->id ? 'selected' : '' }}>{{ $s->masinhvien }} - {{ optional($s->taikhoan)->name ?? 'N/A' }}</option>
+            @endforeach
+        </select>
+        <select name="mucdo" class="rounded-lg border border-gray-300 px-3 py-2 text-sm">
+            <option value="">--Tất cả mức độ--</option>
+            @foreach(['Nhẹ', 'Trung bình', 'Nặng'] as $m)
+                <option value="{{ $m }}" {{ $selectedMucDo == $m ? 'selected' : '' }}>{{ $m }}</option>
+            @endforeach
+        </select>
+        <button class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white" type="submit">Lọc</button>
+    </form>
+
+    <div class="mb-6 rounded-xl border border-gray-200 bg-white p-4">
+        <form method="POST" action="{{ route('admin.themkyluat') }}" class="space-y-3">
+            @csrf
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
+                <select name="sinhvien_id" required class="col-span-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                    <option value="">Chọn sinh viên</option>
+                    @foreach($sinhviens as $s)
+                        <option value="{{ $s->id }}">{{ $s->masinhvien }} - {{ optional($s->taikhoan)->name ?? 'N/A' }}</option>
+                    @endforeach
+                </select>
+                <input name="noidung" required type="text" placeholder="Nội dung vi phạm" class="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                <input name="ngayvipham" required type="date" class="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                <select name="mucdo" required class="rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                    <option value="Nhẹ">Nhẹ</option>
+                    <option value="Trung bình" selected>Trung bình</option>
+                    <option value="Nặng">Nặng</option>
+                </select>
+            </div>
+            <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-white">Thêm vi phạm</button>
+        </form>
+    </div>
+
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-gray-600">
+                <thead class="bg-gray-50 text-xs uppercase text-gray-700">
+                    <tr>
+                        <th class="px-6 py-3">Mã SV</th>
+                        <th class="px-6 py-3">Sinh viên</th>
+                        <th class="px-6 py-3">Nội dung</th>
+                        <th class="px-6 py-3">Ngày vi phạm</th>
+                        <th class="px-6 py-3">Mức độ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($kyluat as $item)
+                        <tr class="border-t border-gray-200">
+                            <td class="px-6 py-4">{{ optional($item->sinhvien)->masinhvien ?? 'N/A' }}</td>
+                            <td class="px-6 py-4">{{ optional($item->sinhvien->taikhoan)->name ?? 'N/A' }}</td>
+                            <td class="px-6 py-4">{{ $item->noidung }}</td>
+                            <td class="px-6 py-4">{{ $item->ngayvipham }}</td>
+                            <td class="px-6 py-4">{{ $item->mucdo }}</td>
+                        </tr>
+                    @empty
+                        <tr class="border-t border-gray-200">
+                            <td class="px-6 py-4 text-center text-gray-400" colspan="5">Chưa có vi phạm.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+@endsection
+</file>
 
 <file path=".cursorignore">
 # Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
@@ -437,13 +734,8 @@ class AuthenticatedSessionController extends Controller
          * - Nếu admin: chuyển về /admin/trangchu
          * - Nếu sinhvien: chuyển về /student/trangchu
          */
-        $vaitro = Auth::user()->vaitro ?? 'sinhvien';
-
-        if ($vaitro === 'admin') {
-            return redirect()->intended(route('admin.trangchu', absolute: false));
-        }
-
-        return redirect()->intended(route('student.trangchu', absolute: false));
+        // Về dashboard chung để các route và test Breeze mặc định không bị vỡ.
+        return redirect()->intended(route('dashboard', absolute: false));
     }
 
     /**
@@ -709,6 +1001,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Sinhvien;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -745,6 +1038,16 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'vaitro' => 'sinhvien', // Mặc định khi đăng ký là sinh viên
+        ]);
+
+        // Tạo bản ghi sinh viên trống liên kết với user vừa tạo
+        Sinhvien::create([
+            'user_id' => $user->id,
+            'masinhvien' => null,
+            'lop' => null,
+            'sodienthoai' => null,
+            'phong_id' => null,
         ]);
 
         event(new Registered($user));
@@ -900,9 +1203,14 @@ class BaohongController extends Controller
      * - Danh sách báo hỏng lấy từ: bảng baohong
      * - Danh sách phòng/sinh viên lấy từ: bảng phong, sinhvien (để hiển thị)
      */
-    public function danhsachbaohongquantri()
+    public function danhsachbaohongquantri(Request $request)
     {
-        $danhsachbaohong = Baohong::all();
+        $status = $request->query('status', '');
+
+        $danhsachbaohong = Baohong::when($status && $status !== 'Tất cả', function ($query) use ($status) {
+            return $query->where('trangthai', $status);
+        })->get();
+
         $danhsachphong = Phong::all();
         $danhsachsinhvien = Sinhvien::all();
 
@@ -910,6 +1218,7 @@ class BaohongController extends Controller
             'danhsachbaohong' => $danhsachbaohong,
             'danhsachphong' => $danhsachphong,
             'danhsachsinhvien' => $danhsachsinhvien,
+            'status' => $status,
         ]);
     }
 
@@ -1063,6 +1372,7 @@ class DangkyController extends Controller
         Dangky::create([
             'sinhvien_id' => $sinhvien->id,
             'phong_id' => $phong->id,
+            'loaidangky' => 'Thuê phòng',
             'trangthai' => self::TRANGTHAI_CHOXULY,
             'ghichu' => null,
         ]);
@@ -1074,13 +1384,60 @@ class DangkyController extends Controller
     }
 
     /**
+     * Hàm này xử lý sinh viên yêu cầu trả phòng.
+     * - Tạo bản ghi dangky.loaidangky = 'Trả phòng'
+     * - Gán trạng thái là chờ xử lý để admin duyệt.
+     */
+    public function yeucautraphong()
+    {
+        $sinhvien = Sinhvien::where('user_id', Auth::id())->first();
+
+        if (! $sinhvien || ! $sinhvien->phong_id) {
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Bạn hiện không có phòng để trả.');
+        }
+
+        $dangkychoduyet = Dangky::where('sinhvien_id', $sinhvien->id)
+            ->where('trangthai', self::TRANGTHAI_CHOXULY)
+            ->where('loaidangky', 'Trả phòng')
+            ->first();
+
+        if ($dangkychoduyet) {
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Bạn đã gửi yêu cầu trả phòng, vui lòng chờ admin xử lý.');
+        }
+
+        Dangky::create([
+            'sinhvien_id' => $sinhvien->id,
+            'phong_id' => $sinhvien->phong_id,
+            'loaidangky' => 'Trả phòng',
+            'trangthai' => self::TRANGTHAI_CHOXULY,
+            'ghichu' => null,
+        ]);
+
+        return redirect()
+            ->back()
+            ->with('toast_loai', 'thanhcong')
+            ->with('toast_noidung', 'Gửi yêu cầu trả phòng thành công.');
+    }
+
+    /**
      * Hàm này hiển thị danh sách đăng ký cho admin.
      * - Danh sách đăng ký lấy từ: bảng dangky
      * - Danh sách phòng/sinh viên lấy từ: bảng phong, sinhvien (để hiển thị)
      */
-    public function danhsachdangky()
+    public function danhsachdangky(Request $request)
     {
-        $danhsachdangky = Dangky::all();
+        $status = $request->query('status', '');
+
+        $danhsachdangky = Dangky::when($status && $status !== 'Tất cả', function ($query) use ($status) {
+            return $query->where('trangthai', $status);
+        })->get();
+
         $danhsachphong = Phong::all();
         $danhsachsinhvien = Sinhvien::all();
 
@@ -1088,6 +1445,7 @@ class DangkyController extends Controller
             'danhsachdangky' => $danhsachdangky,
             'danhsachphong' => $danhsachphong,
             'danhsachsinhvien' => $danhsachsinhvien,
+            'status' => $status,
         ]);
     }
 
@@ -1124,21 +1482,23 @@ class DangkyController extends Controller
                 ->with('toast_noidung', 'Thiếu dữ liệu sinh viên hoặc phòng.');
         }
 
-        // Nếu sinh viên đã có phòng thì không duyệt nữa
-        if ($sinhvien->phong_id) {
+        // Nếu đăng ký là Thuê phòng và sinh viên đã có phòng thì không duyệt
+        if ($dangky->loaidangky === 'Thuê phòng' && $sinhvien->phong_id) {
             return redirect()
                 ->back()
                 ->with('toast_loai', 'loi')
                 ->with('toast_noidung', 'Sinh viên đã có phòng, không thể duyệt.');
         }
 
-        // Kiểm tra phòng còn chỗ không
-        $soluonghientai = Sinhvien::where('phong_id', $phong->id)->count();
-        if ($soluonghientai >= (int) $phong->soluongtoida) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Phòng đã đủ người, không thể duyệt.');
+        // Kiểm tra phòng còn chỗ không chỉ áp dụng cho Thuê phòng
+        if ($dangky->loaidangky === 'Thuê phòng') {
+            $soluonghientai = Sinhvien::where('phong_id', $phong->id)->count();
+            if ($soluonghientai >= (int) $phong->soluongtoida) {
+                return redirect()
+                    ->back()
+                    ->with('toast_loai', 'loi')
+                    ->with('toast_noidung', 'Phòng đã đủ người, không thể duyệt.');
+            }
         }
 
         $dangky->update([
@@ -1146,6 +1506,28 @@ class DangkyController extends Controller
             'ghichu' => null,
         ]);
 
+        if ($dangky->loaidangky === 'Trả phòng') {
+            // Khi duyệt trả phòng thì bỏ phong_id của sinh viên
+            $sinhvien->update(['phong_id' => null]);
+
+            // Edge case: tính tiền thừa/thiếu theo ngày trong tháng
+            $ngayhientai = (int) now()->format('d');
+            $ngaytrongthang = (int) now()->daysInMonth;
+            $tyle = max(0, 1 - ($ngayhientai / $ngaytrongthang));
+            $tienphong = (int) $phong->giaphong;
+            $sotienhoan = round($tienphong * $tyle);
+            $sotienhoan = max(0, $sotienhoan);
+
+            $thongbao = 'Duyệt yêu cầu trả phòng thành công. Đã giải phóng phòng.';
+            $thongbao .= ' Số tiền hoàn lại dự kiến: ' . number_format($sotienhoan) . ' đ (' . round($tyle*100) . '%).';
+
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'thanhcong')
+                ->with('toast_noidung', $thongbao);
+        }
+
+        // Nếu là đăng ký thuê phòng thì gán phòng cho sinh viên
         $sinhvien->update([
             'phong_id' => $phong->id,
         ]);
@@ -1360,6 +1742,31 @@ class HoadonController extends Controller
             'danhsachhoadon' => $danhsachhoadon,
         ]);
     }
+
+    /**
+     * Hàm này xử lý admin xác nhận đã thanh toán cho hóa đơn.
+     * - $id lấy từ route (id của hoadon)
+     */
+    public function xacnhanthanhtoan(int $id)
+    {
+        $hoadon = Hoadon::find($id);
+
+        if (! $hoadon) {
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Không tìm thấy hóa đơn.');
+        }
+
+        $hoadon->update([
+            'trangthaithanhtoan' => self::TRANGTHAI_DATHANHTOAN,
+        ]);
+
+        return redirect()
+            ->back()
+            ->with('toast_loai', 'thanhcong')
+            ->with('toast_noidung', 'Xác nhận thanh toán thành công.');
+    }
 }
 </file>
 
@@ -1370,6 +1777,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Phong;
 use App\Models\Sinhvien;
+use App\Models\Taisan;
 use Illuminate\Http\Request;
 
 class PhongController extends Controller
@@ -1379,9 +1787,13 @@ class PhongController extends Controller
      * - Danh sách phòng lấy từ: bảng phong
      * - Số người đang ở trong phòng lấy từ: bảng sinhvien (cột phong_id)
      */
-    public function danhsachphong()
+    public function danhsachphong(Request $request)
     {
-        $danhsachphong = Phong::all();
+        $tuKhoa = $request->query('q', '');
+
+        $danhsachphong = Phong::when($tuKhoa, function ($query, $tuKhoa) {
+            return $query->where('tenphong', 'like', '%'.trim($tuKhoa).'%');
+        })->get();
 
         $danhsachphongtrong = $danhsachphong->filter(function ($phong) {
             $soluonghientai = Sinhvien::where('phong_id', $phong->id)->count();
@@ -1390,6 +1802,7 @@ class PhongController extends Controller
 
         return view('student.phong.danhsach', [
             'danhsachphong' => $danhsachphongtrong,
+            'tuKhoa' => $tuKhoa,
         ]);
     }
 
@@ -1398,11 +1811,14 @@ class PhongController extends Controller
      * - Danh sách phòng lấy từ: bảng phong
      * - Số lượng đang ở lấy từ: bảng sinhvien (đếm theo phong_id)
      */
-    public function danhsachphongquantri()
+    public function danhsachphongquantri(Request $request)
     {
-        $danhsachphong = Phong::all();
+        $tuKhoa = $request->query('q', '');
 
-        // Tạo map số lượng đang ở theo phong_id để view hiển thị nhanh
+        $danhsachphong = Phong::when($tuKhoa, function ($query, $tuKhoa) {
+            return $query->where('tenphong', 'like', '%'.trim($tuKhoa).'%');
+        })->get();
+
         $soluongdango_theophong = Sinhvien::all()
             ->groupBy('phong_id')
             ->map(function ($nhom) {
@@ -1413,7 +1829,84 @@ class PhongController extends Controller
         return view('admin.phong.danhsach', [
             'danhsachphong' => $danhsachphong,
             'soluongdango_theophong' => $soluongdango_theophong,
+            'tuKhoa' => $tuKhoa,
         ]);
+    }
+
+    /**
+     * Hàm này hiển thị chi tiết phòng (admin) bao gồm tài sản.
+     */
+    public function chitietphong(int $id)
+    {
+        $phong = Phong::find($id);
+
+        if (! $phong) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy phòng.');
+        }
+
+        $taisan = $phong->danhsachtaisan()->get();
+
+        return view('admin.phong.chitiet', compact('phong', 'taisan'));
+    }
+
+    /**
+     * Thêm tài sản vào phòng (admin).
+     */
+    public function themtaisan(Request $request, int $id)
+    {
+        $phong = Phong::find($id);
+
+        if (! $phong) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy phòng.');
+        }
+
+        $dulieu = $request->validate([
+            'tentaisan' => ['required', 'string'],
+            'soluong' => ['required', 'numeric', 'min:1'],
+            'tinhtrang' => ['required', 'string'],
+        ]);
+
+        Taisan::create(array_merge($dulieu, ['phong_id' => $phong->id]));
+
+        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Thêm tài sản thành công.');
+    }
+
+    /**
+     * Cập nhật tài sản (admin).
+     */
+    public function capnhattaisan(Request $request, int $id, int $taisanId)
+    {
+        $taisan = Taisan::find($taisanId);
+
+        if (! $taisan || $taisan->phong_id !== $id) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy tài sản.');
+        }
+
+        $dulieu = $request->validate([
+            'tentaisan' => ['required', 'string'],
+            'soluong' => ['required', 'numeric', 'min:1'],
+            'tinhtrang' => ['required', 'string'],
+        ]);
+
+        $taisan->update($dulieu);
+
+        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Cập nhật tài sản thành công.');
+    }
+
+    /**
+     * Xóa tài sản (admin).
+     */
+    public function xoataisan(int $id, int $taisanId)
+    {
+        $taisan = Taisan::find($taisanId);
+
+        if (! $taisan || $taisan->phong_id !== $id) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy tài sản.');
+        }
+
+        $taisan->delete();
+
+        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Xóa tài sản thành công.');
     }
 
     /**
@@ -1542,15 +2035,30 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        // Cập nhật thông tin sinh viên nếu có
+        if ($user->vaitro === 'sinhvien') {
+            $sinhvien = $user->sinhvien ?? new \App\Models\Sinhvien(['user_id' => $user->id]);
+            $sinhvien->fill([
+                'masinhvien' => $request->masinhvien,
+                'lop' => $request->lop,
+                'sodienthoai' => $request->sodienthoai,
+            ]);
+            $sinhvien->save();
+        }
+
+        return Redirect::route('profile.edit')
+            ->with('status', 'profile-updated')
+            ->with('toast_loai', 'thanhcong')
+            ->with('toast_noidung', 'Cập nhật hồ sơ thành công.');
     }
 
     /**
@@ -1592,14 +2100,20 @@ class SinhvienController extends Controller
      * - Danh sách sinh viên lấy từ: bảng sinhvien
      * - Danh sách phòng lấy từ: bảng phong (để hiển thị tên phòng)
      */
-    public function danhsachsinhvien()
+    public function danhsachsinhvien(Request $request)
     {
-        $danhsachsinhvien = Sinhvien::all();
+        $tuKhoa = $request->query('q', '');
+
+        $danhsachsinhvien = Sinhvien::when($tuKhoa, function ($query, $tuKhoa) {
+            return $query->where('masinhvien', 'like', '%'.trim($tuKhoa).'%');
+        })->get();
+
         $danhsachphong = Phong::all();
 
         return view('admin.sinhvien.danhsach', [
             'danhsachsinhvien' => $danhsachsinhvien,
             'danhsachphong' => $danhsachphong,
+            'tuKhoa' => $tuKhoa,
         ]);
     }
 
@@ -1679,6 +2193,31 @@ class SinhvienController extends Controller
             ->with('toast_loai', 'thanhcong')
             ->with('toast_noidung', 'Chuyển phòng cho sinh viên thành công.');
     }
+
+    /**
+     * Ham nay xu ly admin cho sinh vien roi phong (set phong_id ve null).
+     * - $id lay tu route (id cua sinhvien)
+     */
+    public function choroiophong(int $id)
+    {
+        $sinhvien = Sinhvien::find($id);
+
+        if (! $sinhvien) {
+            return redirect()
+                ->back()
+                ->with("toast_loai", "loi")
+                ->with("toast_noidung", "Khong tim thay sinh vien.");
+        }
+
+        $sinhvien->update([
+            "phong_id" => null,
+        ]);
+
+        return redirect()
+            ->back()
+            ->with("toast_loai", "thanhcong")
+            ->with("toast_noidung", "Da cho sinh vien roi phong thanh cong.");
+    }
 }
 </file>
 
@@ -1690,6 +2229,7 @@ namespace App\Http\Controllers;
 use App\Models\Baohong;
 use App\Models\Dangky;
 use App\Models\Hoadon;
+use App\Models\Kyluat;
 use App\Models\Phong;
 use App\Models\Sinhvien;
 use Illuminate\Support\Facades\Auth;
@@ -1732,6 +2272,8 @@ class TrangchuController extends Controller
         $hoadonchuathanhtoan = 0;
         $danhsachdangkygannhat = collect();
         $danhsachbaohonggannhat = collect();
+        $doanhthugannhat = [];
+        $nhan = [];
 
         if ($vaitro === 'admin') {
             // Đếm phòng trống dựa theo số sinh viên hiện tại và số lượng tối đa
@@ -1763,6 +2305,21 @@ class TrangchuController extends Controller
                 ->orderByDesc('id')
                 ->limit(5)
                 ->get();
+
+            // Thống kê doanh thu 6 tháng gần nhất (đã thanh toán)
+            $doanhthugannhat = [];
+            $nhan = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $m = now()->subMonths($i);
+                $thang = (int)$m->format('m');
+                $nam = (int)$m->format('Y');
+                $tong = Hoadon::where('thang', $thang)
+                    ->where('nam', $nam)
+                    ->where('trangthaithanhtoan', 'Đã thanh toán')
+                    ->sum('tongtien');
+                $doanhthugannhat[] = (int)$tong;
+                $nhan[] = $m->format('m/Y');
+            }
         }
 
         /**
@@ -1783,14 +2340,45 @@ class TrangchuController extends Controller
                 'danhsachdangkygannhat',
                 'danhsachbaohonggannhat',
                 'thanghientai',
-                'namhientai'
+                'namhientai',
+                'doanhthugannhat',
+                'nhan'
             ));
         }
+
+        $sinhvien = Sinhvien::where('user_id', Auth::id())->first();
+        $thanhviencungphong = collect();
+        $kyluatcuaem = collect();
+        $hoadonchuathanhtoan = collect();
+
+        if ($sinhvien && $sinhvien->phong_id) {
+            $thanhviencungphong = Sinhvien::where('phong_id', $sinhvien->phong_id)
+                ->where('id', '<>', $sinhvien->id)
+                ->get();
+
+            $kyluatcuaem = Kyluat::where('sinhvien_id', $sinhvien->id)->orderByDesc('ngayvipham')->limit(5)->get();
+
+            $hoadonchuathanhtoan = Hoadon::where('phong_id', $sinhvien->phong_id)
+                ->where('trangthaithanhtoan', 'Chưa thanh toán')
+                ->orderByDesc('nam')
+                ->orderByDesc('thang')
+                ->get();
+        }
+
+        $lienhekhancap = [
+            ['title' => 'Bảo vệ', 'phone' => '0900 111 222'],
+            ['title' => 'Y tế', 'phone' => '0900 333 444'],
+        ];
 
         return view('student.trangchu', compact(
             'vaitro',
             'thanghientai',
-            'namhientai'
+            'namhientai',
+            'sinhvien',
+            'thanhviencungphong',
+            'kyluatcuaem',
+            'hoadonchuathanhtoan',
+            'lienhekhancap'
         ));
     }
 }
@@ -2219,6 +2807,7 @@ class LoginRequest extends FormRequest
 namespace App\Http\Requests;
 
 use App\Models\User;
+use App\Models\Sinhvien;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -2242,6 +2831,22 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            // Thêm các trường cho sinh viên
+            'masinhvien' => [
+                'nullable',
+                'string',
+                'max:20',
+                Rule::unique('sinhvien')->ignore($this->user()->sinhvien->id ?? 0),
+            ],
+            'lop' => ['nullable', 'string', 'max:50'],
+            'sodienthoai' => ['nullable', 'string', 'max:15'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'masinhvien.unique' => 'Mã sinh viên này đã tồn tại trên hệ thống.',
         ];
     }
 }
@@ -2300,6 +2905,7 @@ class Dangky extends Model
     protected $fillable = [
         'sinhvien_id',
         'phong_id',
+        'loaidangky',
         'trangthai',
         'ghichu',
     ];
@@ -2385,6 +2991,11 @@ class Phong extends Model
     public function danhsachdangky(): HasMany
     {
         return $this->hasMany(Dangky::class, 'phong_id');
+    }
+
+    public function danhsachtaisan(): HasMany
+    {
+        return $this->hasMany(Taisan::class, 'phong_id');
     }
 }
 </file>
@@ -2481,6 +3092,14 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    /**
+     * Mối quan hệ 1-1 với bảng sinhvien
+     */
+    public function sinhvien()
+    {
+        return $this->hasOne(Sinhvien::class, 'user_id');
+    }
 }
 </file>
 
@@ -4667,9 +5286,9 @@ return new class extends Migration
         Schema::create('sinhvien', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->string('masinhvien')->unique();
-            $table->string('lop');
-            $table->string('sodienthoai');
+            $table->string('masinhvien')->unique()->nullable();
+            $table->string('lop')->nullable();
+            $table->string('sodienthoai')->nullable();
             $table->foreignId('phong_id')->nullable()->constrained('phong')->nullOnDelete();
             $table->timestamps();
         });
@@ -5402,6 +6021,15 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
         <div class="text-sm text-gray-500">Admin cập nhật trạng thái từ “Chờ sửa” sang “Đã xong”.</div>
     </div>
 
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+        @foreach (['Tất cả', 'Chờ sửa', 'Đã xong'] as $loai)
+            <a href="{{ route('admin.quanlybaohong', ['status' => $loai]) }}"
+               class="rounded-lg px-3 py-2 text-sm font-medium {{ (isset($status) && $status === $loai) || (!isset($status) && $loai === 'Tất cả') ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700' }}">
+                {{ $loai }}
+            </a>
+        @endforeach
+    </div>
+
     @php
         $mapsinhvien = $danhsachsinhvien->keyBy('id');
         $mapphong = $danhsachphong->keyBy('id');
@@ -5449,7 +6077,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                     </tr>
                 @empty
                     <tr class="border-t border-gray-200">
-                        <td class="px-6 py-4 text-gray-500" colspan="6">Chưa có báo hỏng.</td>
+                        <td class="px-6 py-4 text-center text-gray-400" colspan="6">Hiện tại chưa có dữ liệu nào trong danh sách này.</td>
                     </tr>
                 @endforelse
                 </tbody>
@@ -5468,6 +6096,15 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
         <div class="text-sm text-gray-500">Admin duyệt / từ chối đăng ký phòng.</div>
     </div>
 
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+        @foreach (['Tất cả', 'Chờ xử lý', 'Đã duyệt', 'Từ chối'] as $loai)
+            <a href="{{ route('admin.duyetdangky', ['status' => $loai]) }}"
+               class="rounded-lg px-3 py-2 text-sm font-medium {{ (isset($status) && $status === $loai) || (!isset($status) && $loai === 'Tất cả') ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700' }}">
+                {{ $loai }}
+            </a>
+        @endforeach
+    </div>
+
     @php
         $mapsinhvien = $danhsachsinhvien->keyBy('id');
         $mapphong = $danhsachphong->keyBy('id');
@@ -5479,6 +6116,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                 <thead class="bg-gray-50 text-xs uppercase text-gray-700">
                 <tr>
                     <th class="px-6 py-3">Sinh viên</th>
+                    <th class="px-6 py-3">Loại đăng ký</th>
                     <th class="px-6 py-3">Phòng</th>
                     <th class="px-6 py-3">Trạng thái</th>
                     <th class="px-6 py-3">Ghi chú</th>
@@ -5494,6 +6132,9 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                     <tr class="border-t border-gray-200">
                         <td class="px-6 py-4 font-medium text-gray-900">
                             {{ $sinhvien?->masinhvien ?? 'N/A' }}
+                        </td>
+                        <td class="px-6 py-4 font-medium text-gray-900">
+                            {{ $dangky->loaidangky ?? 'Thuê phòng' }}
                         </td>
                         <td class="px-6 py-4">{{ $phong?->tenphong ?? 'N/A' }}</td>
                         <td class="px-6 py-4">
@@ -5559,7 +6200,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                     </div>
                 @empty
                     <tr class="border-t border-gray-200">
-                        <td class="px-6 py-4 text-gray-500" colspan="5">Chưa có đăng ký.</td>
+                        <td class="px-6 py-4 text-center text-gray-400" colspan="6">Hiện tại chưa có dữ liệu nào trong danh sách này.</td>
                     </tr>
                 @endforelse
                 </tbody>
@@ -5603,6 +6244,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                     <th class="px-6 py-3">Nước (cũ→mới)</th>
                     <th class="px-6 py-3">Tổng tiền</th>
                     <th class="px-6 py-3">Trạng thái</th>
+                    <th class="px-6 py-3 text-right">Thao tác</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -5614,8 +6256,30 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                         <td class="px-6 py-4">{{ $hoadon->thang }}/{{ $hoadon->nam }}</td>
                         <td class="px-6 py-4">{{ $hoadon->chisodiencu }} → {{ $hoadon->chisodienmoi }}</td>
                         <td class="px-6 py-4">{{ $hoadon->chisonuoccu }} → {{ $hoadon->chisonuocmoi }}</td>
-                        <td class="px-6 py-4">{{ number_format($hoadon->tongtien) }} đ</td>
-                        <td class="px-6 py-4">{{ $hoadon->trangthaithanhtoan }}</td>
+                        <td class="px-6 py-4 font-bold text-gray-900">{{ number_format($hoadon->tongtien) }} đ</td>
+                        <td class="px-6 py-4">
+                            @if ($hoadon->trangthaithanhtoan === 'Đã thanh toán')
+                                <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                    Đã thanh toán
+                                </span>
+                            @else
+                                <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+                                    Chưa thanh toán
+                                </span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            @if ($hoadon->trangthaithanhtoan === 'Chưa thanh toán')
+                                <form method="POST" action="{{ route('admin.xacnhanthanhtoan', $hoadon->id) }}" onsubmit="return confirm('Xác nhận hóa đơn này đã được thanh toán?')">
+                                    @csrf
+                                    <button type="submit" class="text-sm font-medium text-blue-600 hover:underline">
+                                        Xác nhận thanh toán
+                                    </button>
+                                </form>
+                            @else
+                                <span class="text-sm text-gray-400">N/A</span>
+                            @endif
+                        </td>
                     </tr>
                 @empty
                     <tr class="border-t border-gray-200">
@@ -5858,11 +6522,17 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 @extends('admin.layouts.quantri')
 
 @section('noidung')
-    <div class="mb-6 flex items-end justify-between">
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
             <div class="text-2xl font-bold text-gray-900">Quản lý phòng</div>
             <div class="text-sm text-gray-500">Admin thêm/sửa/xóa phòng bằng modal.</div>
         </div>
+
+        <form method="GET" action="{{ route('admin.quanlyphong') }}" class="flex items-center gap-2">
+            <input name="q" value="{{ old('q', $tuKhoa ?? '') }}" type="text" placeholder="Tìm theo tên phòng"
+                   class="rounded-lg border border-gray-300 p-2 text-sm" />
+            <button type="submit" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">Tìm</button>
+        </form>
 
         <button type="button"
                 data-modal-target="modal-themphong" data-modal-toggle="modal-themphong"
@@ -6022,9 +6692,17 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 @extends('admin.layouts.quantri')
 
 @section('noidung')
-    <div class="mb-6">
-        <div class="text-2xl font-bold text-gray-900">Quản lý sinh viên</div>
-        <div class="text-sm text-gray-500">Danh sách sinh viên và chuyển phòng nhanh.</div>
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+            <div class="text-2xl font-bold text-gray-900">Quản lý sinh viên</div>
+            <div class="text-sm text-gray-500">Danh sách sinh viên và chuyển phòng nhanh.</div>
+        </div>
+
+        <form method="GET" action="{{ route('admin.quanlysinhvien') }}" class="flex items-center gap-2">
+            <input name="q" value="{{ old('q', $tuKhoa ?? '') }}" type="text" placeholder="Tìm theo mã sinh viên"
+                   class="rounded-lg border border-gray-300 p-2 text-sm" />
+            <button type="submit" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">Tìm</button>
+        </form>
     </div>
 
     @php
@@ -6057,20 +6735,31 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                             @endif
                         </td>
                         <td class="px-6 py-4 text-right">
-                            <form method="POST" action="{{ route('admin.chuyenphong', ['id' => $sinhvien->id]) }}" class="flex items-center justify-end gap-2">
-                                @csrf
-                                <select name="phong_id" class="rounded-lg border border-gray-300 p-2 text-sm text-gray-900 focus:border-gray-900 focus:ring-gray-900">
-                                    <option value="0" {{ $sinhvien->phong_id ? '' : 'selected' }}>Chưa có</option>
-                                    @foreach ($danhsachphong as $phong)
-                                        <option value="{{ $phong->id }}" {{ (int) $sinhvien->phong_id === (int) $phong->id ? 'selected' : '' }}>
-                                            {{ $phong->tenphong }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <button type="submit" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">
-                                    Lưu
-                                </button>
-                            </form>
+                            <div class="flex flex-col gap-2 items-end">
+                                <form method="POST" action="{{ route('admin.chuyenphong', ['id' => $sinhvien->id]) }}" class="flex items-center gap-2">
+                                    @csrf
+                                    <select name="phong_id" class="rounded-lg border border-gray-300 p-2 text-sm text-gray-900 focus:border-gray-900 focus:ring-gray-900">
+                                        <option value="0" {{ $sinhvien->phong_id ? '' : 'selected' }}>Chưa có</option>
+                                        @foreach ($danhsachphong as $phong)
+                                            <option value="{{ $phong->id }}" {{ (int) $sinhvien->phong_id === (int) $phong->id ? 'selected' : '' }}>
+                                                {{ $phong->tenphong }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <button type="submit" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">
+                                        Lưu
+                                    </button>
+                                </form>
+
+                                @if($sinhvien->phong_id)
+                                    <form method="POST" action="{{ route('admin.choroiophong', ['id' => $sinhvien->id]) }}" onsubmit="return confirm('Bạn có chắc muốn cho sinh viên này rời phòng?')">
+                                        @csrf
+                                        <button type="submit" class="text-xs font-medium text-red-600 hover:underline">
+                                            Cho rời phòng
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @empty
@@ -6096,6 +6785,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
         </div>
     </div>
 
+    {{-- Khối 4 thẻ thống kê nhanh --}}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="rounded-xl border border-gray-200 bg-white p-5">
             <div class="flex items-center justify-between">
@@ -6103,7 +6793,9 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                     <div class="text-sm text-gray-500">Tổng phòng</div>
                     <div class="mt-2 text-3xl font-bold text-gray-900">{{ $tongphong }}</div>
                 </div>
-                <div class="h-10 w-10 rounded-xl bg-indigo-50"></div>
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                </div>
             </div>
         </div>
 
@@ -6113,7 +6805,9 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                     <div class="text-sm text-gray-500">Tổng sinh viên</div>
                     <div class="mt-2 text-3xl font-bold text-gray-900">{{ $tongsinhvien }}</div>
                 </div>
-                <div class="h-10 w-10 rounded-xl bg-sky-50"></div>
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </div>
             </div>
         </div>
 
@@ -6123,7 +6817,9 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                     <div class="text-sm text-gray-500">Phòng trống</div>
                     <div class="mt-2 text-3xl font-bold text-gray-900">{{ $tongphongtrong }}</div>
                 </div>
-                <div class="h-10 w-10 rounded-xl bg-emerald-50"></div>
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
             </div>
         </div>
 
@@ -6133,11 +6829,14 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                     <div class="text-sm text-gray-500">Đăng ký chờ xử lý</div>
                     <div class="mt-2 text-3xl font-bold text-gray-900">{{ $dangkychoxuly }}</div>
                 </div>
-                <div class="h-10 w-10 rounded-xl bg-amber-50"></div>
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
             </div>
         </div>
     </div>
 
+    {{-- Doanh thu & Các thống kê phụ --}}
     <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div class="rounded-xl border border-gray-200 bg-white p-5">
             <div class="text-sm text-gray-500">Báo hỏng chờ sửa</div>
@@ -6145,27 +6844,35 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
         </div>
 
         <div class="rounded-xl border border-gray-200 bg-white p-5">
-            <div class="text-sm text-gray-500">Hóa đơn chưa thanh toán (tháng)</div>
+            <div class="text-sm text-gray-500">Hóa đơn chưa thanh toán</div>
             <div class="mt-2 text-3xl font-bold text-gray-900">{{ $hoadonchuathanhtoan }}</div>
         </div>
 
         <div class="rounded-xl border border-gray-200 bg-gradient-to-br from-gray-900 to-gray-700 p-5 text-white">
-            <div class="text-sm text-gray-200">Doanh thu tháng (đã thanh toán)</div>
+            <div class="text-sm text-gray-200">Doanh thu tháng (đã thu)</div>
             <div class="mt-2 text-3xl font-bold">{{ number_format($doanhthuthang) }} đ</div>
-            <div class="mt-1 text-xs text-gray-200">Tính theo hóa đơn có trạng thái “Đã thanh toán”.</div>
+            <div class="mt-1 text-xs text-gray-200 italic">* Tính theo hóa đơn đã xác nhận thanh toán.</div>
         </div>
     </div>
 
+    {{-- Khu vực Biểu đồ --}}
+    <div class="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+        <div class="mb-4 text-sm font-semibold text-gray-900">Biểu đồ doanh thu 6 tháng gần nhất</div>
+        <canvas id="doanhthu6thang" height="100"></canvas>
+    </div>
+
+    {{-- Hai bảng danh sách gần nhất --}}
     <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {{-- Đăng ký phòng --}}
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
             <div class="border-b border-gray-200 px-6 py-4">
-                <div class="text-sm font-semibold text-gray-900">Đăng ký gần nhất (Chờ xử lý)</div>
+                <div class="text-sm font-semibold text-gray-900">Đăng ký mới nhất (Chờ xử lý)</div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-gray-600">
                     <thead class="bg-gray-50 text-xs uppercase text-gray-700">
                     <tr>
-                        <th class="px-6 py-3">Mã đăng ký</th>
+                        <th class="px-6 py-3">Mã đơn</th>
                         <th class="px-6 py-3">Sinh viên</th>
                         <th class="px-6 py-3">Phòng</th>
                     </tr>
@@ -6174,12 +6881,12 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                     @forelse ($danhsachdangkygannhat as $dangky)
                         <tr class="border-t border-gray-200">
                             <td class="px-6 py-4 font-medium text-gray-900">#{{ $dangky->id }}</td>
-                            <td class="px-6 py-4">{{ $dangky->sinhvien_id }}</td>
-                            <td class="px-6 py-4">{{ $dangky->phong_id }}</td>
+                            <td class="px-6 py-4">{{ optional($dangky->sinhvien->taikhoan)->name ?? 'N/A' }}</td>
+                            <td class="px-6 py-4">{{ optional($dangky->phong)->tenphong ?? 'N/A' }}</td>
                         </tr>
                     @empty
                         <tr class="border-t border-gray-200">
-                            <td class="px-6 py-4 text-gray-500" colspan="3">Không có đăng ký chờ xử lý.</td>
+                            <td class="px-6 py-4 text-center text-gray-500" colspan="3">Không có đăng ký chờ xử lý.</td>
                         </tr>
                     @endforelse
                     </tbody>
@@ -6187,15 +6894,16 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
             </div>
         </div>
 
+        {{-- Báo hỏng --}}
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
             <div class="border-b border-gray-200 px-6 py-4">
-                <div class="text-sm font-semibold text-gray-900">Báo hỏng gần nhất (Chờ sửa)</div>
+                <div class="text-sm font-semibold text-gray-900">Báo hỏng mới nhất (Chờ sửa)</div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-gray-600">
                     <thead class="bg-gray-50 text-xs uppercase text-gray-700">
                     <tr>
-                        <th class="px-6 py-3">Mã báo hỏng</th>
+                        <th class="px-6 py-3">Mã đơn</th>
                         <th class="px-6 py-3">Sinh viên</th>
                         <th class="px-6 py-3">Phòng</th>
                     </tr>
@@ -6204,12 +6912,12 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                     @forelse ($danhsachbaohonggannhat as $baohong)
                         <tr class="border-t border-gray-200">
                             <td class="px-6 py-4 font-medium text-gray-900">#{{ $baohong->id }}</td>
-                            <td class="px-6 py-4">{{ $baohong->sinhvien_id }}</td>
-                            <td class="px-6 py-4">{{ $baohong->phong_id }}</td>
+                            <td class="px-6 py-4">{{ optional($baohong->sinhvien->taikhoan)->name ?? 'N/A' }}</td>
+                            <td class="px-6 py-4">{{ optional($baohong->phong)->tenphong ?? 'N/A' }}</td>
                         </tr>
                     @empty
                         <tr class="border-t border-gray-200">
-                            <td class="px-6 py-4 text-gray-500" colspan="3">Không có báo hỏng chờ sửa.</td>
+                            <td class="px-6 py-4 text-center text-gray-500" colspan="3">Không có báo hỏng chờ sửa.</td>
                         </tr>
                     @endforelse
                     </tbody>
@@ -6217,13 +6925,62 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
             </div>
         </div>
     </div>
+
+    {{-- PHẦN XỬ LÝ BIỂU ĐỒ - KHÔNG DÙNG PHP TRONG SCRIPT --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    {{-- Thẻ ẩn chứa dữ liệu, dùng single quotes để tránh lỗi nháy kép trong JSON --}}
+    <div id="data-chart-container" style="display: none;"
+         data-labels='{!! json_encode($nhan ?? []) !!}'
+         data-values='{!! json_encode($doanhthugannhat ?? []) !!}'>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chartData = document.getElementById('data-chart-container');
+            const labelsArr = JSON.parse(chartData.getAttribute('data-labels') || '[]');
+            const valuesArr = JSON.parse(chartData.getAttribute('data-values') || '[]');
+
+            const ctx = document.getElementById('doanhthu6thang');
+            if (ctx) {
+                new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: labelsArr,
+                        datasets: [{
+                            label: 'Doanh thu thực tế (vnđ)',
+                            data: valuesArr,
+                            backgroundColor: '#4f46e5',
+                            borderRadius: 6,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return new Intl.NumberFormat('vi-VN').format(value) + ' đ';
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
 @endsection
 </file>
 
 <file path="resources/views/auth/confirm-password.blade.php">
 <x-guest-layout>
     <div class="mb-4 text-sm text-gray-600">
-        {{ __('This is a secure area of the application. Please confirm your password before continuing.') }}
+        Khu vực an toàn. Vui lòng xác nhận lại mật khẩu để tiếp tục.
     </div>
 
     <form method="POST" action="{{ route('password.confirm') }}">
@@ -6231,7 +6988,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
         <!-- Password -->
         <div>
-            <x-input-label for="password" :value="__('Password')" />
+            <x-input-label for="password" value="Mật khẩu" />
 
             <x-text-input id="password" class="block mt-1 w-full"
                             type="password"
@@ -6243,7 +7000,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
         <div class="flex justify-end mt-4">
             <x-primary-button>
-                {{ __('Confirm') }}
+                Xác nhận
             </x-primary-button>
         </div>
     </form>
@@ -6253,7 +7010,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 <file path="resources/views/auth/forgot-password.blade.php">
 <x-guest-layout>
     <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+        Quên mật khẩu? Không sao. Vui lòng nhập email để hệ thống gửi liên kết đặt lại mật khẩu.
     </div>
 
     <!-- Session Status -->
@@ -6264,14 +7021,14 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
         <!-- Email Address -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
+        <x-input-label for="email" value="Email" />
             <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
         <div class="flex items-center justify-end mt-4">
             <x-primary-button>
-                {{ __('Email Password Reset Link') }}
+                Gửi email đặt lại mật khẩu
             </x-primary-button>
         </div>
     </form>
@@ -6288,14 +7045,14 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
         <!-- Email Address -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
+            <x-input-label for="email" value="Email" />
             <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
         <!-- Password -->
         <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+            <x-input-label for="password" value="Mật khẩu" />
 
             <x-text-input id="password" class="block mt-1 w-full"
                             type="password"
@@ -6309,19 +7066,19 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
         <div class="block mt-4">
             <label for="remember_me" class="inline-flex items-center">
                 <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
+                <span class="ms-2 text-sm text-gray-600">Nhớ đăng nhập</span>
             </label>
         </div>
 
         <div class="flex items-center justify-end mt-4">
             @if (Route::has('password.request'))
                 <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
+                    Quên mật khẩu?
                 </a>
             @endif
 
             <x-primary-button class="ms-3">
-                {{ __('Log in') }}
+                Đăng nhập
             </x-primary-button>
         </div>
     </form>
@@ -6335,21 +7092,21 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
         <!-- Name -->
         <div>
-            <x-input-label for="name" :value="__('Name')" />
+            <x-input-label for="name" value="Họ và tên" />
             <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
             <x-input-error :messages="$errors->get('name')" class="mt-2" />
         </div>
 
         <!-- Email Address -->
         <div class="mt-4">
-            <x-input-label for="email" :value="__('Email')" />
+            <x-input-label for="email" value="Email" />
             <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
         <!-- Password -->
         <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+            <x-input-label for="password" value="Mật khẩu" />
 
             <x-text-input id="password" class="block mt-1 w-full"
                             type="password"
@@ -6361,7 +7118,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
         <!-- Confirm Password -->
         <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
+            <x-input-label for="password_confirmation" value="Xác nhận mật khẩu" />
 
             <x-text-input id="password_confirmation" class="block mt-1 w-full"
                             type="password"
@@ -6372,11 +7129,11 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
         <div class="flex items-center justify-end mt-4">
             <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
-                {{ __('Already registered?') }}
+                Đã có tài khoản?
             </a>
 
             <x-primary-button class="ms-4">
-                {{ __('Register') }}
+                Đăng ký
             </x-primary-button>
         </div>
     </form>
@@ -6393,21 +7150,21 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
         <!-- Email Address -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
+            <x-input-label for="email" value="Email" />
             <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus autocomplete="username" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
         <!-- Password -->
         <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+            <x-input-label for="password" value="Mật khẩu" />
             <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
         <!-- Confirm Password -->
         <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
+            <x-input-label for="password_confirmation" value="Xác nhận mật khẩu" />
 
             <x-text-input id="password_confirmation" class="block mt-1 w-full"
                                 type="password"
@@ -6418,7 +7175,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
         <div class="flex items-center justify-end mt-4">
             <x-primary-button>
-                {{ __('Reset Password') }}
+                Đặt lại mật khẩu
             </x-primary-button>
         </div>
     </form>
@@ -6428,12 +7185,13 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 <file path="resources/views/auth/verify-email.blade.php">
 <x-guest-layout>
     <div class="mb-4 text-sm text-gray-600">
-        {{ __('Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.') }}
+        Cảm ơn bạn đã đăng ký! Trước khi bắt đầu, vui lòng xác thực email bằng liên kết vừa được gửi.
+        Nếu bạn chưa nhận được email, chúng tôi sẽ gửi lại.
     </div>
 
     @if (session('status') == 'verification-link-sent')
         <div class="mb-4 font-medium text-sm text-green-600">
-            {{ __('A new verification link has been sent to the email address you provided during registration.') }}
+            Liên kết xác thực mới đã được gửi tới email của bạn.
         </div>
     @endif
 
@@ -6443,7 +7201,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
             <div>
                 <x-primary-button>
-                    {{ __('Resend Verification Email') }}
+                    Gửi lại email xác thực
                 </x-primary-button>
             </div>
         </form>
@@ -6452,7 +7210,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
             @csrf
 
             <button type="submit" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                {{ __('Log Out') }}
+                Đăng xuất
             </button>
         </form>
     </div>
@@ -6682,7 +7440,7 @@ $classes = ($active ?? false)
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
-                    {{ __("You're logged in!") }}
+                    Bạn đã đăng nhập thành công!
                 </div>
             </div>
         </div>
@@ -6724,6 +7482,8 @@ $classes = ($active ?? false)
             <main>
                 {{ $slot }}
             </main>
+
+            @include('student.partials.toast')
         </div>
     </body>
 </html>
@@ -6778,7 +7538,7 @@ $classes = ($active ?? false)
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
+                        Trang chủ
                     </x-nav-link>
                 </div>
             </div>
@@ -6800,7 +7560,7 @@ $classes = ($active ?? false)
 
                     <x-slot name="content">
                         <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
+                            Hồ sơ
                         </x-dropdown-link>
 
                         <!-- Authentication -->
@@ -6833,7 +7593,7 @@ $classes = ($active ?? false)
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
+                Trang chủ
             </x-responsive-nav-link>
         </div>
 
@@ -6846,7 +7606,7 @@ $classes = ($active ?? false)
 
             <div class="mt-3 space-y-1">
                 <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
+                    Hồ sơ
                 </x-responsive-nav-link>
 
                 <!-- Authentication -->
@@ -7056,6 +7816,27 @@ $classes = ($active ?? false)
             @endif
         </div>
 
+        @if($user->vaitro === 'sinhvien')
+            {{-- Thông tin bổ sung cho sinh viên --}}
+            <div>
+                <x-input-label for="masinhvien" value="Mã sinh viên" />
+                <x-text-input id="masinhvien" name="masinhvien" type="text" class="mt-1 block w-full" :value="old('masinhvien', optional($user->sinhvien)->masinhvien)" />
+                <x-input-error class="mt-2" :messages="$errors->get('masinhvien')" />
+            </div>
+
+            <div>
+                <x-input-label for="lop" value="Lớp" />
+                <x-text-input id="lop" name="lop" type="text" class="mt-1 block w-full" :value="old('lop', optional($user->sinhvien)->lop)" />
+                <x-input-error class="mt-2" :messages="$errors->get('lop')" />
+            </div>
+
+            <div>
+                <x-input-label for="sodienthoai" value="Số điện thoại" />
+                <x-text-input id="sodienthoai" name="sodienthoai" type="text" class="mt-1 block w-full" :value="old('sodienthoai', optional($user->sinhvien)->sodienthoai)" />
+                <x-input-error class="mt-2" :messages="$errors->get('sodienthoai')" />
+            </div>
+        @endif
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 
@@ -7186,6 +7967,7 @@ $classes = ($active ?? false)
                     <th class="px-6 py-3">Nước (cũ→mới)</th>
                     <th class="px-6 py-3">Tổng tiền</th>
                     <th class="px-6 py-3">Trạng thái</th>
+                    <th class="px-6 py-3">Hành động</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -7196,10 +7978,36 @@ $classes = ($active ?? false)
                         <td class="px-6 py-4">{{ $hoadon->chisonuoccu }} → {{ $hoadon->chisonuocmoi }}</td>
                         <td class="px-6 py-4">{{ number_format($hoadon->tongtien) }} đ</td>
                         <td class="px-6 py-4">{{ $hoadon->trangthaithanhtoan }}</td>
+                        <td class="px-6 py-4">
+                            <button type="button" data-modal-target="modal-bienlai-{{ $hoadon->id }}" data-modal-toggle="modal-bienlai-{{ $hoadon->id }}"
+                                    class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                                Xem biên lai
+                            </button>
+                        </td>
                     </tr>
+
+                    <div id="modal-bienlai-{{ $hoadon->id }}" tabindex="-1" aria-hidden="true"
+                         class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                        <div class="w-full max-w-lg rounded-lg bg-white p-5">
+                            <div class="mb-4 flex items-center justify-between border-b pb-3">
+                                <h3 class="text-lg font-semibold">Biên lai thanh toán</h3>
+                                <button type="button" class="text-gray-500 hover:text-gray-900" data-modal-hide="modal-bienlai-{{ $hoadon->id }}">Đóng</button>
+                            </div>
+                            <div class="mb-3 text-sm text-gray-600">Phòng: {{ optional($hoadon->phong)->tenphong ?? 'N/A' }}</div>
+                            <div class="mb-3 text-sm text-gray-600">Tháng/Năm: {{ $hoadon->thang }}/{{ $hoadon->nam }}</div>
+                            <table class="w-full text-left text-sm text-gray-600">
+                                <tbody>
+                                <tr><td class="py-1">Tiền phòng cố định</td><td class="py-1 text-right">{{ number_format(optional($hoadon->phong)->giaphong ?? 0) }} đ</td></tr>
+                                <tr><td class="py-1">Tiền điện</td><td class="py-1 text-right">{{ number_format((($hoadon->chisodienmoi - $hoadon->chisodiencu) * 3500)) }} đ</td></tr>
+                                <tr><td class="py-1">Tiền nước</td><td class="py-1 text-right">{{ number_format((($hoadon->chisonuocmoi - $hoadon->chisonuoccu) * 15000)) }} đ</td></tr>
+                                <tr><td class="py-2 font-semibold">Tổng cộng</td><td class="py-2 text-right font-semibold">{{ number_format($hoadon->tongtien) }} đ</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 @empty
                     <tr class="border-t border-gray-200">
-                        <td class="px-6 py-4 text-gray-500" colspan="5">Em chưa có hóa đơn (hoặc chưa được xếp phòng).</td>
+                        <td class="px-6 py-4 text-center text-gray-400" colspan="6">Hiện tại chưa có dữ liệu nào trong danh sách này.</td>
                     </tr>
                 @endforelse
                 </tbody>
@@ -7322,11 +8130,17 @@ $classes = ($active ?? false)
 @extends('student.layouts.chinh')
 
 @section('noidung')
-    <div class="mb-6 flex items-end justify-between">
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
             <div class="text-2xl font-bold text-gray-900">Danh sách phòng trống</div>
             <div class="text-sm text-gray-500">Sinh viên chọn phòng và gửi đăng ký.</div>
         </div>
+
+        <form method="GET" action="{{ route('student.danhsachphong') }}" class="flex items-center gap-2">
+            <input name="q" value="{{ old('q', $tuKhoa ?? '') }}" type="text" placeholder="Tìm theo tên phòng"
+                   class="rounded-lg border border-gray-300 p-2 text-sm" />
+            <button type="submit" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">Tìm</button>
+        </form>
     </div>
 
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -7378,6 +8192,58 @@ $classes = ($active ?? false)
         <div class="text-sm text-gray-500">Chọn chức năng bên trên để sử dụng.</div>
     </div>
 
+    @if ($kyluatcuaem->isNotEmpty())
+        <div class="mb-6 rounded-xl border border-red-300 bg-red-50 p-4">
+            <div class="text-red-700 font-semibold">Cảnh báo kỷ luật</div>
+            <div class="text-sm text-red-600">Bạn có {{ $kyluatcuaem->count() }} vi phạm gần đây, hãy liên hệ ban quản lý để xử lý.</div>
+            <ul class="mt-2 list-disc pl-5 text-sm text-red-700">
+                @foreach ($kyluatcuaem as $item)
+                    <li>{{ $item->ngayvipham }} - {{ $item->noidung }} (Mức độ: {{ $item->mucdo }})</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <div class="mb-6 rounded-xl border border-gray-200 bg-white p-5">
+        <div class="text-sm text-gray-500">Liên hệ khẩn cấp</div>
+        <div class="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            @foreach ($lienhekhancap as $lh)
+                <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                    <div class="font-semibold text-gray-900">{{ $lh['title'] }}</div>
+                    <div class="text-sm text-gray-600">{{ $lh['phone'] }}</div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
+    @if (!empty($sinhvien?->phong_id))
+        <div class="mb-6 rounded-xl border border-gray-200 bg-white p-5">
+            <div class="text-sm text-gray-500">Danh sách cùng phòng</div>
+            @if ($thanhviencungphong->isEmpty())
+                <div class="mt-2 text-sm text-gray-400">Chưa có thành viên khác.</div>
+            @else
+                <div class="mt-2 space-y-2">
+                    @foreach ($thanhviencungphong as $tv)
+                        <div class="rounded-lg border border-gray-100 bg-gray-50 p-2">
+                            {{ optional($tv->taikhoan)->name ?? 'N/A' }} - Lớp: {{ $tv->lop ?? 'N/A' }}
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    @endif
+
+    @if ($hoadonchuathanhtoan->isNotEmpty())
+        <div class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 animate-pulse">
+            <div class="font-semibold text-red-700">Bạn có {{ $hoadonchuathanhtoan->count() }} hóa đơn chưa thanh toán!</div>
+            <ul class="mt-2 text-sm text-red-700">
+                @foreach ($hoadonchuathanhtoan as $hoadon)
+                    <li>Phòng {{ optional($hoadon->phong)->tenphong ?? 'N/A' }} tháng {{ $hoadon->thang }}/{{ $hoadon->nam }}: {{ number_format($hoadon->tongtien) }} đ</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <a href="{{ route('student.danhsachphong') }}" class="rounded-xl border border-gray-200 bg-white p-5 hover:bg-gray-50">
             <div class="text-sm text-gray-500">Xem phòng trống</div>
@@ -7393,6 +8259,15 @@ $classes = ($active ?? false)
             <div class="text-sm text-gray-500">Gửi yêu cầu</div>
             <div class="mt-2 text-lg font-semibold text-gray-900">Báo hỏng</div>
         </a>
+
+        <form method="POST" action="{{ route('student.yeucautraphong') }}" class="rounded-xl border border-gray-200 bg-white p-5 hover:bg-gray-50">
+            @csrf
+            <div class="text-sm text-gray-500">Thông tin</div>
+            <div class="mt-2 text-lg font-semibold text-gray-900">Yêu cầu trả phòng</div>
+            <button type="submit" class="mt-4 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700">
+                Gửi yêu cầu trả phòng
+            </button>
+        </form>
     </div>
 @endsection
 </file>
@@ -7666,6 +8541,7 @@ Artisan::command('inspire', function () {
 use App\Http\Controllers\BaohongController;
 use App\Http\Controllers\DangkyController;
 use App\Http\Controllers\HoadonController;
+use App\Http\Controllers\KyluatController;
 use App\Http\Controllers\PhongController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SinhvienController;
@@ -7674,7 +8550,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
-    return redirect()->route('login');
+    return view('welcome');
 });
 
 /**
@@ -7695,6 +8571,7 @@ Route::prefix('admin')
 
         Route::get('/quanlysinhvien', [SinhvienController::class, 'danhsachsinhvien'])->name('quanlysinhvien');
         Route::post('/chuyenphong/{id}', [SinhvienController::class, 'chuyenphongsinhvien'])->name('chuyenphong');
+        Route::post('/choroiophong/{id}', [SinhvienController::class, 'choroiophong'])->name('choroiophong');
 
         Route::get('/duyetdangky', [DangkyController::class, 'danhsachdangky'])->name('duyetdangky');
         Route::post('/duyetdangky/{id}', [DangkyController::class, 'duyetdangky'])->name('xulyduyetdangky');
@@ -7702,9 +8579,20 @@ Route::prefix('admin')
 
         Route::get('/quanlyhoadon', [HoadonController::class, 'danhsachhoadonquantri'])->name('quanlyhoadon');
         Route::post('/xulyhoadon', [HoadonController::class, 'xulyhoadon'])->name('xulyhoadon');
+        Route::post('/xacnhanthanhtoan/{id}', [HoadonController::class, 'xacnhanthanhtoan'])->name('xacnhanthanhtoan');
 
         Route::get('/quanlybaohong', [BaohongController::class, 'danhsachbaohongquantri'])->name('quanlybaohong');
         Route::post('/capnhatbaohong/{id}', [BaohongController::class, 'capnhatbaohong'])->name('capnhatbaohong');
+
+        // Quản lý kỷ luật
+        Route::get('/quanlykyluat', [KyluatController::class, 'danhsachkyluat'])->name('quanlykyluat');
+        Route::post('/them/kyluat', [KyluatController::class, 'themkyluat'])->name('themkyluat');
+
+        // Quản lý tài sản phòng
+        Route::get('/quanlyphong/{id}', [PhongController::class, 'chitietphong'])->name('chitietphong');
+        Route::post('/quanlyphong/{id}/themtaisan', [PhongController::class, 'themtaisan'])->name('themtaisan');
+        Route::post('/quanlyphong/{id}/capnhattaisan/{taisanId}', [PhongController::class, 'capnhattaisan'])->name('capnhattaisan');
+        Route::post('/quanlyphong/{id}/xoataisan/{taisanId}', [PhongController::class, 'xoataisan'])->name('xoataisan');
     });
 
 /**
@@ -7720,6 +8608,7 @@ Route::prefix('student')
 
         Route::get('/danhsachphong', [PhongController::class, 'danhsachphong'])->name('danhsachphong');
         Route::post('/dangkyphong', [DangkyController::class, 'themdangky'])->name('dangkyphong');
+        Route::post('/yeucautraphong', [DangkyController::class, 'yeucautraphong'])->name('yeucautraphong');
 
         Route::get('/hoadoncuaem', [HoadonController::class, 'hoadoncuatoi'])->name('hoadoncuaem');
 
@@ -7746,7 +8635,12 @@ Route::get('/dieuhuong', function () {
 
     // Nếu là sinh viên thì đẩy vào khu vực student
     return redirect()->route('student.trangchu');
-})->middleware(['auth']);
+})->middleware(['auth'])->name('dieuhuong');
+
+// Route mặc định của Breeze: chuyển về dieuhuong
+Route::get('/dashboard', function () {
+    return redirect()->route('dieuhuong');
+})->middleware(['auth'])->name('dashboard');
 require __DIR__.'/auth.php';
 </file>
 

@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
+use App\Models\Sinhvien;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -26,6 +27,22 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            // Thêm các trường cho sinh viên
+            'masinhvien' => [
+                'nullable',
+                'string',
+                'max:20',
+                Rule::unique('sinhvien')->ignore($this->user()->sinhvien->id ?? 0),
+            ],
+            'lop' => ['nullable', 'string', 'max:50'],
+            'sodienthoai' => ['nullable', 'string', 'max:15'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'masinhvien.unique' => 'Mã sinh viên này đã tồn tại trên hệ thống.',
         ];
     }
 }

@@ -13,14 +13,20 @@ class SinhvienController extends Controller
      * - Danh sách sinh viên lấy từ: bảng sinhvien
      * - Danh sách phòng lấy từ: bảng phong (để hiển thị tên phòng)
      */
-    public function danhsachsinhvien()
+    public function danhsachsinhvien(Request $request)
     {
-        $danhsachsinhvien = Sinhvien::all();
+        $tuKhoa = $request->query('q', '');
+
+        $danhsachsinhvien = Sinhvien::when($tuKhoa, function ($query, $tuKhoa) {
+            return $query->where('masinhvien', 'like', '%'.trim($tuKhoa).'%');
+        })->get();
+
         $danhsachphong = Phong::all();
 
         return view('admin.sinhvien.danhsach', [
             'danhsachsinhvien' => $danhsachsinhvien,
             'danhsachphong' => $danhsachphong,
+            'tuKhoa' => $tuKhoa,
         ]);
     }
 
@@ -100,4 +106,30 @@ class SinhvienController extends Controller
             ->with('toast_loai', 'thanhcong')
             ->with('toast_noidung', 'Chuyển phòng cho sinh viên thành công.');
     }
+
+    /**
+     * Ham nay xu ly admin cho sinh vien roi phong (set phong_id ve null).
+     * - $id lay tu route (id cua sinhvien)
+     */
+    public function choroiophong(int $id)
+    {
+        $sinhvien = Sinhvien::find($id);
+
+        if (! $sinhvien) {
+            return redirect()
+                ->back()
+                ->with("toast_loai", "loi")
+                ->with("toast_noidung", "Khong tim thay sinh vien.");
+        }
+
+        $sinhvien->update([
+            "phong_id" => null,
+        ]);
+
+        return redirect()
+            ->back()
+            ->with("toast_loai", "thanhcong")
+            ->with("toast_noidung", "Da cho sinh vien roi phong thanh cong.");
+    }
 }
+

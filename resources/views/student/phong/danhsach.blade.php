@@ -1,11 +1,17 @@
 @extends('student.layouts.chinh')
 
 @section('noidung')
-    <div class="mb-6 flex items-end justify-between">
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
             <div class="text-2xl font-bold text-gray-900">Danh sách phòng trống</div>
             <div class="text-sm text-gray-500">Sinh viên chọn phòng và gửi đăng ký.</div>
         </div>
+
+        <form method="GET" action="{{ route('student.danhsachphong') }}" class="flex items-center gap-2">
+            <input name="q" value="{{ old('q', $tuKhoa ?? '') }}" type="text" placeholder="Tìm theo tên phòng"
+                   class="rounded-lg border border-gray-300 p-2 text-sm" />
+            <button type="submit" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">Tìm</button>
+        </form>
     </div>
 
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">

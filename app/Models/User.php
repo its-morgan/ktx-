@@ -43,4 +43,12 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    /**
+     * Mối quan hệ 1-1 với bảng sinhvien
+     */
+    public function sinhvien()
+    {
+        return $this->hasOne(Sinhvien::class, 'user_id');
+    }
 }

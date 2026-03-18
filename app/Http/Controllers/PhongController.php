@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Phong;
 use App\Models\Sinhvien;
+use App\Models\Taisan;
 use Illuminate\Http\Request;
 
 class PhongController extends Controller
@@ -13,9 +14,13 @@ class PhongController extends Controller
      * - Danh sách phòng lấy từ: bảng phong
      * - Số người đang ở trong phòng lấy từ: bảng sinhvien (cột phong_id)
      */
-    public function danhsachphong()
+    public function danhsachphong(Request $request)
     {
-        $danhsachphong = Phong::all();
+        $tuKhoa = $request->query('q', '');
+
+        $danhsachphong = Phong::when($tuKhoa, function ($query, $tuKhoa) {
+            return $query->where('tenphong', 'like', '%'.trim($tuKhoa).'%');
+        })->get();
 
         $danhsachphongtrong = $danhsachphong->filter(function ($phong) {
             $soluonghientai = Sinhvien::where('phong_id', $phong->id)->count();
@@ -24,6 +29,7 @@ class PhongController extends Controller
 
         return view('student.phong.danhsach', [
             'danhsachphong' => $danhsachphongtrong,
+            'tuKhoa' => $tuKhoa,
         ]);
     }
 
@@ -32,11 +38,14 @@ class PhongController extends Controller
      * - Danh sách phòng lấy từ: bảng phong
      * - Số lượng đang ở lấy từ: bảng sinhvien (đếm theo phong_id)
      */
-    public function danhsachphongquantri()
+    public function danhsachphongquantri(Request $request)
     {
-        $danhsachphong = Phong::all();
+        $tuKhoa = $request->query('q', '');
 
-        // Tạo map số lượng đang ở theo phong_id để view hiển thị nhanh
+        $danhsachphong = Phong::when($tuKhoa, function ($query, $tuKhoa) {
+            return $query->where('tenphong', 'like', '%'.trim($tuKhoa).'%');
+        })->get();
+
         $soluongdango_theophong = Sinhvien::all()
             ->groupBy('phong_id')
             ->map(function ($nhom) {
@@ -47,7 +56,84 @@ class PhongController extends Controller
         return view('admin.phong.danhsach', [
             'danhsachphong' => $danhsachphong,
             'soluongdango_theophong' => $soluongdango_theophong,
+            'tuKhoa' => $tuKhoa,
         ]);
+    }
+
+    /**
+     * Hàm này hiển thị chi tiết phòng (admin) bao gồm tài sản.
+     */
+    public function chitietphong(int $id)
+    {
+        $phong = Phong::find($id);
+
+        if (! $phong) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy phòng.');
+        }
+
+        $taisan = $phong->danhsachtaisan()->get();
+
+        return view('admin.phong.chitiet', compact('phong', 'taisan'));
+    }
+
+    /**
+     * Thêm tài sản vào phòng (admin).
+     */
+    public function themtaisan(Request $request, int $id)
+    {
+        $phong = Phong::find($id);
+
+        if (! $phong) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy phòng.');
+        }
+
+        $dulieu = $request->validate([
+            'tentaisan' => ['required', 'string'],
+            'soluong' => ['required', 'numeric', 'min:1'],
+            'tinhtrang' => ['required', 'string'],
+        ]);
+
+        Taisan::create(array_merge($dulieu, ['phong_id' => $phong->id]));
+
+        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Thêm tài sản thành công.');
+    }
+
+    /**
+     * Cập nhật tài sản (admin).
+     */
+    public function capnhattaisan(Request $request, int $id, int $taisanId)
+    {
+        $taisan = Taisan::find($taisanId);
+
+        if (! $taisan || $taisan->phong_id !== $id) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy tài sản.');
+        }
+
+        $dulieu = $request->validate([
+            'tentaisan' => ['required', 'string'],
+            'soluong' => ['required', 'numeric', 'min:1'],
+            'tinhtrang' => ['required', 'string'],
+        ]);
+
+        $taisan->update($dulieu);
+
+        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Cập nhật tài sản thành công.');
+    }
+
+    /**
+     * Xóa tài sản (admin).
+     */
+    public function xoataisan(int $id, int $taisanId)
+    {
+        $taisan = Taisan::find($taisanId);
+
+        if (! $taisan || $taisan->phong_id !== $id) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy tài sản.');
+        }
+
+        $taisan->delete();
+
+        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Xóa tài sản thành công.');
     }
 
     /**

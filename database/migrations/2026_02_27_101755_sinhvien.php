@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('sinhvien', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->string('masinhvien')->unique();
-            $table->string('lop');
-            $table->string('sodienthoai');
+            $table->string('masinhvien')->unique()->nullable();
+            $table->string('lop')->nullable();
+            $table->string('sodienthoai')->nullable();
             $table->foreignId('phong_id')->nullable()->constrained('phong')->nullOnDelete();
             $table->timestamps();
         });

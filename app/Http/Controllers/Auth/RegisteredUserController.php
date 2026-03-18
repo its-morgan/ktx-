@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Sinhvien;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,6 +41,16 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'vaitro' => 'sinhvien', // Mặc định khi đăng ký là sinh viên
+        ]);
+
+        // Tạo bản ghi sinh viên trống liên kết với user vừa tạo
+        Sinhvien::create([
+            'user_id' => $user->id,
+            'masinhvien' => null,
+            'lop' => null,
+            'sodienthoai' => null,
+            'phong_id' => null,
         ]);
 
         event(new Registered($user));

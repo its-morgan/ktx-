@@ -94,6 +94,7 @@ class DangkyController extends Controller
         Dangky::create([
             'sinhvien_id' => $sinhvien->id,
             'phong_id' => $phong->id,
+            'loaidangky' => 'Thuê phòng',
             'trangthai' => self::TRANGTHAI_CHOXULY,
             'ghichu' => null,
         ]);
@@ -105,13 +106,60 @@ class DangkyController extends Controller
     }
 
     /**
+     * Hàm này xử lý sinh viên yêu cầu trả phòng.
+     * - Tạo bản ghi dangky.loaidangky = 'Trả phòng'
+     * - Gán trạng thái là chờ xử lý để admin duyệt.
+     */
+    public function yeucautraphong()
+    {
+        $sinhvien = Sinhvien::where('user_id', Auth::id())->first();
+
+        if (! $sinhvien || ! $sinhvien->phong_id) {
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Bạn hiện không có phòng để trả.');
+        }
+
+        $dangkychoduyet = Dangky::where('sinhvien_id', $sinhvien->id)
+            ->where('trangthai', self::TRANGTHAI_CHOXULY)
+            ->where('loaidangky', 'Trả phòng')
+            ->first();
+
+        if ($dangkychoduyet) {
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Bạn đã gửi yêu cầu trả phòng, vui lòng chờ admin xử lý.');
+        }
+
+        Dangky::create([
+            'sinhvien_id' => $sinhvien->id,
+            'phong_id' => $sinhvien->phong_id,
+            'loaidangky' => 'Trả phòng',
+            'trangthai' => self::TRANGTHAI_CHOXULY,
+            'ghichu' => null,
+        ]);
+
+        return redirect()
+            ->back()
+            ->with('toast_loai', 'thanhcong')
+            ->with('toast_noidung', 'Gửi yêu cầu trả phòng thành công.');
+    }
+
+    /**
      * Hàm này hiển thị danh sách đăng ký cho admin.
      * - Danh sách đăng ký lấy từ: bảng dangky
      * - Danh sách phòng/sinh viên lấy từ: bảng phong, sinhvien (để hiển thị)
      */
-    public function danhsachdangky()
+    public function danhsachdangky(Request $request)
     {
-        $danhsachdangky = Dangky::all();
+        $status = $request->query('status', '');
+
+        $danhsachdangky = Dangky::when($status && $status !== 'Tất cả', function ($query) use ($status) {
+            return $query->where('trangthai', $status);
+        })->get();
+
         $danhsachphong = Phong::all();
         $danhsachsinhvien = Sinhvien::all();
 
@@ -119,6 +167,7 @@ class DangkyController extends Controller
             'danhsachdangky' => $danhsachdangky,
             'danhsachphong' => $danhsachphong,
             'danhsachsinhvien' => $danhsachsinhvien,
+            'status' => $status,
         ]);
     }
 
@@ -155,21 +204,23 @@ class DangkyController extends Controller
                 ->with('toast_noidung', 'Thiếu dữ liệu sinh viên hoặc phòng.');
         }
 
-        // Nếu sinh viên đã có phòng thì không duyệt nữa
-        if ($sinhvien->phong_id) {
+        // Nếu đăng ký là Thuê phòng và sinh viên đã có phòng thì không duyệt
+        if ($dangky->loaidangky === 'Thuê phòng' && $sinhvien->phong_id) {
             return redirect()
                 ->back()
                 ->with('toast_loai', 'loi')
                 ->with('toast_noidung', 'Sinh viên đã có phòng, không thể duyệt.');
         }
 
-        // Kiểm tra phòng còn chỗ không
-        $soluonghientai = Sinhvien::where('phong_id', $phong->id)->count();
-        if ($soluonghientai >= (int) $phong->soluongtoida) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Phòng đã đủ người, không thể duyệt.');
+        // Kiểm tra phòng còn chỗ không chỉ áp dụng cho Thuê phòng
+        if ($dangky->loaidangky === 'Thuê phòng') {
+            $soluonghientai = Sinhvien::where('phong_id', $phong->id)->count();
+            if ($soluonghientai >= (int) $phong->soluongtoida) {
+                return redirect()
+                    ->back()
+                    ->with('toast_loai', 'loi')
+                    ->with('toast_noidung', 'Phòng đã đủ người, không thể duyệt.');
+            }
         }
 
         $dangky->update([
@@ -177,6 +228,28 @@ class DangkyController extends Controller
             'ghichu' => null,
         ]);
 
+        if ($dangky->loaidangky === 'Trả phòng') {
+            // Khi duyệt trả phòng thì bỏ phong_id của sinh viên
+            $sinhvien->update(['phong_id' => null]);
+
+            // Edge case: tính tiền thừa/thiếu theo ngày trong tháng
+            $ngayhientai = (int) now()->format('d');
+            $ngaytrongthang = (int) now()->daysInMonth;
+            $tyle = max(0, 1 - ($ngayhientai / $ngaytrongthang));
+            $tienphong = (int) $phong->giaphong;
+            $sotienhoan = round($tienphong * $tyle);
+            $sotienhoan = max(0, $sotienhoan);
+
+            $thongbao = 'Duyệt yêu cầu trả phòng thành công. Đã giải phóng phòng.';
+            $thongbao .= ' Số tiền hoàn lại dự kiến: ' . number_format($sotienhoan) . ' đ (' . round($tyle*100) . '%).';
+
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'thanhcong')
+                ->with('toast_noidung', $thongbao);
+        }
+
+        // Nếu là đăng ký thuê phòng thì gán phòng cho sinh viên
         $sinhvien->update([
             'phong_id' => $phong->id,
         ]);

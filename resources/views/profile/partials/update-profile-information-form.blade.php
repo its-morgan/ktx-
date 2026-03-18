@@ -47,6 +47,27 @@
             @endif
         </div>
 
+        @if($user->vaitro === 'sinhvien')
+            {{-- Thông tin bổ sung cho sinh viên --}}
+            <div>
+                <x-input-label for="masinhvien" value="Mã sinh viên" />
+                <x-text-input id="masinhvien" name="masinhvien" type="text" class="mt-1 block w-full" :value="old('masinhvien', optional($user->sinhvien)->masinhvien)" />
+                <x-input-error class="mt-2" :messages="$errors->get('masinhvien')" />
+            </div>
+
+            <div>
+                <x-input-label for="lop" value="Lớp" />
+                <x-text-input id="lop" name="lop" type="text" class="mt-1 block w-full" :value="old('lop', optional($user->sinhvien)->lop)" />
+                <x-input-error class="mt-2" :messages="$errors->get('lop')" />
+            </div>
+
+            <div>
+                <x-input-label for="sodienthoai" value="Số điện thoại" />
+                <x-text-input id="sodienthoai" name="sodienthoai" type="text" class="mt-1 block w-full" :value="old('sodienthoai', optional($user->sinhvien)->sodienthoai)" />
+                <x-input-error class="mt-2" :messages="$errors->get('sodienthoai')" />
+            </div>
+        @endif
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 

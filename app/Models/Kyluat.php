@@ -3,30 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Dangky extends Model
+class Kyluat extends Model
 {
     use HasFactory;
 
-    protected $table = 'dangky';
+    protected $table = 'kyluat';
 
     protected $fillable = [
         'sinhvien_id',
-        'phong_id',
-        'loaidangky',
-        'trangthai',
-        'ghichu',
+        'noidung',
+        'ngayvipham',
+        'mucdo',
     ];
 
     public function sinhvien(): BelongsTo
     {
         return $this->belongsTo(Sinhvien::class, 'sinhvien_id');
-    }
-
-    public function phong(): BelongsTo
-    {
-        return $this->belongsTo(Phong::class, 'phong_id');
     }
 }
