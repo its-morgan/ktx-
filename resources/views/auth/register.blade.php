@@ -1,52 +1,91 @@
 <x-guest-layout>
-    <form method="POST" action="{{ route('register') }}">
+    <div class="mb-6 text-center">
+        <h1 class="text-2xl font-bold text-gray-900">Đăng ký tài khoản sinh viên</h1>
+        <p class="mt-1 text-sm text-gray-600">Điền đầy đủ thông tin để tạo tài khoản mới.</p>
+    </div>
+
+    <form method="POST" action="{{ route('register') }}" class="space-y-4">
         @csrf
 
-        <!-- Name -->
         <div>
             <x-input-label for="name" value="Họ và tên" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
+            <x-text-input
+                id="name"
+                class="mt-1 block w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                type="text"
+                name="name"
+                :value="old('name')"
+                required
+                autofocus
+                autocomplete="name"
+            />
             <x-input-error :messages="$errors->get('name')" class="mt-2" />
         </div>
 
-        <!-- Email Address -->
-        <div class="mt-4">
+        <div>
             <x-input-label for="email" value="Email" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
+            <x-text-input
+                id="email"
+                class="mt-1 block w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                type="email"
+                name="email"
+                :value="old('email')"
+                required
+                autocomplete="username"
+            />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
-        <!-- Password -->
-        <div class="mt-4">
+        <div>
             <x-input-label for="password" value="Mật khẩu" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="new-password" />
-
+            <x-text-input
+                id="password"
+                class="mt-1 block w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                type="password"
+                name="password"
+                required
+                autocomplete="new-password"
+            />
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
-        <!-- Confirm Password -->
-        <div class="mt-4">
+        <div>
             <x-input-label for="password_confirmation" value="Xác nhận mật khẩu" />
-
-            <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                            type="password"
-                            name="password_confirmation" required autocomplete="new-password" />
-
+            <x-text-input
+                id="password_confirmation"
+                class="mt-1 block w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                type="password"
+                name="password_confirmation"
+                required
+                autocomplete="new-password"
+            />
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
-                Đã có tài khoản?
-            </a>
-
-            <x-primary-button class="ms-4">
-                Đăng ký
-            </x-primary-button>
+        <div>
+            <x-input-label for="gioitinh" value="Giới tính" />
+            <select
+                id="gioitinh"
+                name="gioitinh"
+                class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+            >
+                <option value="">-- Chọn giới tính --</option>
+                <option value="Nam" {{ old('gioitinh') === 'Nam' ? 'selected' : '' }}>Nam</option>
+                <option value="Nữ" {{ old('gioitinh') === 'Nữ' ? 'selected' : '' }}>Nữ</option>
+            </select>
+            <x-input-error :messages="$errors->get('gioitinh')" class="mt-2" />
         </div>
+
+        <x-primary-button class="mt-2 w-full">
+            Đăng ký
+        </x-primary-button>
+
+        <p class="text-center text-sm text-gray-600">
+            Đã có tài khoản?
+            <a class="font-medium text-blue-700 hover:text-blue-800 hover:underline" href="{{ route('login') }}">
+                Đăng nhập
+            </a>
+        </p>
     </form>
 </x-guest-layout>

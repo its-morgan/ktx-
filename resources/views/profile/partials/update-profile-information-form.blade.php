@@ -66,6 +66,16 @@
                 <x-text-input id="sodienthoai" name="sodienthoai" type="text" class="mt-1 block w-full" :value="old('sodienthoai', optional($user->sinhvien)->sodienthoai)" />
                 <x-input-error class="mt-2" :messages="$errors->get('sodienthoai')" />
             </div>
+
+            <div>
+                <x-input-label for="gioitinh" value="Giới tính" />
+                <select id="gioitinh" name="gioitinh" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" required>
+                    <option value="">-- Chọn giới tính --</option>
+                    <option value="Nam" {{ old('gioitinh', $user->gioitinh ?? '') === 'Nam' ? 'selected' : '' }}>Nam</option>
+                    <option value="Nữ" {{ old('gioitinh', $user->gioitinh ?? '') === 'Nữ' ? 'selected' : '' }}>Nữ</option>
+                </select>
+                <x-input-error class="mt-2" :messages="$errors->get('gioitinh')" />
+            </div>
         @endif
 
         <div class="flex items-center gap-4">

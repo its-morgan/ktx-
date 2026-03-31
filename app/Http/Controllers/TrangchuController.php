@@ -8,6 +8,8 @@ use App\Models\Hoadon;
 use App\Models\Kyluat;
 use App\Models\Phong;
 use App\Models\Sinhvien;
+use App\Models\Taisan;
+use App\Models\Thongbao;
 use Illuminate\Support\Facades\Auth;
 
 class TrangchuController extends Controller
@@ -50,6 +52,7 @@ class TrangchuController extends Controller
         $danhsachbaohonggannhat = collect();
         $doanhthugannhat = [];
         $nhan = [];
+        $thongbao = Thongbao::orderByDesc('ngaydang')->limit(5)->get();
 
         if ($vaitro === 'admin') {
             // Đếm phòng trống dựa theo số sinh viên hiện tại và số lượng tối đa
@@ -118,7 +121,8 @@ class TrangchuController extends Controller
                 'thanghientai',
                 'namhientai',
                 'doanhthugannhat',
-                'nhan'
+                'nhan',
+                'thongbao'
             ));
         }
 
@@ -126,8 +130,11 @@ class TrangchuController extends Controller
         $thanhviencungphong = collect();
         $kyluatcuaem = collect();
         $hoadonchuathanhtoan = collect();
+        $phonghientai = null;
+        $taisanphong = collect();
 
         if ($sinhvien && $sinhvien->phong_id) {
+            $phonghientai = Phong::find($sinhvien->phong_id);
             $thanhviencungphong = Sinhvien::where('phong_id', $sinhvien->phong_id)
                 ->where('id', '<>', $sinhvien->id)
                 ->get();
@@ -139,6 +146,8 @@ class TrangchuController extends Controller
                 ->orderByDesc('nam')
                 ->orderByDesc('thang')
                 ->get();
+
+            $taisanphong = Taisan::where('phong_id', $sinhvien->phong_id)->get();
         }
 
         $lienhekhancap = [
@@ -151,10 +160,13 @@ class TrangchuController extends Controller
             'thanghientai',
             'namhientai',
             'sinhvien',
+            'phonghientai',
+            'taisanphong',
             'thanhviencungphong',
             'kyluatcuaem',
             'hoadonchuathanhtoan',
-            'lienhekhancap'
+            'lienhekhancap',
+            'thongbao'
         ));
     }
 }

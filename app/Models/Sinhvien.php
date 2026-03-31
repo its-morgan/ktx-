@@ -19,6 +19,8 @@ class Sinhvien extends Model
         'lop',
         'sodienthoai',
         'phong_id',
+        'ngay_vao',
+        'ngay_het_han',
     ];
 
     public function taikhoan(): BelongsTo
@@ -39,5 +41,10 @@ class Sinhvien extends Model
     public function danhsachbaohong(): HasMany
     {
         return $this->hasMany(Baohong::class, 'sinhvien_id');
+    }
+
+    public function danhsachhopdong(): HasMany
+    {
+        return $this->hasMany(Hopdong::class, 'sinhvien_id');
     }
 }

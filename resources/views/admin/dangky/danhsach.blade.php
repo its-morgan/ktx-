@@ -20,26 +20,24 @@
         $mapphong = $danhsachphong->keyBy('id');
     @endphp
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-gray-600">
-                <thead class="bg-gray-50 text-xs uppercase text-gray-700">
-                <tr>
-                    <th class="px-6 py-3">Sinh viên</th>
-                    <th class="px-6 py-3">Loại đăng ký</th>
-                    <th class="px-6 py-3">Phòng</th>
-                    <th class="px-6 py-3">Trạng thái</th>
-                    <th class="px-6 py-3">Ghi chú</th>
-                    <th class="px-6 py-3 text-right">Thao tác</th>
-                </tr>
-                </thead>
-                <tbody>
+    <x-table class="w-full text-left text-sm text-gray-600">
+        <thead class="bg-gray-50 text-xs uppercase text-gray-700">
+        <tr>
+            <th class="px-6 py-3">Sinh viên</th>
+            <th class="px-6 py-3">Loại đăng ký</th>
+            <th class="px-6 py-3">Phòng</th>
+            <th class="px-6 py-3">Trạng thái</th>
+            <th class="px-6 py-3">Ghi chú</th>
+            <th class="px-6 py-3 text-right">Thao tác</th>
+        </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
                 @forelse ($danhsachdangky as $dangky)
                     @php
                         $sinhvien = $mapsinhvien[$dangky->sinhvien_id] ?? null;
                         $phong = $mapphong[$dangky->phong_id] ?? null;
                     @endphp
-                    <tr class="border-t border-gray-200">
+                    <tr class="border-t border-gray-200 hover:bg-gray-50 transition">
                         <td class="px-6 py-4 font-medium text-gray-900">
                             {{ $sinhvien?->masinhvien ?? 'N/A' }}
                         </td>
@@ -48,21 +46,24 @@
                         </td>
                         <td class="px-6 py-4">{{ $phong?->tenphong ?? 'N/A' }}</td>
                         <td class="px-6 py-4">
-                            <span class="rounded-full px-3 py-1 text-xs font-semibold
-                                {{ $dangky->trangthai === 'Đã duyệt' ? 'bg-green-100 text-green-700' : '' }}
-                                {{ $dangky->trangthai === 'Từ chối' ? 'bg-red-100 text-red-700' : '' }}
-                                {{ $dangky->trangthai === 'Chờ xử lý' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                            ">
-                                {{ $dangky->trangthai }}
-                            </span>
+                            @php
+                                $badgeType = match ($dangky->trangthai) {
+                                    'Đã duyệt' => 'success',
+                                    'Từ chối' => 'danger',
+                                    'Chờ xử lý' => 'warning',
+                                    default => 'info',
+                                };
+                            @endphp
+                            @badge($badgeType, $dangky->trangthai)
                         </td>
                         <td class="px-6 py-4">{{ $dangky->ghichu }}</td>
                         <td class="px-6 py-4 text-right">
                             @if ($dangky->trangthai === 'Chờ xử lý')
                                 <form method="POST" action="{{ route('admin.xulyduyetdangky', ['id' => $dangky->id]) }}" class="inline">
                                     @csrf
+                                    <input type="date" name="ngay_het_han" value="{{ now()->addMonths(5)->format('Y-m-d') }}" class="rounded-lg border border-gray-300 p-1 text-sm" />
                                     <button type="submit"
-                                            class="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700">
+                                            class="ml-2 rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700">
                                         Duyệt
                                     </button>
                                 </form>
@@ -109,13 +110,17 @@
                         </div>
                     </div>
                 @empty
-                    <tr class="border-t border-gray-200">
-                        <td class="px-6 py-4 text-center text-gray-400" colspan="6">Hiện tại chưa có dữ liệu nào trong danh sách này.</td>
+                    <tr>
+                        <td colspan="6" class="px-6 py-8">
+                            <div class="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg>
+                                <p class="text-sm font-medium text-gray-400">Chưa có dữ liệu.</p>
+                                <p class="text-xs text-gray-400">Vui lòng thử lại sau hoặc thêm dữ liệu mới.</p>
+                            </div>
+                        </td>
                     </tr>
                 @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
+        </tbody>
+    </x-table>
 @endsection
 

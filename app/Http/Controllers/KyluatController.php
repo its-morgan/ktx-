@@ -31,6 +31,22 @@ class KyluatController extends Controller
     }
 
     /**
+     * Lịch sử kỷ luật của sinh viên đang đăng nhập.
+     */
+    public function kyluatcuaem()
+    {
+        $sinhvien = Sinhvien::where('user_id', auth()->id())->first();
+
+        if (! $sinhvien) {
+            return view('student.kyluatcuaem', ['kyluat' => collect()]);
+        }
+
+        $kyluat = Kyluat::where('sinhvien_id', $sinhvien->id)->orderByDesc('ngayvipham')->get();
+
+        return view('student.kyluatcuaem', ['kyluat' => $kyluat]);
+    }
+
+    /**
      * Thêm kỷ luật cho sinh viên (admin).
      */
     public function themkyluat(Request $request)
@@ -45,5 +61,29 @@ class KyluatController extends Controller
         Kyluat::create($dulieu);
 
         return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Thêm kỷ luật cho sinh viên thành công.');
+    }
+
+    /**
+     * Cập nhật kỷ luật (admin).
+     * - $id là id bản ghi kyluat lấy từ route
+     * - Dữ liệu update từ form: noidung, ngayvipham, mucdo
+     */
+    public function capnhatkyluat(Request $request, int $id)
+    {
+        $kyluat = Kyluat::find($id);
+
+        if (! $kyluat) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy kỷ luật.');
+        }
+
+        $dulieu = $request->validate([
+            'noidung' => ['required', 'string'],
+            'ngayvipham' => ['required', 'date'],
+            'mucdo' => ['required', 'string'],
+        ]);
+
+        $kyluat->update($dulieu);
+
+        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Cập nhật kỷ luật thành công.');
     }
 }

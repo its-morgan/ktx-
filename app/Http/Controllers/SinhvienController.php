@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Hopdong;
 use App\Models\Phong;
 use App\Models\Sinhvien;
 use Illuminate\Http\Request;
@@ -10,8 +11,6 @@ class SinhvienController extends Controller
 {
     /**
      * Hàm này hiển thị danh sách sinh viên cho admin.
-     * - Danh sách sinh viên lấy từ: bảng sinhvien
-     * - Danh sách phòng lấy từ: bảng phong (để hiển thị tên phòng)
      */
     public function danhsachsinhvien(Request $request)
     {
@@ -31,10 +30,43 @@ class SinhvienController extends Controller
     }
 
     /**
+     * Cập nhật thông tin sinh viên (admin)
+     */
+    public function capnhatsinhvien(Request $request, int $id)
+    {
+        $sinhvien = Sinhvien::find($id);
+
+        if (! $sinhvien) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy sinh viên.');
+        }
+
+        $dulieu = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'masinhvien' => ['required', 'string', 'max:20'],
+            'lop' => ['required', 'string', 'max:50'],
+            'sodienthoai' => ['required', 'string', 'max:15'],
+            'gioitinh' => ['required', 'in:Nam,Nữ'],
+        ]);
+
+        $user = $sinhvien->taikhoan;
+        if (! $user) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy tài khoản sinh viên.');
+        }
+
+        $user->update(['name' => $dulieu['name'], 'gioitinh' => $dulieu['gioitinh']]);
+
+        $sinhvien->update([
+            'masinhvien' => $dulieu['masinhvien'],
+            'lop' => $dulieu['lop'],
+            'sodienthoai' => $dulieu['sodienthoai'],
+        ]);
+
+        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Cập nhật sinh viên thành công.');
+    }
+
+    /**
      * Hàm này xử lý admin chuyển phòng cho sinh viên.
-     * - $id lấy từ route (id của sinhvien)
-     * - Dữ liệu phòng mới lấy từ form: phong_id
-     * - Kiểm tra phòng còn chỗ dựa vào: bảng sinhvien (đếm theo phong_id) và phong.soluongtoida
+
      */
     public function chuyenphongsinhvien(Request $request, int $id)
     {
@@ -87,6 +119,11 @@ class SinhvienController extends Controller
                 ->with('toast_noidung', 'Sinh viên đang ở đúng phòng này.');
         }
 
+        // Đóng hợp đồng cũ của sinh viên nếu đang hiệu lực
+        Hopdong::where('sinhvien_id', $sinhvien->id)
+            ->where('trang_thai', 'Đang hiệu lực')
+            ->update(['trang_thai' => 'Đã thanh lý']);
+
         // Đếm số sinh viên hiện tại trong phòng mới
         $soluonghientai = Sinhvien::where('phong_id', $phong->id)->count();
 
@@ -122,8 +159,14 @@ class SinhvienController extends Controller
                 ->with("toast_noidung", "Khong tim thay sinh vien.");
         }
 
+        Hopdong::where('sinhvien_id', $sinhvien->id)
+            ->where('trang_thai', 'Đang hiệu lực')
+            ->update(['trang_thai' => 'Đã thanh lý']);
+
         $sinhvien->update([
             "phong_id" => null,
+            'ngay_vao' => null,
+            'ngay_het_han' => null,
         ]);
 
         return redirect()

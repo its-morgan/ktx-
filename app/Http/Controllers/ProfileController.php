@@ -46,6 +46,12 @@ class ProfileController extends Controller
             $sinhvien->save();
         }
 
+        // Cập nhật giới tính người dùng
+        if ($request->filled('gioitinh')) {
+            $user->gioitinh = $request->gioitinh;
+            $user->save();
+        }
+
         return Redirect::route('profile.edit')
             ->with('status', 'profile-updated')
             ->with('toast_loai', 'thanhcong')

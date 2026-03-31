@@ -55,7 +55,11 @@
                                 </span>
                             @endif
                         </td>
-                        <td class="px-6 py-4 text-right">
+                        <td class="px-6 py-4 text-right space-y-1">
+                            <button type="button" data-modal-target="modal-chitiethoadon-{{ $hoadon->id }}" data-modal-toggle="modal-chitiethoadon-{{ $hoadon->id }}" class="text-sm font-medium text-indigo-600 hover:underline">
+                                Xem chi tiết
+                            </button>
+
                             @if ($hoadon->trangthaithanhtoan === 'Chưa thanh toán')
                                 <form method="POST" action="{{ route('admin.xacnhanthanhtoan', $hoadon->id) }}" onsubmit="return confirm('Xác nhận hóa đơn này đã được thanh toán?')">
                                     @csrf
@@ -64,10 +68,46 @@
                                     </button>
                                 </form>
                             @else
-                                <span class="text-sm text-gray-400">N/A</span>
+                                <span class="text-sm text-gray-400">Đã thanh toán</span>
                             @endif
                         </td>
                     </tr>
+                    <div id="modal-chitiethoadon-{{ $hoadon->id }}" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                        <div class="w-full max-w-lg rounded-lg bg-white p-5">
+                            <h3 class="mb-4 text-lg font-semibold">Chi tiết hóa đơn</h3>
+                            <table class="w-full text-sm text-gray-700">
+                                <tbody>
+                                    <tr>
+                                        <td class="py-2">Phòng</td>
+                                        <td class="py-2 font-semibold">{{ $mapphong[$hoadon->phong_id]->tenphong ?? 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2">Tháng/Năm</td>
+                                        <td class="py-2 font-semibold">{{ $hoadon->thang }}/{{ $hoadon->nam }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2">Tiền phòng</td>
+                                        <td class="py-2 font-semibold">{{ number_format(optional($mapphong[$hoadon->phong_id])->giaphong ?? 0) }} đ</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2">Tiền điện ({{ $hoadon->chisodiencu }} → {{ $hoadon->chisodienmoi }})</td>
+                                        <td class="py-2 font-semibold">{{ number_format(($hoadon->chisodienmoi - $hoadon->chisodiencu) * $dongiadien) }} đ</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2">Tiền nước ({{ $hoadon->chisonuoccu }} → {{ $hoadon->chisonuocmoi }})</td>
+                                        <td class="py-2 font-semibold">{{ number_format(($hoadon->chisonuocmoi - $hoadon->chisonuoccu) * $dongianuoc) }} đ</td>
+                                    </tr>
+                                    <tr class="border-t">
+                                        <td class="py-2 font-semibold">Tổng tiền</td>
+                                        <td class="py-2 font-bold text-gray-900">{{ number_format($hoadon->tongtien) }} đ</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="mt-4 flex justify-end">
+                                <button type="button" class="rounded-lg bg-gray-600 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700" data-modal-hide="modal-chitiethoadon-{{ $hoadon->id }}">Đóng</button>
+                            </div>
+                        </div>
+                    </div>
                 @empty
                     <tr class="border-t border-gray-200">
                         <td class="px-6 py-4 text-gray-500" colspan="6">Chưa có hóa đơn.</td>

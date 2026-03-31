@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-class Kiemtravaitro
+class KiemTraVaiTro
 {
     /**
      * Hàm này dùng để kiểm tra vai trò (vaitro) của người đăng nhập.

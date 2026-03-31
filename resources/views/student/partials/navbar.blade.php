@@ -17,6 +17,14 @@
                class="rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('student.danhsachbaohong') ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50' }}">
                 Báo hỏng
             </a>
+            <a href="{{ route('student.taisanphong') }}"
+               class="rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('student.taisanphong') ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50' }}">
+                Tài sản phòng
+            </a>
+            <a href="{{ route('student.kyluatcuaem') }}"
+               class="rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('student.kyluatcuaem') ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50' }}">
+                Lịch sử kỷ luật
+            </a>
         </nav>
 
         <div class="flex items-center gap-3">

@@ -35,6 +35,7 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'gioitinh' => ['required', 'in:Nam,Nữ'],
         ]);
 
         $user = User::create([
@@ -42,6 +43,7 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'vaitro' => 'sinhvien', // Mặc định khi đăng ký là sinh viên
+            'gioitinh' => $request->gioitinh,
         ]);
 
         // Tạo bản ghi sinh viên trống liên kết với user vừa tạo

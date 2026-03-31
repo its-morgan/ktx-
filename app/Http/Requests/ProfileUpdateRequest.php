@@ -36,6 +36,7 @@ class ProfileUpdateRequest extends FormRequest
             ],
             'lop' => ['nullable', 'string', 'max:50'],
             'sodienthoai' => ['nullable', 'string', 'max:15'],
+            'gioitinh' => ['nullable', 'in:Nam,Nữ'],
         ];
     }
 

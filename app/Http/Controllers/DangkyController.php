@@ -176,8 +176,12 @@ class DangkyController extends Controller
      * - $id lấy từ route (id của dangky)
      * - Khi duyệt: cập nhật dangky.trangthai = "Đã duyệt", và cập nhật sinhvien.phong_id
      */
-    public function duyetdangky(int $id)
+    public function duyetdangky(Request $request, int $id)
     {
+        $dulieu = $request->validate([
+            'ngay_het_han' => ['nullable', 'date', 'after_or_equal:today'],
+        ]);
+
         $dangky = Dangky::find($id);
 
         if (! $dangky) {
@@ -249,15 +253,34 @@ class DangkyController extends Controller
                 ->with('toast_noidung', $thongbao);
         }
 
-        // Nếu là đăng ký thuê phòng thì gán phòng cho sinh viên
+        // Nếu là đăng ký thuê phòng thì gán phòng cho sinh viên và tạo hợp đồng
+        $ngayBatDau = now()->format('Y-m-d');
+        $ngayKetThuc = $dulieu['ngay_het_han'] ?? now()->addMonths(5)->format('Y-m-d');
+
+        if (strtotime($ngayKetThuc) <= strtotime($ngayBatDau)) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Ngày kết thúc phải sau ngày bắt đầu.');
+        }
+
         $sinhvien->update([
             'phong_id' => $phong->id,
+            'ngay_vao' => $ngayBatDau,
+            'ngay_het_han' => $ngayKetThuc,
+        ]);
+
+        \App\Models\Hopdong::create([
+            'sinhvien_id' => $sinhvien->id,
+            'phong_id' => $phong->id,
+            'ngay_bat_dau' => $ngayBatDau,
+            'ngay_ket_thuc' => $ngayKetThuc,
+            'giaphong_luc_ky' => (int) $phong->giaphong,
+            'trang_thai' => 'Đang hiệu lực',
+            'ghichu' => null,
         ]);
 
         return redirect()
             ->back()
             ->with('toast_loai', 'thanhcong')
-            ->with('toast_noidung', 'Duyệt đăng ký thành công và đã cập nhật sinh viên vào phòng.');
+            ->with('toast_noidung', 'Duyệt đăng ký thành công, tạo hợp đồng mới và cập nhật sinh viên vào phòng.');
     }
 
     /**

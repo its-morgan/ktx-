@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cauhinh;
 use App\Models\Hoadon;
 use App\Models\Phong;
 use App\Models\Sinhvien;
@@ -29,6 +30,16 @@ class HoadonController extends Controller
      * Đơn giá nước (VND / số) để demo.
      */
     private const DONGIANUOC = 15000;
+
+    /**
+     * Lấy giá cấu hình từ bảng cauhinh, nếu không có dùng giá mặc định.
+     * - key: gia_dien, gia_nuoc, hotline.
+     */
+    private function layGiaCauHinh(string $key, string $macdinh)
+    {
+        $item = Cauhinh::where('ten', $key)->first();
+        return $item ? $item->giatri : $macdinh;
+    }
 
     /**
      * Hàm này hiển thị danh sách hóa đơn cho admin.
@@ -105,9 +116,13 @@ class HoadonController extends Controller
                 ->with('toast_noidung', 'Phòng không tồn tại.');
         }
 
+        // Lấy cấu hình giá từ bảng cauhinh thay vì ghi cứng
+        $dongiadien = (int) $this->layGiaCauHinh('gia_dien', (string) self::DONGIADIEN);
+        $dongianuoc = (int) $this->layGiaCauHinh('gia_nuoc', (string) self::DONGIANUOC);
+
         // Tính tiền điện nước theo công thức đã chọn
-        $tiendien = ((int) $dulieu['chisodienmoi'] - (int) $dulieu['chisodiencu']) * self::DONGIADIEN;
-        $tiennuoc = ((int) $dulieu['chisonuocmoi'] - (int) $dulieu['chisonuoccu']) * self::DONGIANUOC;
+        $tiendien = ((int) $dulieu['chisodienmoi'] - (int) $dulieu['chisodiencu']) * $dongiadien;
+        $tiennuoc = ((int) $dulieu['chisonuocmoi'] - (int) $dulieu['chisonuoccu']) * $dongianuoc;
         $tongtien = ((int) $phong->giaphong) + $tiendien + $tiennuoc;
 
         // Tìm hóa đơn theo phòng + tháng + năm (nếu có thì update, chưa có thì create)

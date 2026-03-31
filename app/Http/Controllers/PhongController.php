@@ -17,9 +17,13 @@ class PhongController extends Controller
     public function danhsachphong(Request $request)
     {
         $tuKhoa = $request->query('q', '');
+        $sinhvien = Sinhvien::where('user_id', auth()->id())->first();
+        $gioitinhSinhvien = optional($sinhvien->taikhoan)->gioitinh ?? null;
 
         $danhsachphong = Phong::when($tuKhoa, function ($query, $tuKhoa) {
             return $query->where('tenphong', 'like', '%'.trim($tuKhoa).'%');
+        })->when($gioitinhSinhvien, function ($query) use ($gioitinhSinhvien) {
+            return $query->where('gioitinh', $gioitinhSinhvien);
         })->get();
 
         $danhsachphongtrong = $danhsachphong->filter(function ($phong) {
@@ -34,6 +38,24 @@ class PhongController extends Controller
     }
 
     /**
+     * Chức năng sinh viên: xem tài sản phòng đang ở.
+     */
+    public function taisanphong()
+    {
+        $sinhvien = Sinhvien::where('user_id', auth()->id())->first();
+
+        if (! $sinhvien || ! $sinhvien->phong_id) {
+            return view('student.taisanphong', ['taisan' => collect(), 'phong' => null]);
+        }
+
+        $phong = Phong::find($sinhvien->phong_id);
+
+        $taisan = Taisan::where('phong_id', $sinhvien->phong_id)->get();
+
+        return view('student.taisanphong', compact('taisan', 'phong'));
+    }
+
+    /**
      * Hàm này hiển thị danh sách phòng cho admin (quản trị).
      * - Danh sách phòng lấy từ: bảng phong
      * - Số lượng đang ở lấy từ: bảng sinhvien (đếm theo phong_id)
@@ -41,6 +63,8 @@ class PhongController extends Controller
     public function danhsachphongquantri(Request $request)
     {
         $tuKhoa = $request->query('q', '');
+
+        $viewMode = $request->query('view', 'table');
 
         $danhsachphong = Phong::when($tuKhoa, function ($query, $tuKhoa) {
             return $query->where('tenphong', 'like', '%'.trim($tuKhoa).'%');
@@ -57,6 +81,7 @@ class PhongController extends Controller
             'danhsachphong' => $danhsachphong,
             'soluongdango_theophong' => $soluongdango_theophong,
             'tuKhoa' => $tuKhoa,
+            'viewMode' => $viewMode,
         ]);
     }
 
@@ -148,6 +173,7 @@ class PhongController extends Controller
                 'giaphong' => ['required', 'numeric', 'min:0'],
                 'soluongtoida' => ['required', 'numeric', 'min:1'],
                 'mota' => ['nullable'],
+                'gioitinh' => ['required', 'in:Nam,Nữ'],
             ],
             [
                 'tenphong.required' => 'Tên phòng không được để trống.',
@@ -189,6 +215,7 @@ class PhongController extends Controller
                 'giaphong' => ['required', 'numeric', 'min:0'],
                 'soluongtoida' => ['required', 'numeric', 'min:1'],
                 'mota' => ['nullable'],
+                'gioitinh' => ['required', 'in:Nam,Nữ'],
             ],
             [
                 'tenphong.required' => 'Tên phòng không được để trống.',

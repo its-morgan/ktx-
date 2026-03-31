@@ -8,6 +8,23 @@
         </div>
     </div>
 
+    <div class="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+        <div class="text-sm text-blue-700 font-semibold">Thông báo mới nhất</div>
+        @if($thongbao->isEmpty())
+            <div class="text-sm text-gray-500">Chưa có thông báo.</div>
+        @else
+            <ul class="mt-2 space-y-2 text-sm text-gray-700">
+                @foreach($thongbao as $tb)
+                    <li class="rounded-lg border border-blue-200 bg-blue-100 p-2">
+                        <div class="font-semibold">{{ $tb->tieude }}</div>
+                        <div>{{ $tb->noidung }}</div>
+                        <div class="text-xs text-blue-600">{{ $tb->ngaydang }}</div>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </div>
+
     {{-- Khối 4 thẻ thống kê nhanh --}}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="rounded-xl border border-gray-200 bg-white p-5">

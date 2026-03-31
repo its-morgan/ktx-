@@ -17,6 +17,7 @@ class Phong extends Model
         'giaphong',
         'soluongtoida',
         'mota',
+        'gioitinh',
     ];
 
     public function danhsachsinhvien(): HasMany
@@ -37,5 +38,10 @@ class Phong extends Model
     public function danhsachtaisan(): HasMany
     {
         return $this->hasMany(Taisan::class, 'phong_id');
+    }
+
+    public function danhsachhopdong(): HasMany
+    {
+        return $this->hasMany(Hopdong::class, 'phong_id');
     }
 }
