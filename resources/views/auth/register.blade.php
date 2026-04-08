@@ -1,7 +1,7 @@
 <x-guest-layout>
     <div class="mb-6 text-center">
-        <h1 class="text-2xl font-bold text-gray-900">Đăng ký tài khoản sinh viên</h1>
-        <p class="mt-1 text-sm text-gray-600">Điền đầy đủ thông tin để tạo tài khoản mới.</p>
+        <h1 class="text-2xl font-semibold tracking-tight text-[#121212]">Đăng ký tài khoản sinh viên</h1>
+        <p class="mt-1 text-sm text-[#606060]">Điền đầy đủ thông tin để tạo tài khoản mới.</p>
     </div>
 
     <form method="POST" action="{{ route('register') }}" class="space-y-4">
@@ -11,7 +11,7 @@
             <x-input-label for="name" value="Họ và tên" />
             <x-text-input
                 id="name"
-                class="mt-1 block w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                class="mt-1 block w-full"
                 type="text"
                 name="name"
                 :value="old('name')"
@@ -26,7 +26,7 @@
             <x-input-label for="email" value="Email" />
             <x-text-input
                 id="email"
-                class="mt-1 block w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                class="mt-1 block w-full"
                 type="email"
                 name="email"
                 :value="old('email')"
@@ -40,7 +40,7 @@
             <x-input-label for="password" value="Mật khẩu" />
             <x-text-input
                 id="password"
-                class="mt-1 block w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                class="mt-1 block w-full"
                 type="password"
                 name="password"
                 required
@@ -53,7 +53,7 @@
             <x-input-label for="password_confirmation" value="Xác nhận mật khẩu" />
             <x-text-input
                 id="password_confirmation"
-                class="mt-1 block w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                class="mt-1 block w-full"
                 type="password"
                 name="password_confirmation"
                 required
@@ -64,12 +64,7 @@
 
         <div>
             <x-input-label for="gioitinh" value="Giới tính" />
-            <select
-                id="gioitinh"
-                name="gioitinh"
-                class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
-            >
+            <select id="gioitinh" name="gioitinh" class="linear-select mt-1" required>
                 <option value="">-- Chọn giới tính --</option>
                 <option value="Nam" {{ old('gioitinh') === 'Nam' ? 'selected' : '' }}>Nam</option>
                 <option value="Nữ" {{ old('gioitinh') === 'Nữ' ? 'selected' : '' }}>Nữ</option>
@@ -81,9 +76,9 @@
             Đăng ký
         </x-primary-button>
 
-        <p class="text-center text-sm text-gray-600">
+        <p class="text-center text-sm text-[#606060]">
             Đã có tài khoản?
-            <a class="font-medium text-blue-700 hover:text-blue-800 hover:underline" href="{{ route('login') }}">
+            <a class="font-medium text-[#121212] hover:underline" href="{{ route('login') }}">
                 Đăng nhập
             </a>
         </p>

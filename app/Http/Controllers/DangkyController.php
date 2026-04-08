@@ -3,13 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Dangky;
+use App\Models\Hopdong;
 use App\Models\Phong;
 use App\Models\Sinhvien;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DangkyController extends Controller
 {
+    use \App\Traits\KiemtraKyluat;
+
     /**
      * Trạng thái đăng ký: chờ xử lý.
      */
@@ -50,6 +54,15 @@ class DangkyController extends Controller
                 ->back()
                 ->with('toast_loai', 'loi')
                 ->with('toast_noidung', 'Không tìm thấy thông tin sinh viên.');
+        }
+
+        // Kiểm tra kỷ luật trước khi cho phép đăng ký
+        $ketQuaKyluat = $this->kiemTraKyluat($sinhvien->id);
+        if ($ketQuaKyluat['bi_chan']) {
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', $ketQuaKyluat['ly_do']);
         }
 
         // Nếu sinh viên đã có phòng rồi thì không cho đăng ký nữa
@@ -148,6 +161,75 @@ class DangkyController extends Controller
     }
 
     /**
+     * Hàm này xử lý sinh viên yêu cầu đổi phòng.
+     * - Tạo bản ghi dangky.loaidangky = 'Đổi phòng'
+     * - Gán trạng thái là chờ xử lý để admin duyệt.
+     * - Kiểm tra kỷ luật trước khi cho phép đổi phòng.
+     */
+    public function yeucaudoiphong(Request $request)
+    {
+        $dulieu = $request->validate([
+            'phong_moi_id' => ['required', 'numeric', 'exists:phong,id'],
+            'lydo' => ['required', 'string'],
+        ], [
+            'phong_moi_id.required' => 'Vui lòng chọn phòng mới.',
+            'lydo.required' => 'Vui lòng nhập lý do đổi phòng.',
+        ]);
+
+        $sinhvien = Sinhvien::where('user_id', Auth::id())->first();
+
+        if (! $sinhvien || ! $sinhvien->phong_id) {
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Bạn hiện không có phòng để đổi.');
+        }
+
+        // Kiểm tra kỷ luật trước khi cho phép đổi phòng
+        $ketQuaKyluat = $this->kiemTraKyluat($sinhvien->id);
+        if ($ketQuaKyluat['bi_chan']) {
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', $ketQuaKyluat['ly_do']);
+        }
+
+        // Kiểm tra phòng mới có khác phòng hiện tại không
+        if ((int) $sinhvien->phong_id === (int) $dulieu['phong_moi_id']) {
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Phòng mới phải khác phòng hiện tại.');
+        }
+
+        // Kiểm tra đã có yêu cầu đổi phòng đang chờ xử lý chưa
+        $dangkychoduyet = Dangky::where('sinhvien_id', $sinhvien->id)
+            ->where('trangthai', self::TRANGTHAI_CHOXULY)
+            ->where('loaidangky', 'Doi phong')
+            ->first();
+
+        if ($dangkychoduyet) {
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Bạn đã gửi yêu cầu đổi phòng, vui lòng chờ admin xử lý.');
+        }
+
+        Dangky::create([
+            'sinhvien_id' => $sinhvien->id,
+            'phong_id' => $dulieu['phong_moi_id'],
+            'loaidangky' => 'Doi phong',
+            'trangthai' => self::TRANGTHAI_CHOXULY,
+            'ghichu' => $dulieu['lydo'],
+        ]);
+
+        return redirect()
+            ->back()
+            ->with('toast_loai', 'thanhcong')
+            ->with('toast_noidung', 'Gửi yêu cầu đổi phòng thành công. Vui lòng chờ admin duyệt.');
+    }
+
+    /**
      * Hàm này hiển thị danh sách đăng ký cho admin.
      * - Danh sách đăng ký lấy từ: bảng dangky
      * - Danh sách phòng/sinh viên lấy từ: bảng phong, sinhvien (để hiển thị)
@@ -173,8 +255,9 @@ class DangkyController extends Controller
 
     /**
      * Hàm này xử lý admin duyệt đăng ký.
-     * - $id lấy từ route (id của dangky)
-     * - Khi duyệt: cập nhật dangky.trangthai = "Đã duyệt", và cập nhật sinhvien.phong_id
+     * - Sử dụng DB::transaction để đảm bảo tính toàn vẹn dữ liệu
+     * - Khi duyệt: cập nhật dangky.trangthai = "Đã duyệt", cập nhật sinhvien.phong_id,
+     *   tăng phong.dango, tạo hợp đồng mới
      */
     public function duyetdangky(Request $request, int $id)
     {
@@ -182,105 +265,126 @@ class DangkyController extends Controller
             'ngay_het_han' => ['nullable', 'date', 'after_or_equal:today'],
         ]);
 
-        $dangky = Dangky::find($id);
+        try {
+            return DB::transaction(function () use ($id, $dulieu) {
+                $dangky = Dangky::find($id);
 
-        if (! $dangky) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Không tìm thấy đăng ký.');
-        }
+                if (! $dangky) {
+                    return redirect()
+                        ->back()
+                        ->with('toast_loai', 'loi')
+                        ->with('toast_noidung', 'Không tìm thấy đăng ký.');
+                }
 
-        if ($dangky->trangthai !== self::TRANGTHAI_CHOXULY) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Đăng ký này đã được xử lý trước đó.');
-        }
+                if ($dangky->trangthai !== self::TRANGTHAI_CHOXULY) {
+                    return redirect()
+                        ->back()
+                        ->with('toast_loai', 'loi')
+                        ->with('toast_noidung', 'Đăng ký này đã được xử lý trước đó.');
+                }
 
-        $sinhvien = Sinhvien::find((int) $dangky->sinhvien_id);
-        $phong = Phong::find((int) $dangky->phong_id);
+                $sinhvien = Sinhvien::find((int) $dangky->sinhvien_id);
+                $phong = Phong::find((int) $dangky->phong_id);
 
-        if (! $sinhvien || ! $phong) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Thiếu dữ liệu sinh viên hoặc phòng.');
-        }
+                if (! $sinhvien || ! $phong) {
+                    return redirect()
+                        ->back()
+                        ->with('toast_loai', 'loi')
+                        ->with('toast_noidung', 'Thiếu dữ liệu sinh viên hoặc phòng.');
+                }
 
-        // Nếu đăng ký là Thuê phòng và sinh viên đã có phòng thì không duyệt
-        if ($dangky->loaidangky === 'Thuê phòng' && $sinhvien->phong_id) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Sinh viên đã có phòng, không thể duyệt.');
-        }
+                // Nếu đăng ký là Thuê phòng và sinh viên đã có phòng thì không duyệt
+                if ($dangky->loaidangky === 'Thuê phòng' && $sinhvien->phong_id) {
+                    return redirect()
+                        ->back()
+                        ->with('toast_loai', 'loi')
+                        ->with('toast_noidung', 'Sinh viên đã có phòng, không thể duyệt.');
+                }
 
-        // Kiểm tra phòng còn chỗ không chỉ áp dụng cho Thuê phòng
-        if ($dangky->loaidangky === 'Thuê phòng') {
-            $soluonghientai = Sinhvien::where('phong_id', $phong->id)->count();
-            if ($soluonghientai >= (int) $phong->soluongtoida) {
+                // Kiểm tra phòng còn chỗ không chỉ áp dụng cho Thuê phòng
+                if ($dangky->loaidangky === 'Thuê phòng') {
+                    $soluonghientai = Sinhvien::where('phong_id', $phong->id)->count();
+                    if ($soluonghientai >= (int) $phong->succhuamax) {
+                        return redirect()
+                            ->back()
+                            ->with('toast_loai', 'loi')
+                            ->with('toast_noidung', 'Phòng đã đủ người, không thể duyệt.');
+                    }
+                }
+
+                // Cập nhật trạng thái đăng ký
+                $dangky->update([
+                    'trangthai' => self::TRANGTHAI_DADUYET,
+                    'ghichu' => null,
+                ]);
+
+                if ($dangky->loaidangky === 'Trả phòng') {
+                    // Khi duyệt trả phòng: giảm số người đang ở, thanh lý hợp đồng
+                    $phong->decrement('dango');
+                    
+                    // Thanh lý hợp đồng đang hiệu lực
+                    Hopdong::where('sinhvien_id', $sinhvien->id)
+                        ->where('trang_thai', 'Đang hiệu lực')
+                        ->update(['trang_thai' => 'Đã thanh lý']);
+
+                    $sinhvien->update(['phong_id' => null]);
+
+                    // Tính tiền thừa/thiếu theo ngày trong tháng
+                    $ngayhientai = (int) now()->format('d');
+                    $ngaytrongthang = (int) now()->daysInMonth;
+                    $tyle = max(0, 1 - ($ngayhientai / $ngaytrongthang));
+                    $tienphong = (int) $phong->giaphong;
+                    $sotienhoan = round($tienphong * $tyle);
+                    $sotienhoan = max(0, $sotienhoan);
+
+                    $thongbao = 'Duyệt yêu cầu trả phòng thành công. Đã giải phóng phòng.';
+                    $thongbao .= ' Số tiền hoàn lại dự kiến: ' . number_format($sotienhoan) . ' đ (' . round($tyle*100) . '%).';
+
+                    return redirect()
+                        ->back()
+                        ->with('toast_loai', 'thanhcong')
+                        ->with('toast_noidung', $thongbao);
+                }
+
+                // Nếu là đăng ký thuê phòng thì tạo hợp đồng và cập nhật sinh viên
+                $ngayBatDau = now()->format('Y-m-d');
+                $ngayKetThuc = $dulieu['ngay_het_han'] ?? now()->addMonths(5)->format('Y-m-d');
+
+                if (strtotime($ngayKetThuc) <= strtotime($ngayBatDau)) {
+                    return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Ngày kết thúc phải sau ngày bắt đầu.');
+                }
+
+                // Cập nhật sinh viên vào phòng và tăng số người đang ở
+                $sinhvien->update([
+                    'phong_id' => $phong->id,
+                    'ngay_vao' => $ngayBatDau,
+                    'ngay_het_han' => $ngayKetThuc,
+                ]);
+
+                $phong->increment('dango');
+
+                // Tạo hợp đồng mới
+                Hopdong::create([
+                    'sinhvien_id' => $sinhvien->id,
+                    'phong_id' => $phong->id,
+                    'ngay_bat_dau' => $ngayBatDau,
+                    'ngay_ket_thuc' => $ngayKetThuc,
+                    'giaphong_luc_ky' => (int) $phong->giaphong,
+                    'trang_thai' => 'Đang hiệu lực',
+                    'ghichu' => null,
+                ]);
+
                 return redirect()
                     ->back()
-                    ->with('toast_loai', 'loi')
-                    ->with('toast_noidung', 'Phòng đã đủ người, không thể duyệt.');
-            }
-        }
-
-        $dangky->update([
-            'trangthai' => self::TRANGTHAI_DADUYET,
-            'ghichu' => null,
-        ]);
-
-        if ($dangky->loaidangky === 'Trả phòng') {
-            // Khi duyệt trả phòng thì bỏ phong_id của sinh viên
-            $sinhvien->update(['phong_id' => null]);
-
-            // Edge case: tính tiền thừa/thiếu theo ngày trong tháng
-            $ngayhientai = (int) now()->format('d');
-            $ngaytrongthang = (int) now()->daysInMonth;
-            $tyle = max(0, 1 - ($ngayhientai / $ngaytrongthang));
-            $tienphong = (int) $phong->giaphong;
-            $sotienhoan = round($tienphong * $tyle);
-            $sotienhoan = max(0, $sotienhoan);
-
-            $thongbao = 'Duyệt yêu cầu trả phòng thành công. Đã giải phóng phòng.';
-            $thongbao .= ' Số tiền hoàn lại dự kiến: ' . number_format($sotienhoan) . ' đ (' . round($tyle*100) . '%).';
-
+                    ->with('toast_loai', 'thanhcong')
+                    ->with('toast_noidung', 'Duyệt đăng ký thành công, tạo hợp đồng mới và cập nhật sinh viên vào phòng.');
+            });
+        } catch (\Exception $e) {
             return redirect()
                 ->back()
-                ->with('toast_loai', 'thanhcong')
-                ->with('toast_noidung', $thongbao);
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Có lỗi xảy ra: ' . $e->getMessage());
         }
-
-        // Nếu là đăng ký thuê phòng thì gán phòng cho sinh viên và tạo hợp đồng
-        $ngayBatDau = now()->format('Y-m-d');
-        $ngayKetThuc = $dulieu['ngay_het_han'] ?? now()->addMonths(5)->format('Y-m-d');
-
-        if (strtotime($ngayKetThuc) <= strtotime($ngayBatDau)) {
-            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Ngày kết thúc phải sau ngày bắt đầu.');
-        }
-
-        $sinhvien->update([
-            'phong_id' => $phong->id,
-            'ngay_vao' => $ngayBatDau,
-            'ngay_het_han' => $ngayKetThuc,
-        ]);
-
-        \App\Models\Hopdong::create([
-            'sinhvien_id' => $sinhvien->id,
-            'phong_id' => $phong->id,
-            'ngay_bat_dau' => $ngayBatDau,
-            'ngay_ket_thuc' => $ngayKetThuc,
-            'giaphong_luc_ky' => (int) $phong->giaphong,
-            'trang_thai' => 'Đang hiệu lực',
-            'ghichu' => null,
-        ]);
-
-        return redirect()
-            ->back()
-            ->with('toast_loai', 'thanhcong')
-            ->with('toast_noidung', 'Duyệt đăng ký thành công, tạo hợp đồng mới và cập nhật sinh viên vào phòng.');
     }
 
     /**

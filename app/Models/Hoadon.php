@@ -21,7 +21,12 @@ class Hoadon extends Model
         'chisonuoccu',
         'chisonuocmoi',
         'tongtien',
+        'tienphong',
+        'tiendien',
+        'tiennuoc',
+        'phidichvu',
         'trangthaithanhtoan',
+        'ngayxuat',
     ];
 
     public function phong(): BelongsTo

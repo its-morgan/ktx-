@@ -97,6 +97,8 @@ class HoadonController extends Controller
             return redirect()
                 ->back()
                 ->withErrors(['chisodienmoi' => 'Chỉ số điện mới phải lớn hơn hoặc bằng chỉ số điện cũ.'])
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Chỉ số điện mới phải lớn hơn hoặc bằng chỉ số điện cũ.')
                 ->withInput();
         }
 
@@ -104,6 +106,8 @@ class HoadonController extends Controller
             return redirect()
                 ->back()
                 ->withErrors(['chisonuocmoi' => 'Chỉ số nước mới phải lớn hơn hoặc bằng chỉ số nước cũ.'])
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Chỉ số nước mới phải lớn hơn hoặc bằng chỉ số nước cũ.')
                 ->withInput();
         }
 
@@ -123,7 +127,9 @@ class HoadonController extends Controller
         // Tính tiền điện nước theo công thức đã chọn
         $tiendien = ((int) $dulieu['chisodienmoi'] - (int) $dulieu['chisodiencu']) * $dongiadien;
         $tiennuoc = ((int) $dulieu['chisonuocmoi'] - (int) $dulieu['chisonuoccu']) * $dongianuoc;
-        $tongtien = ((int) $phong->giaphong) + $tiendien + $tiennuoc;
+        $tienphong = (int) $phong->giaphong;
+        $phidichvu = 0; // Có thể thêm logic tính phí dịch vụ khác ở đây
+        $tongtien = $tienphong + $tiendien + $tiennuoc + $phidichvu;
 
         // Tìm hóa đơn theo phòng + tháng + năm (nếu có thì update, chưa có thì create)
         $hoadoncu = Hoadon::where('phong_id', (int) $dulieu['phong_id'])
@@ -137,7 +143,12 @@ class HoadonController extends Controller
                 'chisodienmoi' => (int) $dulieu['chisodienmoi'],
                 'chisonuoccu' => (int) $dulieu['chisonuoccu'],
                 'chisonuocmoi' => (int) $dulieu['chisonuocmoi'],
+                'tienphong' => $tienphong,
+                'tiendien' => $tiendien,
+                'tiennuoc' => $tiennuoc,
+                'phidichvu' => $phidichvu,
                 'tongtien' => $tongtien,
+                'ngayxuat' => now()->format('Y-m-d'),
             ]);
         } else {
             Hoadon::create([
@@ -148,8 +159,13 @@ class HoadonController extends Controller
                 'chisodienmoi' => (int) $dulieu['chisodienmoi'],
                 'chisonuoccu' => (int) $dulieu['chisonuoccu'],
                 'chisonuocmoi' => (int) $dulieu['chisonuocmoi'],
+                'tienphong' => $tienphong,
+                'tiendien' => $tiendien,
+                'tiennuoc' => $tiennuoc,
+                'phidichvu' => $phidichvu,
                 'tongtien' => $tongtien,
                 'trangthaithanhtoan' => self::TRANGTHAI_CHUATHANHTOAN,
+                'ngayxuat' => now()->format('Y-m-d'),
             ]);
         }
 
@@ -204,5 +220,40 @@ class HoadonController extends Controller
             ->back()
             ->with('toast_loai', 'thanhcong')
             ->with('toast_noidung', 'Xác nhận thanh toán thành công.');
+    }
+
+    /**
+     * Xuất hóa đơn PDF.
+     * - Sử dụng Barryvdh\DomPDF\Facade\Pdf (cần cài đặt package)
+     */
+    public function xuatPDF(int $id)
+    {
+        $hoadon = Hoadon::with(['phong.danhsachsinhvien.taikhoan'])->find($id);
+
+        if (! $hoadon) {
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Không tìm thấy hóa đơn.');
+        }
+
+        $phong = $hoadon->phong;
+        $danhsachsinhvien = $phong ? $phong->danhsachsinhvien : collect();
+
+        // Nếu chưa cài DomPDF, trả về thông báo
+        if (! class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Vui lòng cài đặt package barryvdh/laravel-dompdf: composer require barryvdh/laravel-dompdf');
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.hoadon', [
+            'hoadon' => $hoadon,
+            'phong' => $phong,
+            'danhsachsinhvien' => $danhsachsinhvien,
+        ]);
+
+        return $pdf->download('hoadon_' . $hoadon->thang . '_' . $hoadon->nam . '_' . ($phong->tenphong ?? 'phong') . '.pdf');
     }
 }

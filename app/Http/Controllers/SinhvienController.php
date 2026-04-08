@@ -145,8 +145,8 @@ class SinhvienController extends Controller
     }
 
     /**
-     * Ham nay xu ly admin cho sinh vien roi phong (set phong_id ve null).
-     * - $id lay tu route (id cua sinhvien)
+     * Hàm này xử lý admin cho sinh viên rời phòng (set phong_id về null).
+     * - $id lấy từ route (id của sinhvien)
      */
     public function choroiophong(int $id)
     {
@@ -156,7 +156,7 @@ class SinhvienController extends Controller
             return redirect()
                 ->back()
                 ->with("toast_loai", "loi")
-                ->with("toast_noidung", "Khong tim thay sinh vien.");
+                ->with("toast_noidung", "Không tìm thấy sinh viên.");
         }
 
         Hopdong::where('sinhvien_id', $sinhvien->id)
@@ -172,7 +172,7 @@ class SinhvienController extends Controller
         return redirect()
             ->back()
             ->with("toast_loai", "thanhcong")
-            ->with("toast_noidung", "Da cho sinh vien roi phong thanh cong.");
+            ->with("toast_noidung", "Đã cho sinh viên rời phòng thành công.");
     }
 }
 

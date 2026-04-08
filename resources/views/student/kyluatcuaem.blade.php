@@ -2,30 +2,30 @@
 
 @section('noidung')
     <div class="mb-6">
-        <div class="text-2xl font-bold text-gray-900">Lịch sử kỷ luật</div>
-        <div class="text-sm text-gray-500">Danh sách vi phạm của bạn.</div>
+        <div class="text-2xl font-bold text-[#121212]">Lịch sử kỷ luật</div>
+        <div class="text-sm text-[#606060]">Danh sách vi phạm của bạn.</div>
     </div>
 
     <div class="space-y-4 md:hidden">
         @forelse ($kyluat as $item)
-            <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="rounded-lg border border-gray-200/70 bg-white p-4 shadow-none">
                 <div class="flex items-start justify-between gap-3">
-                    <div class="text-sm font-semibold text-gray-900">{{ $item->mucdo }}</div>
-                    <div class="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">{{ $item->ngayvipham }}</div>
+                    <div class="text-sm font-semibold text-[#121212]">{{ $item->mucdo }}</div>
+                    <div class="rounded-full bg-[#F7F7F8] px-3 py-1 text-xs font-medium text-[#606060]">{{ $item->ngayvipham }}</div>
                 </div>
-                <div class="mt-3 text-sm text-gray-600">{{ $item->noidung }}</div>
+                <div class="mt-3 text-sm text-[#606060]">{{ $item->noidung }}</div>
             </div>
         @empty
-            <div class="rounded-2xl border border-gray-200 bg-white p-4 text-center text-sm text-gray-500">
+            <div class="rounded-lg border border-gray-200/70 bg-white p-4 text-center text-sm text-[#606060]">
                 Chưa có kỷ luật.
             </div>
         @endforelse
     </div>
 
-    <div class="hidden overflow-hidden rounded-lg border border-gray-200 bg-white md:block">
+    <div class="hidden overflow-hidden rounded-lg border border-gray-200/70 bg-white md:block">
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-gray-600">
-                <thead class="bg-gray-50 text-xs uppercase text-gray-700">
+            <table class="w-full text-left text-sm text-[#606060]">
+                <thead class="bg-[#F7F7F8] text-xs uppercase text-[#606060]">
                     <tr>
                         <th class="px-6 py-3">Nội dung</th>
                         <th class="px-6 py-3">Ngày vi phạm</th>
@@ -34,14 +34,14 @@
                 </thead>
                 <tbody>
                     @forelse ($kyluat as $item)
-                        <tr class="border-t border-gray-200">
+                        <tr class="border-t border-gray-200/70">
                             <td class="px-6 py-3">{{ $item->noidung }}</td>
                             <td class="px-6 py-3">{{ $item->ngayvipham }}</td>
                             <td class="px-6 py-3">{{ $item->mucdo }}</td>
                         </tr>
                     @empty
-                        <tr class="border-t border-gray-200">
-                            <td class="px-6 py-4 text-center text-gray-500" colspan="3">Chưa có kỷ luật.</td>
+                        <tr class="border-t border-gray-200/70">
+                            <td class="px-6 py-4 text-center text-[#606060]" colspan="3">Chưa có kỷ luật.</td>
                         </tr>
                     @endforelse
                 </tbody>

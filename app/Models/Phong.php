@@ -14,8 +14,12 @@ class Phong extends Model
 
     protected $fillable = [
         'tenphong',
+        'tang',
         'giaphong',
         'soluongtoida',
+        'succhua',
+        'succhuamax',
+        'dango',
         'mota',
         'gioitinh',
     ];
@@ -38,6 +42,11 @@ class Phong extends Model
     public function danhsachtaisan(): HasMany
     {
         return $this->hasMany(Taisan::class, 'phong_id');
+    }
+
+    public function danhsachvattu(): HasMany
+    {
+        return $this->hasMany(Vattu::class, 'phong_id');
     }
 
     public function danhsachhopdong(): HasMany

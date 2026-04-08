@@ -1,5 +1,5 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
+    <div class="mb-4 text-sm text-[#606060]">
         Quên mật khẩu? Không sao. Vui lòng nhập email để hệ thống gửi liên kết đặt lại mật khẩu.
     </div>
 

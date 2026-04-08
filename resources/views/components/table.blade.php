@@ -1,5 +1,5 @@
-<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-    <table {{ $attributes->merge(['class' => 'min-w-full divide-y divide-gray-200']) }}>
+<div class="linear-table-wrap">
+    <table {{ $attributes->merge(['class' => 'linear-table']) }}>
         {{ $slot }}
     </table>
 </div>

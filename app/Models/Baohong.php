@@ -18,6 +18,8 @@ class Baohong extends Model
         'mota',
         'anhminhhoa',
         'trangthai',
+        'ngayhen',
+        'noidung',
     ];
 
     public function sinhvien(): BelongsTo

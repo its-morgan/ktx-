@@ -2,33 +2,36 @@
 
 @section('noidung')
     <div class="mb-6">
-        <div class="text-2xl font-bold text-gray-900">Hóa đơn của em</div>
-        <div class="text-sm text-gray-500">Danh sách hóa đơn theo phòng của em.</div>
+        <div class="text-2xl font-bold text-[#121212]">Hóa đơn của em</div>
+        <div class="text-sm text-[#606060]">Danh sách hóa đơn theo phòng của em.</div>
     </div>
 
     <div class="space-y-4 md:hidden">
         @forelse ($danhsachhoadon as $hoadon)
-            <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="rounded-lg border border-gray-200/70 bg-white p-4 shadow-none">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <div class="text-xs uppercase tracking-wide text-gray-500">Tháng/Năm</div>
-                        <div class="text-lg font-semibold text-gray-900">{{ $hoadon->thang }}/{{ $hoadon->nam }}</div>
+                        <div class="text-xs uppercase tracking-wide text-[#606060]">Tháng/Năm</div>
+                        <div class="text-lg font-semibold text-[#121212]">{{ $hoadon->thang }}/{{ $hoadon->nam }}</div>
                     </div>
-                    <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">{{ $hoadon->trangthaithanhtoan }}</span>
+                    @php
+                        $badgeType = $hoadon->trangthaithanhtoan === 'Đã thanh toán' ? 'success' : 'warning';
+                    @endphp
+                    <x-badge type="{{ $badgeType }}" :text="$hoadon->trangthaithanhtoan" />
                 </div>
 
                 <div class="mt-4 space-y-2 text-sm">
                     <div class="flex items-center justify-between gap-3">
-                        <span class="text-gray-500">Điện</span>
-                        <span class="font-medium text-gray-800">{{ $hoadon->chisodiencu }} -> {{ $hoadon->chisodienmoi }}</span>
+                        <span class="text-[#606060]">Điện</span>
+                        <span class="font-medium text-[#121212]">{{ $hoadon->chisodiencu }} -> {{ $hoadon->chisodienmoi }}</span>
                     </div>
                     <div class="flex items-center justify-between gap-3">
-                        <span class="text-gray-500">Nước</span>
-                        <span class="font-medium text-gray-800">{{ $hoadon->chisonuoccu }} -> {{ $hoadon->chisonuocmoi }}</span>
+                        <span class="text-[#606060]">Nước</span>
+                        <span class="font-medium text-[#121212]">{{ $hoadon->chisonuoccu }} -> {{ $hoadon->chisonuocmoi }}</span>
                     </div>
                     <div class="flex items-center justify-between gap-3">
-                        <span class="text-gray-500">Tổng tiền</span>
-                        <span class="font-semibold text-rose-600">{{ number_format($hoadon->tongtien) }} đ</span>
+                        <span class="text-[#606060]">Tổng tiền</span>
+                        <span class="font-semibold text-[#606060]">{{ number_format($hoadon->tongtien) }} đ</span>
                     </div>
                 </div>
 
@@ -36,22 +39,25 @@
                     type="button"
                     data-modal-target="modal-bienlai-{{ $hoadon->id }}"
                     data-modal-toggle="modal-bienlai-{{ $hoadon->id }}"
-                    class="mt-4 w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                    class="mt-4 w-full rounded-lg bg-black px-3 py-2 text-sm font-medium text-white hover:bg-[#1C1C1C]"
                 >
                     Xem biên lai
                 </button>
             </div>
         @empty
-            <div class="rounded-2xl border border-gray-200 bg-white p-4 text-center text-sm text-gray-500">
-                Hiện tại chưa có dữ liệu nào trong danh sách này.
-            </div>
+            <x-empty-state
+                title="Chưa có hóa đơn"
+                description="Hóa đơn của em sẽ hiển thị tại đây khi được tạo."
+                actionLabel="Tải lại trang"
+                :actionHref="request()->fullUrl()"
+            />
         @endforelse
     </div>
 
-    <div class="hidden overflow-hidden rounded-xl border border-gray-200 bg-white md:block">
+    <div class="hidden overflow-hidden rounded-lg border border-gray-200/70 bg-white md:block">
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-gray-600">
-                <thead class="bg-gray-50 text-xs uppercase text-gray-700">
+            <table class="w-full text-left text-sm text-[#606060]">
+                <thead class="bg-[#F7F7F8] text-xs uppercase text-[#606060]">
                     <tr>
                         <th class="px-6 py-3">Tháng/Năm</th>
                         <th class="px-6 py-3">Điện (cũ->mới)</th>
@@ -63,26 +69,38 @@
                 </thead>
                 <tbody>
                     @forelse ($danhsachhoadon as $hoadon)
-                        <tr class="border-t border-gray-200">
-                            <td class="px-6 py-4 font-medium text-gray-900">{{ $hoadon->thang }}/{{ $hoadon->nam }}</td>
+                        <tr class="border-t border-gray-200/70">
+                            <td class="px-6 py-4 font-medium text-[#121212]">{{ $hoadon->thang }}/{{ $hoadon->nam }}</td>
                             <td class="px-6 py-4">{{ $hoadon->chisodiencu }} -> {{ $hoadon->chisodienmoi }}</td>
                             <td class="px-6 py-4">{{ $hoadon->chisonuoccu }} -> {{ $hoadon->chisonuocmoi }}</td>
                             <td class="px-6 py-4">{{ number_format($hoadon->tongtien) }} đ</td>
-                            <td class="px-6 py-4">{{ $hoadon->trangthaithanhtoan }}</td>
+                            <td class="px-6 py-4">
+                                @php
+                                    $badgeType = $hoadon->trangthaithanhtoan === 'Đã thanh toán' ? 'success' : 'warning';
+                                @endphp
+                                <x-badge type="{{ $badgeType }}" :text="$hoadon->trangthaithanhtoan" />
+                            </td>
                             <td class="px-6 py-4">
                                 <button
                                     type="button"
                                     data-modal-target="modal-bienlai-{{ $hoadon->id }}"
                                     data-modal-toggle="modal-bienlai-{{ $hoadon->id }}"
-                                    class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                                    class="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white hover:bg-[#1C1C1C]"
                                 >
                                     Xem biên lai
                                 </button>
                             </td>
                         </tr>
                     @empty
-                        <tr class="border-t border-gray-200">
-                            <td class="px-6 py-4 text-center text-gray-400" colspan="6">Hiện tại chưa có dữ liệu nào trong danh sách này.</td>
+                        <tr class="border-t border-gray-200/70">
+                            <td class="px-6 py-4" colspan="6">
+                                <x-empty-state
+                                    title="Chưa có hóa đơn"
+                                    description="Hóa đơn của em sẽ hiển thị tại đây khi được tạo."
+                                    actionLabel="Tải lại trang"
+                                    :actionHref="request()->fullUrl()"
+                                />
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -95,20 +113,20 @@
             <div class="w-full max-w-lg rounded-lg bg-white p-5">
                 <div class="mb-4 flex items-center justify-between border-b pb-3">
                     <h3 class="text-lg font-semibold">Biên lai thanh toán</h3>
-                    <button type="button" class="text-gray-500 hover:text-gray-900" data-modal-hide="modal-bienlai-{{ $hoadon->id }}">Đóng</button>
+                    <button type="button" class="text-[#606060] hover:text-[#121212]" data-modal-hide="modal-bienlai-{{ $hoadon->id }}">Đóng</button>
                 </div>
-                <div class="mb-3 text-sm text-gray-600">Phòng: {{ optional($hoadon->phong)->tenphong ?? 'N/A' }}</div>
-                <div class="mb-3 text-sm text-gray-600">Tháng/Năm: {{ $hoadon->thang }}/{{ $hoadon->nam }}</div>
+                <div class="mb-3 text-sm text-[#606060]">Phòng: {{ optional($hoadon->phong)->tenphong ?? 'N/A' }}</div>
+                <div class="mb-3 text-sm text-[#606060]">Tháng/Năm: {{ $hoadon->thang }}/{{ $hoadon->nam }}</div>
                 <div class="mb-4 flex flex-wrap items-center gap-4">
-                    <div class="text-sm font-medium text-gray-700">Quét QR để thanh toán:</div>
+                    <div class="text-sm font-medium text-[#606060]">Quét QR để thanh toán:</div>
                     @php
                         $phongTen = optional($hoadon->phong)->tenphong ?? 'N/A';
                         $qrText = 'KTX - ' . $phongTen . ' - ' . $hoadon->thang . '/' . $hoadon->nam;
                         $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=' . urlencode($qrText);
                     @endphp
-                    <img src="{{ $qrUrl }}" alt="QR thanh toán" class="h-32 w-32 rounded-lg border border-gray-200" />
+                    <img src="{{ $qrUrl }}" alt="QR thanh toán" class="h-32 w-32 rounded-lg border border-gray-200/70" />
                 </div>
-                <table class="w-full text-left text-sm text-gray-600">
+                <table class="w-full text-left text-sm text-[#606060]">
                     <tbody>
                         <tr>
                             <td class="py-1">Tiền phòng cố định</td>

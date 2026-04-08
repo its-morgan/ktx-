@@ -1,3 +1,357 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    :root {
+        --linear-bg: 248 250 252;
+        --linear-surface: 255 255 255;
+        --linear-muted-bg: 244 244 245;
+        --linear-muted-bg-strong: 228 228 231;
+        --linear-border: 226 232 240;
+        --linear-text: 15 23 42;
+        --linear-text-muted: 71 85 105;
+        --linear-ring: 79 70 229;
+        --linear-shadow: 15 23 42;
+        --linear-glass: 255 255 255;
+    }
+
+    html {
+        @apply scroll-smooth;
+    }
+
+    body {
+        background-color: rgb(var(--linear-bg));
+        color: rgb(var(--linear-text));
+        font-family: "Quicksand", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        @apply font-sans text-sm leading-6 antialiased text-slate-800;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        color: rgb(var(--linear-text));
+        @apply font-display tracking-tight;
+    }
+
+    *:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgb(var(--linear-ring) / 0.25);
+        border-radius: 0.5rem;
+    }
+
+    ::selection {
+        background: rgb(var(--linear-ring) / 0.2);
+        color: rgb(var(--linear-text));
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    .linear-shell {
+        background-color: rgb(var(--linear-bg));
+        color: rgb(var(--linear-text));
+        @apply min-h-screen;
+    }
+
+    .linear-panel {
+        background-color: rgb(var(--linear-surface));
+        border-color: rgb(var(--linear-border) / 0.72);
+        box-shadow: 0 10px 30px rgb(var(--linear-shadow) / 0.06);
+        @apply rounded-xl border;
+    }
+
+    .linear-panel-muted {
+        background-color: rgb(var(--linear-muted-bg));
+        border-color: rgb(var(--linear-border) / 0.8);
+        @apply rounded-xl border;
+    }
+
+    .linear-card {
+        background-color: rgb(var(--linear-surface));
+        border-color: rgb(var(--linear-border) / 0.7);
+        box-shadow: 0 10px 30px rgb(var(--linear-shadow) / 0.06);
+        @apply rounded-xl border p-4 transition-all duration-300 ease-smooth hover:-translate-y-1 hover:shadow-float sm:p-5;
+    }
+
+    .linear-title {
+        color: rgb(var(--linear-text));
+        @apply font-display text-xl font-semibold tracking-tighter;
+    }
+
+    .linear-subtitle {
+        color: rgb(var(--linear-text-muted));
+        @apply text-sm;
+    }
+
+    .linear-btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-all duration-300 ease-smooth disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    .linear-btn-primary {
+        @apply linear-btn border-brand-700 bg-brand-600 text-white hover:-translate-y-0.5 hover:bg-brand-700 hover:shadow-float;
+    }
+
+    .linear-btn-secondary {
+        background-color: rgb(var(--linear-surface));
+        border-color: rgb(var(--linear-border) / 0.75);
+        color: rgb(var(--linear-text));
+        @apply linear-btn hover:-translate-y-0.5 hover:bg-zinc-50;
+    }
+
+    .linear-btn-danger {
+        @apply linear-btn border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100;
+    }
+
+    .linear-btn-success {
+        @apply linear-btn border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100;
+    }
+
+    .linear-input {
+        background-color: rgb(var(--linear-surface));
+        border-color: rgb(var(--linear-border) / 0.86);
+        color: rgb(var(--linear-text));
+        @apply w-full rounded-lg border px-3 py-2 text-sm placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-200/70;
+    }
+
+    .linear-select {
+        @apply linear-input pr-8;
+    }
+
+    .linear-textarea {
+        @apply linear-input min-h-24;
+    }
+
+    .linear-chip {
+        background-color: rgb(var(--linear-muted-bg));
+        border-color: rgb(var(--linear-border) / 0.9);
+        color: rgb(var(--linear-text-muted));
+        @apply inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium;
+    }
+
+    .linear-table-wrap {
+        background-color: rgb(var(--linear-surface));
+        border-color: rgb(var(--linear-border) / 0.72);
+        box-shadow: 0 10px 30px rgb(var(--linear-shadow) / 0.05);
+        @apply overflow-hidden rounded-xl border;
+    }
+
+    .linear-table {
+        color: rgb(var(--linear-text-muted));
+        @apply min-w-full text-left text-sm;
+    }
+
+    .linear-table thead {
+        background-color: rgb(var(--linear-muted-bg));
+        color: rgb(var(--linear-text-muted));
+        @apply text-[11px] uppercase tracking-wide;
+    }
+
+    .linear-table th {
+        color: rgb(var(--linear-text));
+        @apply px-4 py-3 font-semibold;
+    }
+
+    .linear-table td {
+        @apply px-4 py-3;
+    }
+
+    .linear-table tbody tr {
+        border-color: rgb(var(--linear-border) / 0.72);
+        @apply border-t transition-all duration-200 ease-smooth hover:bg-slate-50/80;
+    }
+
+    .linear-navbar-glass {
+        background: linear-gradient(
+            135deg,
+            rgb(var(--linear-glass) / 0.8) 0%,
+            rgb(var(--linear-glass) / 0.64) 100%
+        );
+        border-color: rgb(var(--linear-border) / 0.65);
+        box-shadow: 0 10px 30px rgb(var(--linear-shadow) / 0.08);
+        @apply backdrop-blur-glass;
+    }
+
+    .linear-sidebar-glass {
+        background: linear-gradient(
+            135deg,
+            rgb(var(--linear-glass) / 0.78) 0%,
+            rgb(var(--linear-glass) / 0.66) 100%
+        );
+        border-color: rgb(var(--linear-border) / 0.65);
+        box-shadow: 0 10px 30px rgb(var(--linear-shadow) / 0.08);
+        @apply backdrop-blur-glass;
+    }
+
+    .linear-breadcrumb {
+        color: rgb(var(--linear-text-muted));
+        @apply mb-4 flex flex-wrap items-center gap-2 text-xs;
+    }
+
+    .linear-breadcrumb a {
+        @apply transition-colors duration-200 hover:text-brand-700;
+    }
+
+    .linear-empty {
+        @apply linear-panel-muted flex flex-col items-center justify-center gap-3 p-8 text-center;
+    }
+
+    .linear-empty-title {
+        color: rgb(var(--linear-text));
+        @apply font-display text-base font-semibold tracking-tight;
+    }
+
+    .linear-empty-subtitle {
+        color: rgb(var(--linear-text-muted));
+        @apply max-w-md text-sm;
+    }
+
+    .linear-page-header {
+        @apply linear-panel mb-6 flex flex-wrap items-end justify-between gap-4 p-5 sm:p-6;
+    }
+
+    .linear-page-header-main {
+        @apply min-w-0 flex-1 space-y-1.5;
+    }
+
+    .linear-page-title {
+        color: rgb(var(--linear-text));
+        @apply font-display text-2xl font-semibold tracking-tighter;
+    }
+
+    .linear-page-subtitle {
+        color: rgb(var(--linear-text-muted));
+        @apply text-sm;
+    }
+
+    .linear-page-actions {
+        @apply flex flex-wrap items-center gap-2;
+    }
+
+    .linear-row-action {
+        @apply opacity-0 translate-y-1 transition-all duration-200 ease-smooth;
+    }
+
+    .linear-table tbody tr:hover .linear-row-action {
+        @apply opacity-100 translate-y-0;
+    }
+
+    .linear-table tbody tr:focus-within .linear-row-action {
+        @apply opacity-100 translate-y-0;
+    }
+
+    .linear-skeleton {
+        @apply animate-pulse rounded-lg bg-slate-200/80;
+    }
+
+    .linear-badge {
+        @apply inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600;
+    }
+
+    .linear-badge-dot {
+        @apply inline-block h-2 w-2 rounded-full bg-emerald-500;
+    }
+
+    .linear-badge-pending .linear-badge-dot {
+        @apply animate-pulse bg-amber-500;
+    }
+
+    .linear-modal-backdrop {
+        @apply fixed inset-0 z-50 bg-slate-950/35 backdrop-blur-[2px];
+    }
+
+    .linear-modal-card {
+        background-color: rgb(var(--linear-surface));
+        border-color: rgb(var(--linear-border) / 0.88);
+        box-shadow: 0 14px 45px rgb(var(--linear-shadow) / 0.16);
+        @apply w-full rounded-xl border motion-safe:animate-pop-in;
+    }
+
+    .linear-link {
+        color: rgb(var(--linear-text));
+        @apply underline-offset-2 hover:text-brand-700 hover:underline;
+    }
+
+    .linear-btn-loading {
+        @apply relative pointer-events-none;
+    }
+
+    .linear-btn-loading::after {
+        content: "";
+        border-top-color: transparent;
+        @apply absolute right-2 h-3.5 w-3.5 animate-spin rounded-full border-2 border-current opacity-80;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 1ms !important;
+        transition-duration: 1ms !important;
+    }
+}
+
+/* Laravel Pagination Styling */
+.pagination {
+    @apply flex items-center gap-1;
+}
+
+.pagination .page-item .page-link {
+    @apply inline-flex items-center justify-center min-w-[2.25rem] h-9 px-3 text-sm font-medium text-zinc-600 bg-white border border-zinc-200 rounded-lg transition-all duration-200 hover:bg-zinc-50 hover:text-zinc-900 hover:border-zinc-300;
+}
+
+.pagination .page-item.active .page-link {
+    @apply bg-brand-600 text-white border-brand-600 hover:bg-brand-700 hover:border-brand-700;
+}
+
+.pagination .page-item.disabled .page-link {
+    @apply text-zinc-300 cursor-not-allowed hover:bg-white hover:text-zinc-300 hover:border-zinc-200;
+}
+
+.pagination .page-item:first-child .page-link,
+.pagination .page-item:last-child .page-link {
+    @apply px-3;
+}
+
+/* Simple pagination (Previous/Next) */
+.pagination .page-link[rel="prev"],
+.pagination .page-link[rel="next"] {
+    @apply px-4;
+}
+
+/* Skeleton Loading States */
+.skeleton {
+    @apply animate-pulse rounded-lg bg-slate-200/80;
+}
+
+.skeleton-text {
+    @apply h-4 bg-slate-200 rounded;
+}
+
+.skeleton-title {
+    @apply h-6 bg-slate-300 rounded w-3/4;
+}
+
+.skeleton-avatar {
+    @apply h-10 w-10 rounded-full bg-slate-200;
+}
+
+.skeleton-card {
+    @apply linear-panel p-4 space-y-3;
+}
+
+.skeleton-table-row {
+    @apply flex gap-4 py-3 border-b border-slate-100 last:border-0;
+}
+
+.skeleton-chart {
+    @apply h-32 bg-slate-100 rounded-lg;
+}
+

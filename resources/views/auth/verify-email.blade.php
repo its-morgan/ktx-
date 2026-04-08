@@ -1,11 +1,11 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
+    <div class="mb-4 text-sm text-[#606060]">
         Cảm ơn bạn đã đăng ký! Trước khi bắt đầu, vui lòng xác thực email bằng liên kết vừa được gửi.
         Nếu bạn chưa nhận được email, chúng tôi sẽ gửi lại.
     </div>
 
     @if (session('status') == 'verification-link-sent')
-        <div class="mb-4 font-medium text-sm text-green-600">
+        <div class="mb-4 font-medium text-sm text-[#606060]">
             Liên kết xác thực mới đã được gửi tới email của bạn.
         </div>
     @endif
@@ -24,7 +24,7 @@
         <form method="POST" action="{{ route('logout') }}">
             @csrf
 
-            <button type="submit" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <button type="submit" class="underline text-sm text-[#606060] hover:text-[#121212] rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black/10">
                 Đăng xuất
             </button>
         </form>

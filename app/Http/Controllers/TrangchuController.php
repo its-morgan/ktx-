@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Baohong;
 use App\Models\Dangky;
 use App\Models\Hoadon;
+use App\Models\Hopdong;
 use App\Models\Kyluat;
 use App\Models\Phong;
 use App\Models\Sinhvien;
 use App\Models\Taisan;
 use App\Models\Thongbao;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class TrangchuController extends Controller
 {
@@ -53,6 +55,8 @@ class TrangchuController extends Controller
         $doanhthugannhat = [];
         $nhan = [];
         $thongbao = Thongbao::orderByDesc('ngaydang')->limit(5)->get();
+        $hopdongsaphethan = collect();
+        $diennuocbathuong = collect();
 
         if ($vaitro === 'admin') {
             // Đếm phòng trống dựa theo số sinh viên hiện tại và số lượng tối đa
@@ -74,6 +78,64 @@ class TrangchuController extends Controller
                 ->where('trangthaithanhtoan', 'Chưa thanh toán')
                 ->count();
 
+            // CẢNH BÁO: Hợp đồng sắp hết hạn (trong vòng 30 ngày)
+            $ngay30NgayToi = now()->addDays(30)->format('Y-m-d');
+            $hopdongsaphethan = Hopdong::where('trang_thai', 'Đang hiệu lực')
+                ->whereDate('ngay_ket_thuc', '<=', $ngay30NgayToi)
+                ->whereDate('ngay_ket_thuc', '>=', now()->format('Y-m-d'))
+                ->with(['sinhvien.taikhoan', 'phong'])
+                ->orderBy('ngay_ket_thuc', 'asc')
+                ->limit(10)
+                ->get();
+
+            // CẢNH BÁO: Điện nước tăng bất thường (>50% so với tháng trước)
+            $thangTruoc = now()->subMonth();
+            $hoadonThangTruoc = Hoadon::where('thang', $thangTruoc->format('m'))
+                ->where('nam', $thangTruoc->format('Y'))
+                ->get()
+                ->keyBy('phong_id');
+
+            $hoadonThangNay = Hoadon::where('thang', $thanghientai)
+                ->where('nam', $namhientai)
+                ->with('phong')
+                ->get();
+
+            $diennuocbathuong = [];
+            foreach ($hoadonThangNay as $hoadon) {
+                $phongId = $hoadon->phong_id;
+                if (isset($hoadonThangTruoc[$phongId])) {
+                    $hoadonTruoc = $hoadonThangTruoc[$phongId];
+                    
+                    // Tính số điện, nước tiêu thụ
+                    $dienTieuThuThangNay = $hoadon->chisodienmoi - $hoadon->chisodiencu;
+                    $dienTieuThuThangTruoc = $hoadonTruoc->chisodienmoi - $hoadonTruoc->chisodiencu;
+                    $nuocTieuThuThangNay = $hoadon->chisonuocmoi - $hoadon->chisonuoccu;
+                    $nuocTieuThuThangTruoc = $hoadonTruoc->chisonuocmoi - $hoadonTruoc->chisonuoccu;
+
+                    // Kiểm tra tăng >50%
+                    if ($dienTieuThuThangTruoc > 0 && $dienTieuThuThangNay > $dienTieuThuThangTruoc * 1.5) {
+                        $diennuocbathuong[] = [
+                            'phong' => $hoadon->phong,
+                            'loai' => 'Điện',
+                            'thang_truoc' => $dienTieuThuThangTruoc,
+                            'thang_nay' => $dienTieuThuThangNay,
+                            'ty_le_tang' => round((($dienTieuThuThangNay - $dienTieuThuThangTruoc) / $dienTieuThuThangTruoc) * 100, 1),
+                        ];
+                    }
+
+                    if ($nuocTieuThuThangTruoc > 0 && $nuocTieuThuThangNay > $nuocTieuThuThangTruoc * 1.5) {
+                        $diennuocbathuong[] = [
+                            'phong' => $hoadon->phong,
+                            'loai' => 'Nước',
+                            'thang_truoc' => $nuocTieuThuThangTruoc,
+                            'thang_nay' => $nuocTieuThuThangNay,
+                            'ty_le_tang' => round((($nuocTieuThuThangNay - $nuocTieuThuThangTruoc) / $nuocTieuThuThangTruoc) * 100, 1),
+                        ];
+                    }
+                }
+            }
+            $diennuocbathuong = collect($diennuocbathuong);
+
             // Danh sách việc cần làm (lấy 5 mục gần nhất)
             $danhsachdangkygannhat = Dangky::where('trangthai', 'Chờ xử lý')
                 ->orderByDesc('id')
@@ -85,20 +147,36 @@ class TrangchuController extends Controller
                 ->limit(5)
                 ->get();
 
-            // Thống kê doanh thu 6 tháng gần nhất (đã thanh toán)
-            $doanhthugannhat = [];
+            // Thống kê doanh thu 6 tháng gần nhất (đã thanh toán) - Tách thành 2 cột
+            $doanhthugannhat_tienphong = [];
+            $doanhthugannhat_tiendichvu = [];
             $nhan = [];
             for ($i = 5; $i >= 0; $i--) {
                 $m = now()->subMonths($i);
                 $thang = (int)$m->format('m');
                 $nam = (int)$m->format('Y');
-                $tong = Hoadon::where('thang', $thang)
+                
+                // Tính tiền phòng riêng
+                $tongtienphong = Hoadon::where('thang', $thang)
                     ->where('nam', $nam)
-                    ->where('trangthaithanhtoan', 'Đã thanh toán')
-                    ->sum('tongtien');
-                $doanhthugannhat[] = (int)$tong;
+                    ->where('trangthaithanhtoan', 'Da thanh toan')
+                    ->sum('tienphong');
+                
+                // Tính tiền dịch vụ (điện + nước + phí dịch vụ)
+                $tongtiendichvu = Hoadon::where('thang', $thang)
+                    ->where('nam', $nam)
+                    ->where('trangthaithanhtoan', 'Da thanh toan')
+                    ->sum(DB::raw('tiendien + tiennuoc + phidichvu'));
+                
+                $doanhthugannhat_tienphong[] = (int)$tongtienphong;
+                $doanhthugannhat_tiendichvu[] = (int)$tongtiendichvu;
                 $nhan[] = $m->format('m/Y');
             }
+            
+            $doanhthugannhat = [
+                'tienphong' => $doanhthugannhat_tienphong,
+                'tiendichvu' => $doanhthugannhat_tiendichvu,
+            ];
         }
 
         /**
@@ -122,7 +200,9 @@ class TrangchuController extends Controller
                 'namhientai',
                 'doanhthugannhat',
                 'nhan',
-                'thongbao'
+                'thongbao',
+                'hopdongsaphethan',
+                'diennuocbathuong'
             ));
         }
 

@@ -1,5 +1,5 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
+    <div class="mb-4 text-sm text-[#606060]">
         Khu vực an toàn. Vui lòng xác nhận lại mật khẩu để tiếp tục.
     </div>
 
