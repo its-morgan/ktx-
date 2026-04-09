@@ -2,42 +2,37 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cauhinh;
 use App\Models\Hoadon;
 use App\Models\Phong;
 use App\Models\Sinhvien;
+use App\Services\InvoiceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class HoadonController extends Controller
 {
+    public function __construct(private InvoiceService $invoiceService)
+    {
+    }
+
     private const TRANGTHAI_CHUATHANHTOAN = Hoadon::TRANGTHAI_CHUA_THANH_TOAN;
     private const TRANGTHAI_DATHANHTOAN = Hoadon::TRANGTHAI_DA_THANH_TOAN;
 
-    private const DONGIADIEN = 3500;
-    private const DONGIANUOC = 15000;
-
-    private function layGiaCauHinh(string $key, string $macdinh): string
-    {
-        $item = Cauhinh::where('ten', $key)->first();
-
-        return $item ? $item->giatri : $macdinh;
-    }
-
-    public function danhsachhoadonquantri()
+    public function listInvoicesAdmin()
     {
         $danhsachhoadon = Hoadon::all();
         $danhsachphong = Phong::all();
+        $bangGia = $this->invoiceService->layBangGia();
 
         return view('admin.hoadon.danhsach', [
             'danhsachhoadon' => $danhsachhoadon,
             'danhsachphong' => $danhsachphong,
-            'dongiadien' => self::DONGIADIEN,
-            'dongianuoc' => self::DONGIANUOC,
+            'dongiadien' => $bangGia['dongiadien'],
+            'dongianuoc' => $bangGia['dongianuoc'],
         ]);
     }
 
-    public function xulyhoadon(Request $request)
+    public function processInvoices(Request $request)
     {
         $dulieu = $request->validate(
             [
@@ -60,73 +55,25 @@ class HoadonController extends Controller
             ]
         );
 
-        if ((int) $dulieu['chisodienmoi'] < (int) $dulieu['chisodiencu']) {
-            return redirect()->back()->withErrors([
-                'chisodienmoi' => 'Chi so dien moi phai lon hon hoac bang chi so dien cu.',
-            ])->with('toast_loai', 'loi')->with('toast_noidung', 'Chi so dien moi phai lon hon hoac bang chi so dien cu.')->withInput();
+        $ketQua = $this->invoiceService->xuLyHoaDon($dulieu);
+
+        $phanHoi = redirect()
+            ->back()
+            ->with('toast_loai', $ketQua['toast_loai'])
+            ->with('toast_noidung', $ketQua['toast_noidung']);
+
+        if (! empty($ketQua['loi'])) {
+            $phanHoi = $phanHoi->withErrors($ketQua['loi']);
         }
 
-        if ((int) $dulieu['chisonuocmoi'] < (int) $dulieu['chisonuoccu']) {
-            return redirect()->back()->withErrors([
-                'chisonuocmoi' => 'Chi so nuoc moi phai lon hon hoac bang chi so nuoc cu.',
-            ])->with('toast_loai', 'loi')->with('toast_noidung', 'Chi so nuoc moi phai lon hon hoac bang chi so nuoc cu.')->withInput();
+        if (! empty($ketQua['giu_input'])) {
+            $phanHoi = $phanHoi->withInput();
         }
 
-        $phong = Phong::find((int) $dulieu['phong_id']);
-        if (! $phong) {
-            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Phong khong ton tai.');
-        }
-
-        $dongiadien = (int) $this->layGiaCauHinh('gia_dien', (string) self::DONGIADIEN);
-        $dongianuoc = (int) $this->layGiaCauHinh('gia_nuoc', (string) self::DONGIANUOC);
-
-        $tiendien = ((int) $dulieu['chisodienmoi'] - (int) $dulieu['chisodiencu']) * $dongiadien;
-        $tiennuoc = ((int) $dulieu['chisonuocmoi'] - (int) $dulieu['chisonuoccu']) * $dongianuoc;
-        $tienphong = (int) $phong->giaphong;
-        $phidichvu = 0;
-        $tongtien = $tienphong + $tiendien + $tiennuoc + $phidichvu;
-
-        $hoadoncu = Hoadon::where('phong_id', (int) $dulieu['phong_id'])
-            ->where('thang', (int) $dulieu['thang'])
-            ->where('nam', (int) $dulieu['nam'])
-            ->first();
-
-        if ($hoadoncu) {
-            $hoadoncu->update([
-                'chisodiencu' => (int) $dulieu['chisodiencu'],
-                'chisodienmoi' => (int) $dulieu['chisodienmoi'],
-                'chisonuoccu' => (int) $dulieu['chisonuoccu'],
-                'chisonuocmoi' => (int) $dulieu['chisonuocmoi'],
-                'tienphong' => $tienphong,
-                'tiendien' => $tiendien,
-                'tiennuoc' => $tiennuoc,
-                'phidichvu' => $phidichvu,
-                'tongtien' => $tongtien,
-                'ngayxuat' => now()->format('Y-m-d'),
-            ]);
-        } else {
-            Hoadon::create([
-                'phong_id' => (int) $dulieu['phong_id'],
-                'thang' => (int) $dulieu['thang'],
-                'nam' => (int) $dulieu['nam'],
-                'chisodiencu' => (int) $dulieu['chisodiencu'],
-                'chisodienmoi' => (int) $dulieu['chisodienmoi'],
-                'chisonuoccu' => (int) $dulieu['chisonuoccu'],
-                'chisonuocmoi' => (int) $dulieu['chisonuocmoi'],
-                'tienphong' => $tienphong,
-                'tiendien' => $tiendien,
-                'tiennuoc' => $tiennuoc,
-                'phidichvu' => $phidichvu,
-                'tongtien' => $tongtien,
-                'trangthaithanhtoan' => self::TRANGTHAI_CHUATHANHTOAN,
-                'ngayxuat' => now()->format('Y-m-d'),
-            ]);
-        }
-
-        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Cap nhat hoa don thanh cong.');
+        return $phanHoi;
     }
 
-    public function hoadoncuatoi()
+    public function myInvoices()
     {
         $sinhvien = Sinhvien::where('user_id', Auth::id())->first();
         if (! $sinhvien || ! $sinhvien->phong_id) {
@@ -138,17 +85,25 @@ class HoadonController extends Controller
             ->orderByDesc('thang')
             ->paginate(12);
 
+        $thongKeTongHop = Hoadon::where('phong_id', (int) $sinhvien->phong_id)
+            ->selectRaw(
+                'COUNT(*) as tong_hoa_don,
+                SUM(CASE WHEN trangthaithanhtoan = ? THEN 1 ELSE 0 END) as chua_thanh_toan,
+                SUM(CASE WHEN trangthaithanhtoan = ? THEN 1 ELSE 0 END) as da_thanh_toan,
+                SUM(CASE WHEN trangthaithanhtoan = ? THEN tongtien ELSE 0 END) as tong_tien_da_tra',
+                [
+                    self::TRANGTHAI_CHUATHANHTOAN,
+                    self::TRANGTHAI_DATHANHTOAN,
+                    self::TRANGTHAI_DATHANHTOAN,
+                ]
+            )
+            ->first();
+
         $thongKe = [
-            'tong_hoa_don' => Hoadon::where('phong_id', (int) $sinhvien->phong_id)->count(),
-            'da_thanh_toan' => Hoadon::where('phong_id', (int) $sinhvien->phong_id)
-                ->where('trangthaithanhtoan', self::TRANGTHAI_DATHANHTOAN)
-                ->count(),
-            'chua_thanh_toan' => Hoadon::where('phong_id', (int) $sinhvien->phong_id)
-                ->where('trangthaithanhtoan', self::TRANGTHAI_CHUATHANHTOAN)
-                ->count(),
-            'tong_tien_da_tra' => Hoadon::where('phong_id', (int) $sinhvien->phong_id)
-                ->where('trangthaithanhtoan', self::TRANGTHAI_DATHANHTOAN)
-                ->sum('tongtien'),
+            'tong_hoa_don' => (int) ($thongKeTongHop->tong_hoa_don ?? 0),
+            'da_thanh_toan' => (int) ($thongKeTongHop->da_thanh_toan ?? 0),
+            'chua_thanh_toan' => (int) ($thongKeTongHop->chua_thanh_toan ?? 0),
+            'tong_tien_da_tra' => (int) ($thongKeTongHop->tong_tien_da_tra ?? 0),
         ];
 
         return view('student.phongcuatoi.lichSuHoaDon', [
@@ -157,7 +112,7 @@ class HoadonController extends Controller
         ]);
     }
 
-    public function xacnhanthanhtoan(int $id)
+    public function confirmPayment(int $id)
     {
         $hoadon = Hoadon::find($id);
         if (! $hoadon) {
@@ -171,7 +126,7 @@ class HoadonController extends Controller
         return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Xac nhan thanh toan thanh cong.');
     }
 
-    public function chiTietHoaDonCuaToi(int $id)
+    public function viewMyInvoiceDetails(int $id)
     {
         $sinhvien = Sinhvien::where('user_id', Auth::id())->first();
 
@@ -208,11 +163,19 @@ class HoadonController extends Controller
         ]);
     }
 
-    public function xuatPDF(int $id)
+    public function downloadInvoicePDF(int $id)
     {
         $hoadon = Hoadon::with(['phong.danhsachsinhvien.taikhoan'])->find($id);
         if (! $hoadon) {
             return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Khong tim thay hoa don.');
+        }
+
+        $user = Auth::user();
+        if (($user->vaitro ?? null) === 'sinhvien') {
+            $sinhvien = Sinhvien::where('user_id', (int) $user->id)->first();
+            if (! $sinhvien || (int) $sinhvien->phong_id !== (int) $hoadon->phong_id) {
+                abort(403, 'Ban khong co quyen xem hoa don nay.');
+            }
         }
 
         $phong = $hoadon->phong;

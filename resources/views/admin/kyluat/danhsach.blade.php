@@ -15,7 +15,7 @@
         </select>
         <select name="mucdo" class="rounded-lg border border-gray-200/80 px-3 py-2 text-sm" @change="$el.form.submit()">
             <option value="">--Tất cả mức độ--</option>
-            @foreach(['Nhẹ', 'Trung bình', 'Nặng'] as $m)
+            @foreach(\App\Enums\DisciplineLevel::values() as $m)
                 <option value="{{ $m }}" {{ $selectedMucDo == $m ? 'selected' : '' }}>{{ $m }}</option>
             @endforeach
         </select>
@@ -35,9 +35,9 @@
                 <input name="noidung" required type="text" placeholder="Nội dung vi phạm" class="rounded-lg border border-gray-200/80 px-3 py-2 text-sm" />
                 <input name="ngayvipham" required type="date" class="rounded-lg border border-gray-200/80 px-3 py-2 text-sm" />
                 <select name="mucdo" required class="rounded-lg border border-gray-200/80 px-3 py-2 text-sm">
-                    <option value="Nhẹ">Nhẹ</option>
-                    <option value="Trung bình" selected>Trung bình</option>
-                    <option value="Nặng">Nặng</option>
+                    <option value="{{ \App\Enums\DisciplineLevel::LOW->value }}">{{ \App\Enums\DisciplineLevel::LOW->value }}</option>
+                    <option value="{{ \App\Enums\DisciplineLevel::MEDIUM->value }}" selected>{{ \App\Enums\DisciplineLevel::MEDIUM->value }}</option>
+                    <option value="{{ \App\Enums\DisciplineLevel::HIGH->value }}">{{ \App\Enums\DisciplineLevel::HIGH->value }}</option>
                 </select>
             </div>
             <button type="submit" class="rounded-lg bg-black px-4 py-2 text-white">Thêm vi phạm</button>
@@ -99,9 +99,9 @@
                             <input class="rounded-lg border border-gray-200/80 px-3 py-2 text-sm" name="noidung" value="{{ $item->noidung }}" required />
                             <input class="rounded-lg border border-gray-200/80 px-3 py-2 text-sm" type="date" name="ngayvipham" value="{{ $item->ngayvipham }}" required />
                             <select name="mucdo" class="rounded-lg border border-gray-200/80 px-3 py-2 text-sm" required>
-                                <option value="Nhẹ" {{ $item->mucdo === 'Nhẹ' ? 'selected' : '' }}>Nhẹ</option>
-                                <option value="Trung bình" {{ $item->mucdo === 'Trung bình' ? 'selected' : '' }}>Trung bình</option>
-                                <option value="Nặng" {{ $item->mucdo === 'Nặng' ? 'selected' : '' }}>Nặng</option>
+                                <option value="{{ \App\Enums\DisciplineLevel::LOW->value }}" {{ $item->mucdo === \App\Enums\DisciplineLevel::LOW->value ? 'selected' : '' }}>{{ \App\Enums\DisciplineLevel::LOW->value }}</option>
+                                <option value="{{ \App\Enums\DisciplineLevel::MEDIUM->value }}" {{ $item->mucdo === \App\Enums\DisciplineLevel::MEDIUM->value ? 'selected' : '' }}>{{ \App\Enums\DisciplineLevel::MEDIUM->value }}</option>
+                                <option value="{{ \App\Enums\DisciplineLevel::HIGH->value }}" {{ $item->mucdo === \App\Enums\DisciplineLevel::HIGH->value ? 'selected' : '' }}>{{ \App\Enums\DisciplineLevel::HIGH->value }}</option>
                             </select>
                             <button type="submit" class="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white">Lưu</button>
                         </div>

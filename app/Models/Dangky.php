@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RegistrationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
@@ -14,9 +15,9 @@ class Dangky extends Model
     public const LOAI_TRA_PHONG = 'Trả phòng';
     public const LOAI_DOI_PHONG = 'Doi phong';
 
-    public const TRANGTHAI_CHO_XU_LY = 'Chờ xử lý';
-    public const TRANGTHAI_DA_DUYET = 'Đã duyệt';
-    public const TRANGTHAI_TU_CHOI = 'Từ chối';
+    public const TRANGTHAI_CHO_XU_LY = RegistrationStatus::PENDING->value;
+    public const TRANGTHAI_DA_DUYET = RegistrationStatus::APPROVED->value;
+    public const TRANGTHAI_TU_CHOI = RegistrationStatus::REJECTED->value;
 
     private const ALLOWED_TRANSITIONS = [
         self::TRANGTHAI_CHO_XU_LY => [

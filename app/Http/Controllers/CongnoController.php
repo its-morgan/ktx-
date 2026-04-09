@@ -21,10 +21,10 @@ class CongnoController extends Controller
     private const NGAY_QUAHAN = 5;
 
     /**
-     * Hiển thị báo cáo công nợ.
-     * - Danh sách sinh viên có hóa đơn chưa thanh toán quá 5 ngày.
+     * Display arrearage (debt) report.
+     * - List students with unpaid invoices overdue more than 5 days.
      */
-    public function index(Request $request)
+    public function showArrearage(Request $request)
     {
         $ngayQuaHan = now()->subDays(self::NGAY_QUAHAN)->format('Y-m-d');
 
@@ -41,7 +41,7 @@ class CongnoController extends Controller
 
         foreach ($hoadonQuaHan as $hoadon) {
             $phongId = $hoadon->phong_id;
-            
+
             if (!isset($congnoTheoPhong[$phongId])) {
                 $phong = $hoadon->phong;
                 $congnoTheoPhong[$phongId] = [
@@ -51,7 +51,7 @@ class CongnoController extends Controller
                     'tongtien' => 0,
                 ];
             }
-            
+
             $congnoTheoPhong[$phongId]['hoadon'][] = $hoadon;
             $congnoTheoPhong[$phongId]['tongtien'] += $hoadon->tongtien;
             $tongCongNo += $hoadon->tongtien;
@@ -73,9 +73,9 @@ class CongnoController extends Controller
     }
 
     /**
-     * Gửi thông báo nhắc nhở cho sinh viên nợ tiền.
+     * Send reminder notification to students with debt.
      */
-    public function guinhacnho(Request $request, int $phongId)
+    public function sendReminderNotification(Request $request, int $phongId)
     {
         $phong = Phong::find($phongId);
 
@@ -87,7 +87,7 @@ class CongnoController extends Controller
         }
 
         $ngayQuaHan = now()->subDays(self::NGAY_QUAHAN)->format('Y-m-d');
-        
+
         $hoadonQuaHan = Hoadon::where('phong_id', $phongId)
             ->where('trangthaithanhtoan', self::TRANGTHAI_CHUATHANHTOAN)
             ->whereNotNull('ngayxuat')

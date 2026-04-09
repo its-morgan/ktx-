@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ContractStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,9 +11,9 @@ class Hopdong extends Model
 {
     use HasFactory;
 
-    public const TRANGTHAI_DANG_HIEU_LUC = 'Đang hiệu lực';
-    public const TRANGTHAI_HET_HAN = 'Hết hạn';
-    public const TRANGTHAI_DA_THANH_LY = 'Đã thanh lý';
+    public const TRANGTHAI_DANG_HIEU_LUC = ContractStatus::ACTIVE->value;
+    public const TRANGTHAI_HET_HAN = ContractStatus::EXPIRED->value;
+    public const TRANGTHAI_DA_THANH_LY = ContractStatus::TERMINATED->value;
 
     private const ALLOWED_TRANSITIONS = [
         self::TRANGTHAI_DANG_HIEU_LUC => [

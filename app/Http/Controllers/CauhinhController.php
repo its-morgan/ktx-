@@ -8,10 +8,10 @@ use Illuminate\Http\Request;
 class CauhinhController extends Controller
 {
     /**
-     * Hiển thị cấu hình hệ thống cho admin
-     * - Lấy dữ liệu từ bảng cauhinh
+     * Display system configuration for admin.
+     * - Get data from: cauhinh table
      */
-    public function index()
+    public function showSettings()
     {
         $cauhinh = Cauhinh::all()->keyBy('ten');
 
@@ -19,10 +19,10 @@ class CauhinhController extends Controller
     }
 
     /**
-     * Cập nhật cấu hình (gia_dien, gia_nuoc, hotline)
-     * - Dữ liệu form gửi qua: gia_dien, gia_nuoc, hotline
+     * Update system configuration (electricity_price, water_price, hotline).
+     * - Form data: gia_dien, gia_nuoc, hotline
      */
-    public function update(Request $request)
+    public function updateSettings(Request $request)
     {
         $dulieu = $request->validate([
             'gia_dien' => ['required', 'numeric', 'min:0'],

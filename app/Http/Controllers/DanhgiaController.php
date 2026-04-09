@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\Auth;
 class DanhgiaController extends Controller
 {
     /**
-     * Hiển thị danh sách đánh giá của phòng.
+     * Display list of room reviews.
      */
-    public function danhsachdanhgia(Request $request, int $phongId)
+    public function listReviews(Request $request, int $phongId)
     {
         $phong = Phong::find($phongId);
 
@@ -40,9 +40,9 @@ class DanhgiaController extends Controller
     }
 
     /**
-     * Sinh viên gửi đánh giá phòng.
+     * Student submits room review.
      */
-    public function themdanhgia(Request $request)
+    public function storeReview(Request $request)
     {
         $dulieu = $request->validate([
             'diem' => ['required', 'integer', 'min:1', 'max:5'],
@@ -93,9 +93,9 @@ class DanhgiaController extends Controller
     }
 
     /**
-     * Hiển thị form đánh giá cho sinh viên.
+     * Display review form for student.
      */
-    public function formdanhgia()
+    public function showReviewForm()
     {
         $sinhvien = Sinhvien::where('user_id', Auth::id())->first();
 

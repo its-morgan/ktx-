@@ -60,8 +60,8 @@ class HopdongTest extends TestCase
         Dangky::create([
             'sinhvien_id' => $data['sinhvien']->id,
             'phong_id' => $data['phong']->id,
-            'loaidangky' => 'Thuê phòng',
-            'trangthai' => 'Chờ xử lý',
+            'loaidangky' => Dangky::LOAI_THUE_PHONG,
+            'trangthai' => Dangky::TRANGTHAI_CHO_XU_LY,
             'ghichu' => null,
         ]);
 
@@ -74,7 +74,7 @@ class HopdongTest extends TestCase
         $this->assertDatabaseHas('hopdong', [
             'sinhvien_id' => $data['sinhvien']->id,
             'phong_id' => $data['phong']->id,
-            'trang_thai' => 'Đang hiệu lực',
+            'trang_thai' => Hopdong::TRANGTHAI_DANG_HIEU_LUC,
         ]);
 
         $this->assertDatabaseHas('sinhvien', [
@@ -95,7 +95,7 @@ class HopdongTest extends TestCase
             'ngay_bat_dau' => now()->format('Y-m-d'),
             'ngay_ket_thuc' => now()->addMonths(3)->format('Y-m-d'),
             'giaphong_luc_ky' => 2000000,
-            'trang_thai' => 'Đang hiệu lực',
+            'trang_thai' => Hopdong::TRANGTHAI_DANG_HIEU_LUC,
         ]);
 
         $data['sinhvien']->update(['phong_id' => $data['phong']->id]);
@@ -126,7 +126,7 @@ class HopdongTest extends TestCase
             'ngay_bat_dau' => now()->subMonths(3)->format('Y-m-d'),
             'ngay_ket_thuc' => now()->addMonths(2)->format('Y-m-d'),
             'giaphong_luc_ky' => 2000000,
-            'trang_thai' => 'Đang hiệu lực',
+            'trang_thai' => Hopdong::TRANGTHAI_DANG_HIEU_LUC,
         ]);
         $data['sinhvien']->update(['phong_id' => $data['phong']->id, 'ngay_vao' => now()->subMonths(3)->format('Y-m-d'), 'ngay_het_han' => now()->addMonths(2)->format('Y-m-d')]);
 
@@ -135,7 +135,7 @@ class HopdongTest extends TestCase
 
         $this->assertDatabaseHas('hopdong', [
             'id' => $hopdong->id,
-            'trang_thai' => 'Đã thanh lý',
+            'trang_thai' => Hopdong::TRANGTHAI_DA_THANH_LY,
         ]);
 
         $this->assertDatabaseHas('sinhvien', [
@@ -165,7 +165,7 @@ class HopdongTest extends TestCase
             'ngay_bat_dau' => now()->subMonths(3)->format('Y-m-d'),
             'ngay_ket_thuc' => now()->addMonths(2)->format('Y-m-d'),
             'giaphong_luc_ky' => 2000000,
-            'trang_thai' => 'Đang hiệu lực',
+            'trang_thai' => Hopdong::TRANGTHAI_DANG_HIEU_LUC,
         ]);
 
         $data['sinhvien']->update(['phong_id' => $data['phong']->id]);
@@ -175,7 +175,7 @@ class HopdongTest extends TestCase
 
         $this->assertDatabaseHas('hopdong', [
             'id' => $hopdong->id,
-            'trang_thai' => 'Đã thanh lý',
+            'trang_thai' => Hopdong::TRANGTHAI_DA_THANH_LY,
         ]);
 
         $this->assertDatabaseHas('sinhvien', [

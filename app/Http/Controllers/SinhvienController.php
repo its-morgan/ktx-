@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ContractStatus;
 use App\Models\Hopdong;
 use App\Models\Phong;
 use App\Models\Sinhvien;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SinhvienController extends Controller
 {
     /**
-     * Hàm này hiển thị danh sách sinh viên cho admin.
+     * List all students for admin.
      */
-    public function danhsachsinhvien(Request $request)
+    public function listStudents(Request $request)
     {
         $tuKhoa = $request->query('q', '');
 
@@ -30,14 +32,14 @@ class SinhvienController extends Controller
     }
 
     /**
-     * Cập nhật thông tin sinh viên (admin)
+     * Update student information (admin).
      */
-    public function capnhatsinhvien(Request $request, int $id)
+    public function updateStudent(Request $request, int $id)
     {
         $sinhvien = Sinhvien::find($id);
 
         if (! $sinhvien) {
-            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy sinh viên.');
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Khong tim thay sinh vien.');
         }
 
         $dulieu = $request->validate([
@@ -50,7 +52,7 @@ class SinhvienController extends Controller
 
         $user = $sinhvien->taikhoan;
         if (! $user) {
-            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy tài khoản sinh viên.');
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Khong tim thay tai khoan sinh vien.');
         }
 
         $user->update(['name' => $dulieu['name'], 'gioitinh' => $dulieu['gioitinh']]);
@@ -61,118 +63,156 @@ class SinhvienController extends Controller
             'sodienthoai' => $dulieu['sodienthoai'],
         ]);
 
-        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Cập nhật sinh viên thành công.');
+        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Cap nhat sinh vien thanh cong.');
     }
 
     /**
-     * Hàm này xử lý admin chuyển phòng cho sinh viên.
-
+     * Assign or change room for a student (admin).
      */
-    public function chuyenphongsinhvien(Request $request, int $id)
+    public function assignRoom(Request $request, int $id)
     {
-        $sinhvien = Sinhvien::find($id);
-
-        if (! $sinhvien) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Không tìm thấy sinh viên.');
-        }
-
         $dulieu = $request->validate(
             [
                 'phong_id' => ['nullable', 'numeric'],
             ],
             [
-                'phong_id.numeric' => 'Phòng không hợp lệ.',
+                'phong_id.numeric' => 'Phong khong hop le.',
             ]
         );
 
-        // Cho phép chọn "không có phòng" (phong_id = null)
-        $phong_id = $dulieu['phong_id'] ?? null;
+        $phongId = $dulieu['phong_id'] ?? null;
 
-        if ($phong_id === null || (int) $phong_id === 0) {
-            $sinhvien->update([
-                'phong_id' => null,
-            ]);
+        try {
+            return DB::transaction(function () use ($id, $phongId) {
+                $sinhvien = Sinhvien::where('id', $id)->lockForUpdate()->first();
+                if (! $sinhvien) {
+                    return redirect()
+                        ->back()
+                        ->with('toast_loai', 'loi')
+                        ->with('toast_noidung', 'Khong tim thay sinh vien.');
+                }
+                $phongCuId = (int) ($sinhvien->phong_id ?? 0);
 
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'thanhcong')
-                ->with('toast_noidung', 'Đã cập nhật sinh viên về trạng thái chưa có phòng.');
-        }
+                // Cho phep chon "khong co phong" (phong_id = null)
+                if ($phongId === null || (int) $phongId === 0) {
+                    Hopdong::where('sinhvien_id', $sinhvien->id)
+                        ->where('trang_thai', ContractStatus::ACTIVE->value)
+                        ->update(['trang_thai' => ContractStatus::TERMINATED->value]);
 
-        $phong = Phong::find((int) $phong_id);
+                    $sinhvien->update([
+                        'phong_id' => null,
+                    ]);
+                    $this->syncOccupancy([$phongCuId]);
 
-        if (! $phong) {
+                    return redirect()
+                        ->back()
+                        ->with('toast_loai', 'thanhcong')
+                        ->with('toast_noidung', 'Da cap nhat sinh vien ve trang thai chua co phong.');
+                }
+
+                $phong = Phong::where('id', (int) $phongId)->lockForUpdate()->first();
+                if (! $phong) {
+                    return redirect()
+                        ->back()
+                        ->with('toast_loai', 'loi')
+                        ->with('toast_noidung', 'Phong khong ton tai.');
+                }
+
+                // Neu chuyen toi dung phong dang o thi khong lam gi
+                if ((int) $sinhvien->phong_id === (int) $phong->id) {
+                    return redirect()
+                        ->back()
+                        ->with('toast_loai', 'thanhcong')
+                        ->with('toast_noidung', 'Sinh vien dang o dung phong nay.');
+                }
+
+                // Terminate active contracts when assigning new room
+                Hopdong::where('sinhvien_id', $sinhvien->id)
+                    ->where('trang_thai', ContractStatus::ACTIVE->value)
+                    ->update(['trang_thai' => ContractStatus::TERMINATED->value]);
+
+                // Khoa cac ban ghi sinh vien trong phong dich de tranh race condition khi dem suc chua
+                $soluonghientai = Sinhvien::where('phong_id', $phong->id)
+                    ->lockForUpdate()
+                    ->count();
+
+                if ($soluonghientai >= (int) $phong->succhuamax) {
+                    return redirect()
+                        ->back()
+                        ->with('toast_loai', 'loi')
+                        ->with('toast_noidung', 'Phong da du nguoi, khong the chuyen.');
+                }
+
+                $sinhvien->update([
+                    'phong_id' => $phong->id,
+                ]);
+                $this->syncOccupancy([$phongCuId, (int) $phong->id]);
+
+                return redirect()
+                    ->back()
+                    ->with('toast_loai', 'thanhcong')
+                    ->with('toast_noidung', 'Chuyen phong cho sinh vien thanh cong.');
+            });
+        } catch (\Throwable $e) {
             return redirect()
                 ->back()
                 ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Phòng không tồn tại.');
+                ->with('toast_noidung', 'Co loi xay ra khi chuyen phong: '.$e->getMessage());
         }
-
-        // Nếu chuyển tới đúng phòng đang ở thì không làm gì
-        if ((int) $sinhvien->phong_id === (int) $phong->id) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'thanhcong')
-                ->with('toast_noidung', 'Sinh viên đang ở đúng phòng này.');
-        }
-
-        // Đóng hợp đồng cũ của sinh viên nếu đang hiệu lực
-        Hopdong::where('sinhvien_id', $sinhvien->id)
-            ->where('trang_thai', 'Đang hiệu lực')
-            ->update(['trang_thai' => 'Đã thanh lý']);
-
-        // Đếm số sinh viên hiện tại trong phòng mới
-        $soluonghientai = Sinhvien::where('phong_id', $phong->id)->count();
-
-        if ($soluonghientai >= (int) $phong->succhuamax) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Phòng đã đủ người, không thể chuyển.');
-        }
-
-        $sinhvien->update([
-            'phong_id' => $phong->id,
-        ]);
-
-        return redirect()
-            ->back()
-            ->with('toast_loai', 'thanhcong')
-            ->with('toast_noidung', 'Chuyển phòng cho sinh viên thành công.');
     }
 
     /**
-     * Hàm này xử lý admin cho sinh viên rời phòng (set phong_id về null).
-     * - $id lấy từ route (id của sinhvien)
+     * Remove student from room (set phong_id to null).
      */
-    public function choroiophong(int $id)
+    public function removeFromRoom(int $id)
     {
-        $sinhvien = Sinhvien::find($id);
+        try {
+            return DB::transaction(function () use ($id) {
+                $sinhvien = Sinhvien::where('id', $id)->lockForUpdate()->first();
+                if (! $sinhvien) {
+                    return redirect()
+                        ->back()
+                        ->with('toast_loai', 'loi')
+                        ->with('toast_noidung', 'Khong tim thay sinh vien.');
+                }
+                $phongCuId = (int) ($sinhvien->phong_id ?? 0);
 
-        if (! $sinhvien) {
+                Hopdong::where('sinhvien_id', $sinhvien->id)
+                    ->where('trang_thai', ContractStatus::ACTIVE->value)
+                    ->update(['trang_thai' => ContractStatus::TERMINATED->value]);
+
+                $sinhvien->update([
+                    'phong_id' => null,
+                    'ngay_vao' => null,
+                    'ngay_het_han' => null,
+                ]);
+                $this->syncOccupancy([$phongCuId]);
+
+                return redirect()
+                    ->back()
+                    ->with('toast_loai', 'thanhcong')
+                    ->with('toast_noidung', 'Da cho sinh vien roi phong thanh cong.');
+            });
+        } catch (\Throwable $e) {
             return redirect()
                 ->back()
-                ->with("toast_loai", "loi")
-                ->with("toast_noidung", "Không tìm thấy sinh viên.");
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', 'Co loi xay ra khi cho roi phong: '.$e->getMessage());
         }
+    }
 
-        Hopdong::where('sinhvien_id', $sinhvien->id)
-            ->where('trang_thai', 'Đang hiệu lực')
-            ->update(['trang_thai' => 'Đã thanh lý']);
+    private function syncOccupancy(array $roomIds): void
+    {
+        $validRoomIds = array_unique(
+            array_filter(
+                array_map(static fn ($id) => (int) $id, $roomIds),
+                static fn (int $id) => $id > 0
+            )
+        );
 
-        $sinhvien->update([
-            "phong_id" => null,
-            'ngay_vao' => null,
-            'ngay_het_han' => null,
-        ]);
-
-        return redirect()
-            ->back()
-            ->with("toast_loai", "thanhcong")
-            ->with("toast_noidung", "Đã cho sinh viên rời phòng thành công.");
+        foreach ($validRoomIds as $roomId) {
+            $occupancy = Sinhvien::where('phong_id', $roomId)->count();
+            Phong::where('id', $roomId)->update(['dango' => $occupancy]);
+        }
     }
 }
-

@@ -3,11 +3,11 @@
 @section('noidung')
     <div class="mb-6">
         <div class="text-2xl font-bold text-[#121212]">Quản lý báo hỏng</div>
-        <div class="text-sm text-[#606060]">Admin cập nhật trạng thái từ “Chờ sửa” sang “Đã xong”.</div>
+        <div class="text-sm text-[#606060]">Admin theo dõi và cập nhật trạng thái báo hỏng theo tiến độ xử lý.</div>
     </div>
 
     <div class="mb-4 flex flex-wrap items-center gap-2">
-        @foreach (['Tất cả', 'Chờ sửa', 'Đã xong'] as $loai)
+        @foreach (['Tất cả', 'Chờ sửa', 'Da hen', 'Dang sua', 'Đã xong'] as $loai)
             <a href="{{ route('admin.quanlybaohong', ['status' => $loai]) }}"
                class="rounded-lg px-3 py-2 text-sm font-medium {{ (isset($status) && $status === $loai) || (!isset($status) && $loai === 'Tất cả') ? 'bg-gray-900 text-white' : 'bg-gray-100 text-[#606060]' }}">
                 {{ $loai }}
@@ -48,7 +48,12 @@
                         </td>
                         <td class="px-6 py-4">
                             @php
-                                $badgeType = $baohong->trangthai === 'Đã xong' ? 'success' : 'warning';
+                                $badgeType = match ($baohong->trangthai) {
+                                    'Đã xong' => 'success',
+                                    'Da hen' => 'warning',
+                                    'Dang sua' => 'info',
+                                    default => 'warning',
+                                };
                             @endphp
                             <x-badge type="{{ $badgeType }}" :text="$baohong->trangthai" />
                         </td>
@@ -57,6 +62,8 @@
                                 @csrf
                                 <select name="trangthai" class="rounded-lg border border-gray-200/80 p-2 text-sm text-[#121212] focus:border-gray-900 focus:ring-gray-900">
                                     <option value="Chờ sửa" {{ $baohong->trangthai === 'Chờ sửa' ? 'selected' : '' }}>Chờ sửa</option>
+                                    <option value="Da hen" {{ $baohong->trangthai === 'Da hen' ? 'selected' : '' }}>Da hen</option>
+                                    <option value="Dang sua" {{ $baohong->trangthai === 'Dang sua' ? 'selected' : '' }}>Dang sua</option>
                                     <option value="Đã xong" {{ $baohong->trangthai === 'Đã xong' ? 'selected' : '' }}>Đã xong</option>
                                 </select>
                                 <button type="submit" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">
@@ -82,4 +89,3 @@
         </div>
     </div>
 @endsection
-

@@ -8,9 +8,9 @@
         <input type="text" name="timkiem" value="{{ old('timkiem', $timkiem) }}" placeholder="Tìm mã SV" class="linear-input" />
         <select name="trangthai" class="linear-select" @change="$el.form.submit()">
             <option value="Tất cả" {{ $trangthai == 'Tất cả' ? 'selected' : '' }}>Tất cả</option>
-            <option value="Đang hiệu lực" {{ $trangthai == 'Đang hiệu lực' ? 'selected' : '' }}>Đang hiệu lực</option>
-            <option value="Đã hết hạn" {{ $trangthai == 'Đã hết hạn' ? 'selected' : '' }}>Đã hết hạn</option>
-            <option value="Đã thanh lý" {{ $trangthai == 'Đã thanh lý' ? 'selected' : '' }}>Đã thanh lý</option>
+            <option value="{{ \App\Enums\ContractStatus::ACTIVE->value }}" {{ $trangthai == \App\Enums\ContractStatus::ACTIVE->value ? 'selected' : '' }}>{{ \App\Enums\ContractStatus::ACTIVE->value }}</option>
+            <option value="{{ \App\Enums\ContractStatus::EXPIRED->value }}" {{ $trangthai == \App\Enums\ContractStatus::EXPIRED->value ? 'selected' : '' }}>{{ \App\Enums\ContractStatus::EXPIRED->value }}</option>
+            <option value="{{ \App\Enums\ContractStatus::TERMINATED->value }}" {{ $trangthai == \App\Enums\ContractStatus::TERMINATED->value ? 'selected' : '' }}>{{ \App\Enums\ContractStatus::TERMINATED->value }}</option>
         </select>
         <button type="submit" class="linear-btn-primary">Lọc</button>
     </form>
@@ -43,9 +43,9 @@
                     <td>{{ number_format($hopdong->giaphong_luc_ky) }}</td>
                     @php
                         $badgeType = match ($hopdong->trang_thai) {
-                            'Đang hiệu lực' => 'success',
-                            'Đã hết hạn' => 'warning',
-                            'Đã thanh lý' => 'danger',
+                            \App\Enums\ContractStatus::ACTIVE->value => 'success',
+                            \App\Enums\ContractStatus::EXPIRED->value => 'warning',
+                            \App\Enums\ContractStatus::TERMINATED->value => 'danger',
                             default => 'default',
                         };
                     @endphp
@@ -53,11 +53,11 @@
                     <td class="space-x-1 whitespace-nowrap">
                         <button type="button" data-modal-target="modal-chi-tiet-{{ $hopdong->id }}" data-modal-toggle="modal-chi-tiet-{{ $hopdong->id }}" class="linear-btn-secondary px-2 py-1 text-xs">Chi tiết</button>
 
-                        @if ($hopdong->trang_thai === 'Đang hiệu lực')
+                        @if ($hopdong->trang_thai === \App\Enums\ContractStatus::ACTIVE->value)
                             <button type="button" data-modal-target="modal-gia-han-{{ $hopdong->id }}" data-modal-toggle="modal-gia-han-{{ $hopdong->id }}" class="linear-btn-primary px-2 py-1 text-xs">Gia hạn</button>
                         @endif
 
-                        @if ($hopdong->trang_thai !== 'Đã thanh lý')
+                        @if ($hopdong->trang_thai !== \App\Enums\ContractStatus::TERMINATED->value)
                             <form action="{{ route('admin.hopdong.thanhly', $hopdong->id) }}" method="post" class="inline">
                                 @csrf
                                 <button type="submit" class="linear-btn-danger px-2 py-1 text-xs" onclick="return confirm('Xác nhận thanh lý?')">Thanh lý</button>
@@ -90,9 +90,9 @@
                 <h3 class="mb-4 text-xl font-bold text-[#121212]">Thông tin hợp đồng #{{ $hopdong->id }}</h3>
                 @php
                     $badgeType = match ($hopdong->trang_thai) {
-                        'Đang hiệu lực' => 'success',
-                        'Đã hết hạn' => 'warning',
-                        'Đã thanh lý' => 'danger',
+                        \App\Enums\ContractStatus::ACTIVE->value => 'success',
+                        \App\Enums\ContractStatus::EXPIRED->value => 'warning',
+                        \App\Enums\ContractStatus::TERMINATED->value => 'danger',
                         default => 'default',
                     };
                 @endphp

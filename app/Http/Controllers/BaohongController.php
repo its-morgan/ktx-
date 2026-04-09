@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\MaintenanceStatus;
 use App\Models\Baohong;
 use App\Models\Phong;
 use App\Models\Sinhvien;
@@ -11,32 +12,11 @@ use Illuminate\Support\Facades\File;
 
 class BaohongController extends Controller
 {
-    /**
-     * Trạng thái báo hỏng: chờ sửa.
-     */
-    private const TRANGTHAI_CHOSUA = 'Chờ sửa';
 
     /**
-     * Trạng thái báo hỏng: đã hẹn.
+     * List maintenance requests for current student.
      */
-    private const TRANGTHAI_DAHEN = 'Da hen';
-
-    /**
-     * Trạng thái báo hỏng: đang sửa.
-     */
-    private const TRANGTHAI_DANGSUA = 'Dang sua';
-
-    /**
-     * Trạng thái báo hỏng: hoàn thành.
-     */
-    private const TRANGTHAI_HOANTHANH = 'Đã xong';
-
-    /**
-     * Hàm này hiển thị danh sách báo hỏng của sinh viên đang đăng nhập.
-     * - Sinh viên hiện tại lấy từ: bảng sinhvien (lọc theo user_id)
-     * - Báo hỏng lấy từ: bảng baohong (lọc theo sinhvien_id)
-     */
-    public function danhsachbaohong()
+    public function listMaintenanceRequests()
     {
         $sinhvien = Sinhvien::where('user_id', Auth::id())->first();
 
@@ -54,12 +34,9 @@ class BaohongController extends Controller
     }
 
     /**
-     * Hàm này xử lý sinh viên gửi yêu cầu báo hỏng (có thể đính kèm ảnh).
-     * - Nội dung mô tả lấy từ form: mota
-     * - Nội dung chi tiết lấy từ form: noidung
-     * - Ảnh minh họa lấy từ form: anhminhhoa (lưu vào public/anhbaohong)
+     * Create a new maintenance request from student.
      */
-    public function thembaohong(Request $request)
+    public function storeMaintenance(Request $request)
     {
         $dulieu = $request->validate(
             [
@@ -110,7 +87,7 @@ class BaohongController extends Controller
             'mota' => $dulieu['mota'],
             'noidung' => $dulieu['noidung'] ?? null,
             'anhminhhoa' => $duongdananh,
-            'trangthai' => self::TRANGTHAI_CHOSUA,
+            'trangthai' => MaintenanceStatus::PENDING->value,
         ]);
 
         return redirect()
@@ -120,11 +97,9 @@ class BaohongController extends Controller
     }
 
     /**
-     * Hàm này hiển thị danh sách báo hỏng cho admin.
-     * - Danh sách báo hỏng lấy từ: bảng baohong
-     * - Danh sách phòng/sinh viên lấy từ: bảng phong, sinhvien (để hiển thị)
+     * List all maintenance requests for admin.
      */
-    public function danhsachbaohongquantri(Request $request)
+    public function listMaintenanceRequestsAdmin(Request $request)
     {
         $status = $request->query('status', '');
 
@@ -144,13 +119,9 @@ class BaohongController extends Controller
     }
 
     /**
-     * Hàm này xử lý admin cập nhật trạng thái báo hỏng.
-     * - $id lấy từ route (id của baohong)
-     * - Trạng thái lấy từ form: trangthai ("Cho sua"|"Da hen"|"Dang sua"|"Hoan thanh")
-     * - Ngày hẹn lấy từ form: ngayhen
-     * - Nội dung chi tiết lấy từ form: noidung
+     * Update maintenance request status (admin).
      */
-    public function capnhatbaohong(Request $request, int $id)
+    public function updateMaintenance(Request $request, int $id)
     {
         $baohong = Baohong::find($id);
 
@@ -163,7 +134,12 @@ class BaohongController extends Controller
 
         $dulieu = $request->validate(
             [
-                'trangthai' => ['required', 'in:Chờ sửa,Đã xong'],
+                'trangthai' => ['required', 'in:' . implode(',', [
+                    MaintenanceStatus::PENDING->value,
+                    MaintenanceStatus::SCHEDULED->value,
+                    MaintenanceStatus::IN_PROGRESS->value,
+                    MaintenanceStatus::COMPLETED->value,
+                ])],
                 'ngayhen' => ['nullable', 'date'],
                 'noidung' => ['nullable', 'string'],
             ],
@@ -186,6 +162,8 @@ class BaohongController extends Controller
                 'tieude' => 'Cap nhat lich hen sua chua',
                 'noidung' => 'Yeu cau bao hong cua ban da duoc hen ngay sua chua: ' . date('d/m/Y', strtotime($dulieu['ngayhen'])) . '. Noi dung: ' . ($dulieu['noidung'] ?? 'Khong co'),
                 'doituong' => 'sinhvien',
+                'sinhvien_id' => (int) $baohong->sinhvien_id,
+                'phong_id' => (int) $baohong->phong_id,
                 'ngaydang' => now(),
             ]);
         }

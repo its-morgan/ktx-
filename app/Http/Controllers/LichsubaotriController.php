@@ -10,9 +10,9 @@ use Illuminate\Http\Request;
 class LichsubaotriController extends Controller
 {
     /**
-     * Trang quản lý bảo trì riêng cho admin.
+     * Maintenance management page for admin.
      */
-    public function danhsach(Request $request)
+    public function listMaintenanceHistory(Request $request)
     {
         $tuKhoa = trim((string) $request->query('q', ''));
         $phongId = $request->query('phong_id');
@@ -65,7 +65,7 @@ class LichsubaotriController extends Controller
     /**
      * Hiển thị lịch sử bảo trì của vật tư.
      */
-    public function lichsu(Request $request, int $vattuId)
+    public function viewSupplyHistory(Request $request, int $vattuId)
     {
         $vattu = Vattu::with('phong')->find($vattuId);
 
@@ -92,7 +92,7 @@ class LichsubaotriController extends Controller
     /**
      * Thêm lịch sử bảo trì mới.
      */
-    public function thembaotri(Request $request, int $vattuId)
+    public function storeMaintenanceRecord(Request $request, int $vattuId)
     {
         $vattu = Vattu::find($vattuId);
 
@@ -154,7 +154,7 @@ class LichsubaotriController extends Controller
     /**
      * Danh sách vật tư sắp hết bảo hành (trong vòng 30 ngày).
      */
-    public function vattuSapHetBaohanh()
+    public function getExpiredWarrantyItems()
     {
         $ngay30NgayToi = now()->addDays(30);
 

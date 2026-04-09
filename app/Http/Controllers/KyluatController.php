@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\DisciplineLevel;
 use App\Models\Kyluat;
 use App\Models\Sinhvien;
 use Illuminate\Http\Request;
@@ -9,10 +10,10 @@ use Illuminate\Http\Request;
 class KyluatController extends Controller
 {
     /**
-     * Danh sách kỷ luật cho admin.
-     * - Lấy tất cả kỷ luật, có hỗ trợ filter bằng sinh viên hoặc mức độ.
+     * Discipline list for admin.
+     * - Get all disciplines with support for filtering by student or level.
      */
-    public function danhsachkyluat(Request $request)
+    public function listDisciplines(Request $request)
     {
         $sinhviens = Sinhvien::all();
 
@@ -31,9 +32,9 @@ class KyluatController extends Controller
     }
 
     /**
-     * Lịch sử kỷ luật của sinh viên đang đăng nhập.
+     * Discipline history of current student.
      */
-    public function kyluatcuaem()
+    public function myDisciplines()
     {
         $sinhvien = Sinhvien::where('user_id', auth()->id())->first();
 
@@ -47,15 +48,15 @@ class KyluatController extends Controller
     }
 
     /**
-     * Thêm kỷ luật cho sinh viên (admin).
+     * Add discipline for student (admin).
      */
-    public function themkyluat(Request $request)
+    public function storeDiscipline(Request $request)
     {
         $dulieu = $request->validate([
             'sinhvien_id' => ['required', 'numeric', 'exists:sinhvien,id'],
             'noidung' => ['required', 'string'],
             'ngayvipham' => ['required', 'date'],
-            'mucdo' => ['required', 'string'],
+            'mucdo' => ['required', 'string', 'in:' . implode(',', DisciplineLevel::values())],
         ]);
 
         Kyluat::create($dulieu);
@@ -64,11 +65,11 @@ class KyluatController extends Controller
     }
 
     /**
-     * Cập nhật kỷ luật (admin).
-     * - $id là id bản ghi kyluat lấy từ route
-     * - Dữ liệu update từ form: noidung, ngayvipham, mucdo
+     * Update discipline (admin).
+     * - $id is the discipline record id from route
+     * - Form data: noidung, ngayvipham, mucdo
      */
-    public function capnhatkyluat(Request $request, int $id)
+    public function updateDiscipline(Request $request, int $id)
     {
         $kyluat = Kyluat::find($id);
 
@@ -79,7 +80,7 @@ class KyluatController extends Controller
         $dulieu = $request->validate([
             'noidung' => ['required', 'string'],
             'ngayvipham' => ['required', 'date'],
-            'mucdo' => ['required', 'string'],
+            'mucdo' => ['required', 'string', 'in:' . implode(',', DisciplineLevel::values())],
         ]);
 
         $kyluat->update($dulieu);

@@ -34,9 +34,9 @@
                             <td class="px-4 py-2">{{ number_format($hopdong->giaphong_luc_ky) }}</td>
                             @php
                                 $badgeType = match ($hopdong->trang_thai) {
-                                    'Đang hiệu lực' => 'success',
-                                    'Đã hết hạn' => 'warning',
-                                    'Đã thanh lý' => 'danger',
+                                    \App\Enums\ContractStatus::ACTIVE->value => 'success',
+                                    \App\Enums\ContractStatus::EXPIRED->value => 'warning',
+                                    \App\Enums\ContractStatus::TERMINATED->value => 'danger',
                                     default => 'default',
                                 };
                             @endphp

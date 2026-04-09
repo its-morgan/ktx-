@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ContractStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +19,7 @@ return new class extends Migration
             $table->date('ngay_bat_dau');
             $table->date('ngay_ket_thuc');
             $table->unsignedBigInteger('giaphong_luc_ky');
-            $table->string('trang_thai')->default('Đang hiệu lực');
+            $table->string('trang_thai')->default(ContractStatus::ACTIVE->value);
             $table->text('ghichu')->nullable();
             $table->timestamps();
         });
@@ -32,3 +33,4 @@ return new class extends Migration
         Schema::dropIfExists('hopdong');
     }
 };
+

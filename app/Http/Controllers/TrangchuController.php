@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ContractStatus;
+use App\Enums\RegistrationStatus;
 use App\Models\Baohong;
 use App\Models\Dangky;
 use App\Models\Hoadon;
@@ -17,26 +19,26 @@ use Illuminate\Support\Facades\DB;
 class TrangchuController extends Controller
 {
     /**
-     * Route riêng cho dashboard admin để tiện kiểm thử độc lập.
+     * Route for admin dashboard for independent testing.
      */
-    public function hienthiAdmin()
+    public function showAdminDashboard()
     {
-        return $this->hienthi();
+        return $this->showDashboard();
     }
 
     /**
-     * Route riêng cho dashboard sinh viên để tiện kiểm thử độc lập.
+     * Route for student dashboard for independent testing.
      */
-    public function hienthiSinhvien()
+    public function showStudentDashboard()
     {
-        return $this->hienthi();
+        return $this->showDashboard();
     }
     /**
-     * Hàm này hiển thị dashboard (trang chủ) theo vai trò.
-     * - Vai trò lấy từ: Auth::user()->vaitro (bảng users, cột vaitro)
-     * - Số liệu tổng quan lấy từ: bảng phong, sinhvien, hoadon
+     * Display dashboard (home page) based on user role.
+     * - Role from: Auth::user()->vaitro (users table, vaitro column)
+     * - Stats from: phong, sinhvien, hoadon tables
      */
-    public function hienthi()
+    public function showDashboard()
     {
         // Lấy vai trò người dùng đang đăng nhập
         $vaitro = Auth::user()->vaitro ?? 'sinhvien';
@@ -83,7 +85,7 @@ class TrangchuController extends Controller
             })->count();
 
             // Đếm đăng ký đang chờ xử lý
-            $dangkychoxuly = Dangky::where('trangthai', 'Chờ xử lý')->count();
+            $dangkychoxuly = Dangky::where('trangthai', RegistrationStatus::PENDING->value)->count();
 
             // Đếm báo hỏng đang chờ sửa
             $baohongchosua = Baohong::where('trangthai', 'Chờ sửa')->count();
@@ -96,7 +98,7 @@ class TrangchuController extends Controller
 
             // CẢNH BÁO: Hợp đồng sắp hết hạn (trong vòng 30 ngày)
             $ngay30NgayToi = now()->addDays(30)->format('Y-m-d');
-            $hopdongsaphethan = Hopdong::where('trang_thai', 'Đang hiệu lực')
+            $hopdongsaphethan = Hopdong::where('trang_thai', ContractStatus::ACTIVE->value)
                 ->whereDate('ngay_ket_thuc', '<=', $ngay30NgayToi)
                 ->whereDate('ngay_ket_thuc', '>=', now()->format('Y-m-d'))
                 ->with(['sinhvien.taikhoan', 'phong'])
@@ -153,7 +155,7 @@ class TrangchuController extends Controller
             $diennuocbathuong = collect($diennuocbathuong);
 
             // Danh sách việc cần làm (lấy 5 mục gần nhất)
-            $danhsachdangkygannhat = Dangky::where('trangthai', 'Chờ xử lý')
+            $danhsachdangkygannhat = Dangky::where('trangthai', RegistrationStatus::PENDING->value)
                 ->orderByDesc('id')
                 ->limit(5)
                 ->get();

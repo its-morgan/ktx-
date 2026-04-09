@@ -12,11 +12,11 @@ use Illuminate\Http\Request;
 class PhongController extends Controller
 {
     /**
-     * ROUTE CÔNG KHAI: Hiển thị danh sách phòng cho khách (không cần đăng nhập).
-     * - Nhóm phòng theo tầng
-     * - Hiển thị số chỗ còn trống
+     * PUBLIC ROUTE: Display list of rooms for visitors (no login required).
+     * - Group rooms by floor
+     * - Display available slots
      */
-    public function danhsachphongcongkhai(Request $request)
+    public function listRoomsPublic(Request $request)
     {
         $tuKhoa = $request->query('q', '');
         $tangLoc = $request->query('tang', '');
@@ -54,9 +54,9 @@ class PhongController extends Controller
     }
 
     /**
-     * ROUTE CÔNG KHAI: Xem chi tiết vật tư của phòng.
+     * PUBLIC ROUTE: View details of room assets.
      */
-    public function chitietvattuphong(int $id)
+    public function viewRoomAssetsPublic(int $id)
     {
         $phong = Phong::find($id);
 
@@ -77,11 +77,11 @@ class PhongController extends Controller
     }
 
     /**
-     * Hàm này hiển thị danh sách phòng trống cho sinh viên.
-     * - Danh sách phòng lấy từ: bảng phong
-     * - Số người đang ở trong phòng lấy từ: bảng sinhvien (cột phong_id)
+     * Display available rooms for students.
+     * - Get rooms from: phong table
+     * - Current occupancy from: sinhvien table (phong_id column)
      */
-    public function danhsachphong(Request $request)
+    public function listStudentRooms(Request $request)
     {
         $tuKhoa = $request->query('q', '');
         $sinhvien = Sinhvien::where('user_id', auth()->id())->first();
@@ -115,7 +115,7 @@ class PhongController extends Controller
     /**
      * Chức năng sinh viên: xem tài sản phòng đang ở.
      */
-    public function taisanphong()
+    public function studentAssets()
     {
         $sinhvien = Sinhvien::where('user_id', auth()->id())->first();
 
@@ -135,7 +135,7 @@ class PhongController extends Controller
      * - Danh sách phòng lấy từ: bảng phong
      * - Số lượng đang ở lấy từ: bảng sinhvien (đếm theo phong_id)
      */
-    public function danhsachphongquantri(Request $request)
+    public function listRooms(Request $request)
     {
         $tuKhoa = $request->query('q', '');
         $tangLoc = $request->query('tang', '');
@@ -174,7 +174,7 @@ class PhongController extends Controller
     /**
      * Hàm này hiển thị chi tiết phòng (admin) bao gồm tài sản.
      */
-    public function chitietphong(int $id)
+    public function viewRoom(int $id)
     {
         $phong = Phong::find($id);
 
@@ -191,7 +191,7 @@ class PhongController extends Controller
     /**
      * Thêm tài sản vào phòng (admin).
      */
-    public function themtaisan(Request $request, int $id)
+    public function storeAsset(Request $request, int $id)
     {
         $phong = Phong::find($id);
 
@@ -213,7 +213,7 @@ class PhongController extends Controller
     /**
      * Cập nhật tài sản (admin).
      */
-    public function capnhattaisan(Request $request, int $id, int $taisanId)
+    public function updateAsset(Request $request, int $id, int $taisanId)
     {
         $taisan = Taisan::find($taisanId);
 
@@ -235,7 +235,7 @@ class PhongController extends Controller
     /**
      * Xóa tài sản (admin).
      */
-    public function xoataisan(int $id, int $taisanId)
+    public function destroyAsset(int $id, int $taisanId)
     {
         $taisan = Taisan::find($taisanId);
 
@@ -251,7 +251,7 @@ class PhongController extends Controller
     /**
      * Thêm vật tư vào phòng (admin).
      */
-    public function themvattu(Request $request, int $id)
+    public function storeSupply(Request $request, int $id)
     {
         $phong = Phong::find($id);
 
@@ -274,7 +274,7 @@ class PhongController extends Controller
     /**
      * Cập nhật vật tư (admin).
      */
-    public function capnhatvattu(Request $request, int $id, int $vattuId)
+    public function updateSupply(Request $request, int $id, int $vattuId)
     {
         $vattu = Vattu::find($vattuId);
 
@@ -297,7 +297,7 @@ class PhongController extends Controller
     /**
      * Xóa vật tư (admin).
      */
-    public function xoavattu(int $id, int $vattuId)
+    public function destroySupply(int $id, int $vattuId)
     {
         $vattu = Vattu::find($vattuId);
 
@@ -314,7 +314,7 @@ class PhongController extends Controller
      * Hàm này xử lý thêm mới phòng (admin).
      * - Dữ liệu lấy từ form: tenphong, giaphong, soluongtoida, mota
      */
-    public function themphong(Request $request)
+    public function storeRoom(Request $request)
     {
         $dulieu = $request->validate(
             [
@@ -355,7 +355,7 @@ class PhongController extends Controller
      * - $id lấy từ route
      * - Dữ liệu lấy từ form: tenphong, giaphong, soluongtoida, mota
      */
-    public function capnhatphong(Request $request, int $id)
+    public function updateRoom(Request $request, int $id)
     {
         $phong = Phong::find($id);
 
@@ -402,7 +402,7 @@ class PhongController extends Controller
      * Hàm này xử lý xóa phòng (admin).
      * - $id lấy từ route
      */
-    public function xoaphong(int $id)
+    public function destroyRoom(int $id)
     {
         $phong = Phong::find($id);
 

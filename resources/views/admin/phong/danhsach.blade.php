@@ -277,12 +277,22 @@
                         </div>
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
+                                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Tầng</label>
+                                <input name="tang" value="{{ $phong->tang }}" required class="linear-input mt-1" />
+                            </div>
+                            <div>
                                 <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Giá phòng</label>
                                 <input name="giaphong" value="{{ $phong->giaphong }}" required class="linear-input mt-1" />
                             </div>
+                        </div>
+                        <div class="grid gap-4 sm:grid-cols-2">
                             <div>
                                 <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Số lượng tối đa</label>
                                 <input name="soluongtoida" value="{{ $phong->soluongtoida }}" required class="linear-input mt-1" />
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Sức chứa</label>
+                                <input name="succhuamax" value="{{ $phong->succhuamax }}" required class="linear-input mt-1" />
                             </div>
                         </div>
                         <div>

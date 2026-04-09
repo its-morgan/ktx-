@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lienhe;
+use App\Models\Thongbao;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class LandingController extends Controller
@@ -30,11 +32,22 @@ class LandingController extends Controller
             ]
         );
 
-        Lienhe::create($duLieu);
+        DB::transaction(function () use ($duLieu) {
+            Lienhe::create([
+                ...$duLieu,
+                'trang_thai' => Lienhe::TRANG_THAI_CHUA_XU_LY,
+            ]);
+
+            Thongbao::create([
+                'tieude' => 'Liên hệ mới từ landing page',
+                'noidung' => 'Họ tên: ' . $duLieu['ho_ten'] . ' | Email: ' . $duLieu['email'] . ' | Nội dung: ' . $duLieu['noi_dung'],
+                'doituong' => 'admin',
+                'ngaydang' => now(),
+            ]);
+        });
 
         return redirect()
             ->to(route('home').'#lien-he')
             ->with('lienhe_thanhcong', 'Cảm ơn bạn đã liên hệ. Ban quản lý sẽ phản hồi sớm.');
     }
 }
-

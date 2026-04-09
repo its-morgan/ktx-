@@ -91,12 +91,12 @@
                 <div class="space-y-2">
                     @foreach ($danhsachdangkygannhat as $dangky)
                         @php
-                            $trangThai = $dangky->trangthai ?? 'Chờ xử lý';
+                            $trangThai = $dangky->trangthai ?? \App\Enums\RegistrationStatus::PENDING->value;
                             $badgeClass = 'bg-amber-100 text-amber-700';
 
-                            if ($trangThai === 'Đã duyệt') {
+                            if ($trangThai === \App\Enums\RegistrationStatus::APPROVED->value) {
                                 $badgeClass = 'bg-emerald-100 text-emerald-700';
-                            } elseif ($trangThai === 'Từ chối') {
+                            } elseif ($trangThai === \App\Enums\RegistrationStatus::REJECTED->value) {
                                 $badgeClass = 'bg-rose-100 text-rose-700';
                             }
                         @endphp

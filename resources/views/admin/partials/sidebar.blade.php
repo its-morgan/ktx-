@@ -93,6 +93,11 @@
                 <span>Người dùng</span>
             </a>
 
+            <a href="{{ route('admin.quanlylienhe') }}"
+               class="{{ $itemBase }} {{ request()->routeIs('admin.quanlylienhe') ? $itemActive : $itemDefault }}">
+                <span>Liên hệ</span>
+            </a>
+
             <a href="javascript:void(0)"
                class="{{ $itemBase }} text-slate-400 cursor-not-allowed">
                 <span>Phân quyền (Sắp triển khai)</span>

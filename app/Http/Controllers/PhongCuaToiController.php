@@ -57,13 +57,13 @@ class PhongCuaToiController extends Controller
 
         // Hợp đồng hiện tại
         $hopdongHienTai = Hopdong::where('sinhvien_id', $sinhvien->id)
-            ->where('trang_thai', 'Đang hiệu lực')
+            ->where('trang_thai', Hopdong::TRANGTHAI_DANG_HIEU_LUC)
             ->with('phong')
             ->first();
 
         // Hóa đơn chưa thanh toán
         $hoadonChuaThanhToan = Hoadon::where('phong_id', $sinhvien->phong_id)
-            ->where('trangthaithanhtoan', 'Chưa thanh toán')
+            ->where('trangthaithanhtoan', Hoadon::TRANGTHAI_CHUA_THANH_TOAN)
             ->orderByDesc('nam')
             ->orderByDesc('thang')
             ->get();
@@ -134,10 +134,10 @@ class PhongCuaToiController extends Controller
         return Phong::when($gioiTinhSinhVien, function ($query) use ($gioiTinhSinhVien) {
                 return $query->where('gioitinh', $gioiTinhSinhVien);
             })
+            ->withCount('danhsachsinhvien')
             ->get()
-            ->filter(function ($phong) {
-                $soNguoiDangO = Sinhvien::where('phong_id', $phong->id)->count();
-                return $soNguoiDangO < $phong->succhuamax;
+            ->filter(function (Phong $phong) {
+                return (int) $phong->danhsachsinhvien_count < (int) $phong->succhuamax;
             })
             ->take(5);
     }

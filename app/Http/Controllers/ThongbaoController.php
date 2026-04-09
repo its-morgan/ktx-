@@ -10,7 +10,7 @@ class ThongbaoController extends Controller
     /**
      * Danh sách thông báo cho sinh viên.
      */
-    public function danhsach(Request $request)
+    public function listAnnouncements(Request $request)
     {
         $loai = $request->query('loai', 'tatca');
 
@@ -59,7 +59,7 @@ class ThongbaoController extends Controller
     /**
      * Chi tiết thông báo cho sinh viên.
      */
-    public function chitiet(int $id)
+    public function viewAnnouncement(int $id)
     {
         $thongbao = Thongbao::where('id', $id)
             ->where(function ($query) {
@@ -98,7 +98,7 @@ class ThongbaoController extends Controller
     /**
      * Danh sách thông báo (admin).
      */
-    public function index()
+    public function listAnnouncementsAdmin()
     {
         $thongbao = Thongbao::orderByDesc('ngaydang')->paginate(20);
 
@@ -108,7 +108,7 @@ class ThongbaoController extends Controller
     /**
      * Tạo thông báo mới (admin).
      */
-    public function store(Request $request)
+    public function storeAnnouncement(Request $request)
     {
         $dulieu = $request->validate([
             'tieude' => ['required', 'string', 'max:255'],
@@ -136,7 +136,7 @@ class ThongbaoController extends Controller
     /**
      * Cập nhật thông báo (admin).
      */
-    public function update(Request $request, int $id)
+    public function updateAnnouncement(Request $request, int $id)
     {
         $thongbao = Thongbao::find($id);
 
@@ -170,7 +170,7 @@ class ThongbaoController extends Controller
     /**
      * Xóa thông báo (admin).
      */
-    public function destroy(int $id)
+    public function destroyAnnouncement(int $id)
     {
         $thongbao = Thongbao::find($id);
 

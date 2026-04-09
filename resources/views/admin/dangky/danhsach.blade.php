@@ -7,7 +7,7 @@
     </div>
 
     <div class="mb-4 flex flex-wrap items-center gap-2">
-        @foreach (['Tất cả', 'Chờ xử lý', 'Đã duyệt', 'Từ chối'] as $loai)
+        @foreach (['Tất cả', \App\Enums\RegistrationStatus::PENDING->value, \App\Enums\RegistrationStatus::APPROVED->value, \App\Enums\RegistrationStatus::REJECTED->value] as $loai)
             <a href="{{ route('admin.duyetdangky', ['status' => $loai]) }}"
                class="rounded-lg px-3 py-2 text-sm font-medium {{ (isset($status) && $status === $loai) || (!isset($status) && $loai === 'Tất cả') ? 'bg-gray-900 text-white' : 'bg-gray-100 text-[#606060]' }}">
                 {{ $loai }}
@@ -48,9 +48,9 @@
                         <td class="px-6 py-4">
                             @php
                                 $badgeType = match ($dangky->trangthai) {
-                                    'Đã duyệt' => 'success',
-                                    'Từ chối' => 'danger',
-                                    'Chờ xử lý' => 'warning',
+                                    \App\Enums\RegistrationStatus::APPROVED->value => 'success',
+                                    \App\Enums\RegistrationStatus::REJECTED->value => 'danger',
+                                    \App\Enums\RegistrationStatus::PENDING->value => 'warning',
                                         default => 'info',
                                 };
                             @endphp
@@ -58,7 +58,7 @@
                         </td>
                         <td class="px-6 py-4">{{ $dangky->ghichu }}</td>
                         <td class="px-6 py-4 text-right">
-                            @if ($dangky->trangthai === 'Chờ xử lý')
+                            @if ($dangky->trangthai === \App\Enums\RegistrationStatus::PENDING->value)
                                 <form method="POST" action="{{ route('admin.xulyduyetdangky', ['id' => $dangky->id]) }}" class="inline">
                                     @csrf
                                     <input type="date" name="ngay_het_han" value="{{ now()->addMonths(5)->format('Y-m-d') }}" class="rounded-lg border border-gray-200/80 p-1 text-sm" />
@@ -128,4 +128,3 @@
     @endforeach
 @endpush
 @endsection
-
