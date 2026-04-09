@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -26,9 +27,11 @@ return new class extends Migration
         DB::table('baohong')->where('trangthai', 'daxong')->update(['trangthai' => 'Đã xong']);
 
         // Đổi default trong MySQL để về sau insert không bị quay lại giá trị cũ
-        DB::statement("ALTER TABLE `dangky` MODIFY `trangthai` VARCHAR(255) NOT NULL DEFAULT 'Chờ xử lý'");
-        DB::statement("ALTER TABLE `hoadon` MODIFY `trangthaithanhtoan` VARCHAR(255) NOT NULL DEFAULT 'Chưa thanh toán'");
-        DB::statement("ALTER TABLE `baohong` MODIFY `trangthai` VARCHAR(255) NOT NULL DEFAULT 'Chờ sửa'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE `dangky` MODIFY `trangthai` VARCHAR(255) NOT NULL DEFAULT 'Chờ xử lý'");
+            DB::statement("ALTER TABLE `hoadon` MODIFY `trangthaithanhtoan` VARCHAR(255) NOT NULL DEFAULT 'Chưa thanh toán'");
+            DB::statement("ALTER TABLE `baohong` MODIFY `trangthai` VARCHAR(255) NOT NULL DEFAULT 'Chờ sửa'");
+        }
     }
 
     /**
@@ -47,8 +50,10 @@ return new class extends Migration
         DB::table('baohong')->where('trangthai', 'Chờ sửa')->update(['trangthai' => 'chosua']);
         DB::table('baohong')->where('trangthai', 'Đã xong')->update(['trangthai' => 'daxong']);
 
-        DB::statement("ALTER TABLE `dangky` MODIFY `trangthai` VARCHAR(255) NOT NULL DEFAULT 'choxuly'");
-        DB::statement("ALTER TABLE `hoadon` MODIFY `trangthaithanhtoan` VARCHAR(255) NOT NULL DEFAULT 'chuathanhtoan'");
-        DB::statement("ALTER TABLE `baohong` MODIFY `trangthai` VARCHAR(255) NOT NULL DEFAULT 'chosua'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE `dangky` MODIFY `trangthai` VARCHAR(255) NOT NULL DEFAULT 'choxuly'");
+            DB::statement("ALTER TABLE `hoadon` MODIFY `trangthaithanhtoan` VARCHAR(255) NOT NULL DEFAULT 'chuathanhtoan'");
+            DB::statement("ALTER TABLE `baohong` MODIFY `trangthai` VARCHAR(255) NOT NULL DEFAULT 'chosua'");
+        }
     }
 };
