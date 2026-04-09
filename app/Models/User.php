@@ -12,6 +12,12 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_ADMIN_TRUONG = 'admin_truong';
+    public const ROLE_ADMIN_TOA_NHA = 'admin_toanha';
+    public const ROLE_LE_TAN = 'le_tan';
+    public const ROLE_SINH_VIEN = 'sinhvien';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -51,5 +57,20 @@ class User extends Authenticatable
     public function sinhvien()
     {
         return $this->hasOne(Sinhvien::class, 'user_id');
+    }
+
+    public function hasAnyRole(array $roles): bool
+    {
+        return in_array($this->vaitro, $roles, true);
+    }
+
+    public function isAdminGroup(): bool
+    {
+        return $this->hasAnyRole([
+            self::ROLE_ADMIN,
+            self::ROLE_ADMIN_TRUONG,
+            self::ROLE_ADMIN_TOA_NHA,
+            self::ROLE_LE_TAN,
+        ]);
     }
 }

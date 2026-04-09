@@ -2,7 +2,7 @@
 
 @section('noidung')
     <div class="mb-6">
-        <a href="{{ route('student.phongcuatoi.hoadon') }}" class="mb-2 inline-flex items-center text-sm text-[#606060] hover:text-[#121212]">
+        <a href="{{ route('student.hoadoncuaem') }}" class="mb-2 inline-flex items-center text-sm text-[#606060] hover:text-[#121212]">
             <svg class="mr-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>

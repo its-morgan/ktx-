@@ -228,7 +228,7 @@
                 <div class="rounded-xl border border-gray-200/70 bg-white p-6">
                     <h3 class="mb-3 font-semibold text-[#121212]">Thao tác nhanh</h3>
                     <div class="space-y-2">
-                        <a href="{{ route('student.phongcuatoi.hoadon') }}" class="flex items-center gap-2 rounded-lg p-2 text-sm text-[#606060] hover:bg-gray-50">
+                        <a href="{{ route('student.hoadoncuaem') }}" class="flex items-center gap-2 rounded-lg p-2 text-sm text-[#606060] hover:bg-gray-50">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
@@ -247,6 +247,33 @@
                             Xem tài sản phòng
                         </a>
                     </div>
+                </div>
+
+                <div class="rounded-xl border border-gray-200/70 bg-white p-6">
+                    <h3 class="mb-2 font-semibold text-[#121212]">Đăng ký đổi phòng</h3>
+                    <p class="mb-3 text-xs text-[#606060]">Xem danh sách phòng trống để lấy mã phòng trước khi gửi yêu cầu.</p>
+                    <a href="{{ route('student.danhsachphong') }}" class="mb-3 inline-block text-xs text-blue-600 hover:text-blue-700">Xem danh sách phòng trống</a>
+                    <form method="POST" action="{{ route('student.yeucaudoiphong') }}" class="space-y-2">
+                        @csrf
+                        <input
+                            type="number"
+                            name="phong_moi_id"
+                            min="1"
+                            required
+                            class="w-full rounded-lg border border-gray-200/80 px-3 py-2 text-sm"
+                            placeholder="Nhập mã phòng muốn đổi"
+                        />
+                        <textarea
+                            name="lydo"
+                            rows="3"
+                            required
+                            class="w-full rounded-lg border border-gray-200/80 px-3 py-2 text-sm"
+                            placeholder="Nhập lý do đổi phòng"
+                        ></textarea>
+                        <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
+                            Đăng ký đổi phòng
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

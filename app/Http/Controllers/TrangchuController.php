@@ -17,6 +17,21 @@ use Illuminate\Support\Facades\DB;
 class TrangchuController extends Controller
 {
     /**
+     * Route riêng cho dashboard admin để tiện kiểm thử độc lập.
+     */
+    public function hienthiAdmin()
+    {
+        return $this->hienthi();
+    }
+
+    /**
+     * Route riêng cho dashboard sinh viên để tiện kiểm thử độc lập.
+     */
+    public function hienthiSinhvien()
+    {
+        return $this->hienthi();
+    }
+    /**
      * Hàm này hiển thị dashboard (trang chủ) theo vai trò.
      * - Vai trò lấy từ: Auth::user()->vaitro (bảng users, cột vaitro)
      * - Số liệu tổng quan lấy từ: bảng phong, sinhvien, hoadon
@@ -54,16 +69,17 @@ class TrangchuController extends Controller
         $danhsachbaohonggannhat = collect();
         $doanhthugannhat = [];
         $nhan = [];
-        $thongbao = Thongbao::orderByDesc('ngaydang')->limit(5)->get();
+        $thongbao = collect();
         $hopdongsaphethan = collect();
         $diennuocbathuong = collect();
 
         if ($vaitro === 'admin') {
+            $thongbao = Thongbao::orderByDesc('ngaydang')->limit(5)->get();
             // Đếm phòng trống dựa theo số sinh viên hiện tại và số lượng tối đa
             $danhsachphong = Phong::all();
             $tongphongtrong = $danhsachphong->filter(function ($phong) {
                 $soluonghientai = Sinhvien::where('phong_id', $phong->id)->count();
-                return $soluonghientai < (int) $phong->soluongtoida;
+                return $soluonghientai < (int) $phong->succhuamax;
             })->count();
 
             // Đếm đăng ký đang chờ xử lý
@@ -105,7 +121,7 @@ class TrangchuController extends Controller
                 $phongId = $hoadon->phong_id;
                 if (isset($hoadonThangTruoc[$phongId])) {
                     $hoadonTruoc = $hoadonThangTruoc[$phongId];
-                    
+
                     // Tính số điện, nước tiêu thụ
                     $dienTieuThuThangNay = $hoadon->chisodienmoi - $hoadon->chisodiencu;
                     $dienTieuThuThangTruoc = $hoadonTruoc->chisodienmoi - $hoadonTruoc->chisodiencu;
@@ -155,24 +171,24 @@ class TrangchuController extends Controller
                 $m = now()->subMonths($i);
                 $thang = (int)$m->format('m');
                 $nam = (int)$m->format('Y');
-                
+
                 // Tính tiền phòng riêng
                 $tongtienphong = Hoadon::where('thang', $thang)
                     ->where('nam', $nam)
-                    ->where('trangthaithanhtoan', 'Da thanh toan')
+                    ->where('trangthaithanhtoan', Hoadon::TRANGTHAI_DA_THANH_TOAN)
                     ->sum('tienphong');
-                
+
                 // Tính tiền dịch vụ (điện + nước + phí dịch vụ)
                 $tongtiendichvu = Hoadon::where('thang', $thang)
                     ->where('nam', $nam)
-                    ->where('trangthaithanhtoan', 'Da thanh toan')
+                    ->where('trangthaithanhtoan', Hoadon::TRANGTHAI_DA_THANH_TOAN)
                     ->sum(DB::raw('tiendien + tiennuoc + phidichvu'));
-                
+
                 $doanhthugannhat_tienphong[] = (int)$tongtienphong;
                 $doanhthugannhat_tiendichvu[] = (int)$tongtiendichvu;
                 $nhan[] = $m->format('m/Y');
             }
-            
+
             $doanhthugannhat = [
                 'tienphong' => $doanhthugannhat_tienphong,
                 'tiendichvu' => $doanhthugannhat_tiendichvu,
@@ -229,6 +245,32 @@ class TrangchuController extends Controller
 
             $taisanphong = Taisan::where('phong_id', $sinhvien->phong_id)->get();
         }
+
+        $thongbao = Thongbao::query()
+            ->where(function ($query) use ($sinhvien) {
+                $query->where(function ($subQuery) {
+                    $subQuery->where('doituong', 'sinhvien')
+                        ->whereNull('phong_id')
+                        ->whereNull('sinhvien_id');
+                });
+
+                if ($sinhvien && $sinhvien->phong_id) {
+                    $query->orWhere(function ($subQuery) use ($sinhvien) {
+                        $subQuery->where('doituong', 'sinhvien')
+                            ->where('phong_id', $sinhvien->phong_id);
+                    });
+                }
+
+                if ($sinhvien) {
+                    $query->orWhere(function ($subQuery) use ($sinhvien) {
+                        $subQuery->where('doituong', 'sinhvien')
+                            ->where('sinhvien_id', $sinhvien->id);
+                    });
+                }
+            })
+            ->orderByDesc('ngaydang')
+            ->limit(5)
+            ->get();
 
         $lienhekhancap = [
             ['title' => 'Bảo vệ', 'phone' => '0900 111 222'],

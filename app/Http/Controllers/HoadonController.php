@@ -11,41 +11,19 @@ use Illuminate\Support\Facades\Auth;
 
 class HoadonController extends Controller
 {
-    /**
-     * Trạng thái thanh toán: chưa thanh toán.
-     */
-    private const TRANGTHAI_CHUATHANHTOAN = 'Chưa thanh toán';
+    private const TRANGTHAI_CHUATHANHTOAN = Hoadon::TRANGTHAI_CHUA_THANH_TOAN;
+    private const TRANGTHAI_DATHANHTOAN = Hoadon::TRANGTHAI_DA_THANH_TOAN;
 
-    /**
-     * Trạng thái thanh toán: đã thanh toán.
-     */
-    private const TRANGTHAI_DATHANHTOAN = 'Đã thanh toán';
-
-    /**
-     * Đơn giá điện (VND / số) để demo.
-     */
     private const DONGIADIEN = 3500;
-
-    /**
-     * Đơn giá nước (VND / số) để demo.
-     */
     private const DONGIANUOC = 15000;
 
-    /**
-     * Lấy giá cấu hình từ bảng cauhinh, nếu không có dùng giá mặc định.
-     * - key: gia_dien, gia_nuoc, hotline.
-     */
-    private function layGiaCauHinh(string $key, string $macdinh)
+    private function layGiaCauHinh(string $key, string $macdinh): string
     {
         $item = Cauhinh::where('ten', $key)->first();
+
         return $item ? $item->giatri : $macdinh;
     }
 
-    /**
-     * Hàm này hiển thị danh sách hóa đơn cho admin.
-     * - Danh sách hóa đơn lấy từ: bảng hoadon
-     * - Danh sách phòng lấy từ: bảng phong
-     */
     public function danhsachhoadonquantri()
     {
         $danhsachhoadon = Hoadon::all();
@@ -59,12 +37,6 @@ class HoadonController extends Controller
         ]);
     }
 
-    /**
-     * Hàm này xử lý tạo/cập nhật hóa đơn khi admin nhập chỉ số điện nước.
-     * - Dữ liệu lấy từ form: phong_id, thang, nam, chisodiencu, chisodienmoi, chisonuoccu, chisonuocmoi
-     * - Tiền được tính theo công thức:
-     *   tongtien = giaphong + (chisodienmoi - chisodiencu)*DONGIADIEN + (chisonuocmoi - chisonuoccu)*DONGIANUOC
-     */
     public function xulyhoadon(Request $request)
     {
         $dulieu = $request->validate(
@@ -78,60 +50,42 @@ class HoadonController extends Controller
                 'chisonuocmoi' => ['required', 'numeric', 'min:0'],
             ],
             [
-                'phong_id.required' => 'Bạn chưa chọn phòng.',
-                'thang.required' => 'Tháng không được để trống.',
-                'nam.required' => 'Năm không được để trống.',
-                'chisodiencu.required' => 'Chỉ số điện cũ không được để trống.',
-                'chisodienmoi.required' => 'Chỉ số điện mới không được để trống.',
-                'chisonuoccu.required' => 'Chỉ số nước cũ không được để trống.',
-                'chisonuocmoi.required' => 'Chỉ số nước mới không được để trống.',
-                'chisodiencu.numeric' => 'Chỉ số điện cũ phải là số.',
-                'chisodienmoi.numeric' => 'Chỉ số điện mới phải là số.',
-                'chisonuoccu.numeric' => 'Chỉ số nước cũ phải là số.',
-                'chisonuocmoi.numeric' => 'Chỉ số nước mới phải là số.',
+                'phong_id.required' => 'Ban chua chon phong.',
+                'thang.required' => 'Thang khong duoc de trong.',
+                'nam.required' => 'Nam khong duoc de trong.',
+                'chisodiencu.required' => 'Chi so dien cu khong duoc de trong.',
+                'chisodienmoi.required' => 'Chi so dien moi khong duoc de trong.',
+                'chisonuoccu.required' => 'Chi so nuoc cu khong duoc de trong.',
+                'chisonuocmoi.required' => 'Chi so nuoc moi khong duoc de trong.',
             ]
         );
 
-        // Kiểm tra chỉ số mới phải >= chỉ số cũ
         if ((int) $dulieu['chisodienmoi'] < (int) $dulieu['chisodiencu']) {
-            return redirect()
-                ->back()
-                ->withErrors(['chisodienmoi' => 'Chỉ số điện mới phải lớn hơn hoặc bằng chỉ số điện cũ.'])
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Chỉ số điện mới phải lớn hơn hoặc bằng chỉ số điện cũ.')
-                ->withInput();
+            return redirect()->back()->withErrors([
+                'chisodienmoi' => 'Chi so dien moi phai lon hon hoac bang chi so dien cu.',
+            ])->with('toast_loai', 'loi')->with('toast_noidung', 'Chi so dien moi phai lon hon hoac bang chi so dien cu.')->withInput();
         }
 
         if ((int) $dulieu['chisonuocmoi'] < (int) $dulieu['chisonuoccu']) {
-            return redirect()
-                ->back()
-                ->withErrors(['chisonuocmoi' => 'Chỉ số nước mới phải lớn hơn hoặc bằng chỉ số nước cũ.'])
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Chỉ số nước mới phải lớn hơn hoặc bằng chỉ số nước cũ.')
-                ->withInput();
+            return redirect()->back()->withErrors([
+                'chisonuocmoi' => 'Chi so nuoc moi phai lon hon hoac bang chi so nuoc cu.',
+            ])->with('toast_loai', 'loi')->with('toast_noidung', 'Chi so nuoc moi phai lon hon hoac bang chi so nuoc cu.')->withInput();
         }
 
-        // Lấy phòng từ bảng phong để lấy giaphong
         $phong = Phong::find((int) $dulieu['phong_id']);
         if (! $phong) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Phòng không tồn tại.');
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Phong khong ton tai.');
         }
 
-        // Lấy cấu hình giá từ bảng cauhinh thay vì ghi cứng
         $dongiadien = (int) $this->layGiaCauHinh('gia_dien', (string) self::DONGIADIEN);
         $dongianuoc = (int) $this->layGiaCauHinh('gia_nuoc', (string) self::DONGIANUOC);
 
-        // Tính tiền điện nước theo công thức đã chọn
         $tiendien = ((int) $dulieu['chisodienmoi'] - (int) $dulieu['chisodiencu']) * $dongiadien;
         $tiennuoc = ((int) $dulieu['chisonuocmoi'] - (int) $dulieu['chisonuoccu']) * $dongianuoc;
         $tienphong = (int) $phong->giaphong;
-        $phidichvu = 0; // Có thể thêm logic tính phí dịch vụ khác ở đây
+        $phidichvu = 0;
         $tongtien = $tienphong + $tiendien + $tiennuoc + $phidichvu;
 
-        // Tìm hóa đơn theo phòng + tháng + năm (nếu có thì update, chưa có thì create)
         $hoadoncu = Hoadon::where('phong_id', (int) $dulieu['phong_id'])
             ->where('thang', (int) $dulieu['thang'])
             ->where('nam', (int) $dulieu['nam'])
@@ -169,83 +123,103 @@ class HoadonController extends Controller
             ]);
         }
 
-        return redirect()
-            ->back()
-            ->with('toast_loai', 'thanhcong')
-            ->with('toast_noidung', 'Cập nhật hóa đơn thành công.');
+        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Cap nhat hoa don thanh cong.');
     }
 
-    /**
-     * Hàm này hiển thị danh sách hóa đơn của sinh viên đang đăng nhập.
-     * - Sinh viên hiện tại lấy từ: bảng sinhvien (lọc theo user_id)
-     * - Hóa đơn lấy từ: bảng hoadon (lọc theo phong_id)
-     */
     public function hoadoncuatoi()
+    {
+        $sinhvien = Sinhvien::where('user_id', Auth::id())->first();
+        if (! $sinhvien || ! $sinhvien->phong_id) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Ban chua co phong.');
+        }
+
+        $lichSuHoaDon = Hoadon::where('phong_id', (int) $sinhvien->phong_id)
+            ->orderByDesc('nam')
+            ->orderByDesc('thang')
+            ->paginate(12);
+
+        $thongKe = [
+            'tong_hoa_don' => Hoadon::where('phong_id', (int) $sinhvien->phong_id)->count(),
+            'da_thanh_toan' => Hoadon::where('phong_id', (int) $sinhvien->phong_id)
+                ->where('trangthaithanhtoan', self::TRANGTHAI_DATHANHTOAN)
+                ->count(),
+            'chua_thanh_toan' => Hoadon::where('phong_id', (int) $sinhvien->phong_id)
+                ->where('trangthaithanhtoan', self::TRANGTHAI_CHUATHANHTOAN)
+                ->count(),
+            'tong_tien_da_tra' => Hoadon::where('phong_id', (int) $sinhvien->phong_id)
+                ->where('trangthaithanhtoan', self::TRANGTHAI_DATHANHTOAN)
+                ->sum('tongtien'),
+        ];
+
+        return view('student.phongcuatoi.lichSuHoaDon', [
+            'lichSuHoaDon' => $lichSuHoaDon,
+            'thongKe' => $thongKe,
+        ]);
+    }
+
+    public function xacnhanthanhtoan(int $id)
+    {
+        $hoadon = Hoadon::find($id);
+        if (! $hoadon) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Khong tim thay hoa don.');
+        }
+
+        if (! $hoadon->transitionTo(self::TRANGTHAI_DATHANHTOAN)) {
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Khong the chuyen trang thai hoa don o buoc hien tai.');
+        }
+
+        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Xac nhan thanh toan thanh cong.');
+    }
+
+    public function chiTietHoaDonCuaToi(int $id)
     {
         $sinhvien = Sinhvien::where('user_id', Auth::id())->first();
 
         if (! $sinhvien || ! $sinhvien->phong_id) {
-            return view('student.hoadon.danhsach', [
-                'danhsachhoadon' => collect(),
-            ]);
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Ban chua co phong.');
         }
 
-        $danhsachhoadon = Hoadon::where('phong_id', (int) $sinhvien->phong_id)->get();
-
-        return view('student.hoadon.danhsach', [
-            'danhsachhoadon' => $danhsachhoadon,
-        ]);
-    }
-
-    /**
-     * Hàm này xử lý admin xác nhận đã thanh toán cho hóa đơn.
-     * - $id lấy từ route (id của hoadon)
-     */
-    public function xacnhanthanhtoan(int $id)
-    {
-        $hoadon = Hoadon::find($id);
+        $hoadon = Hoadon::where('id', $id)
+            ->where('phong_id', (int) $sinhvien->phong_id)
+            ->with('phong')
+            ->first();
 
         if (! $hoadon) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Không tìm thấy hóa đơn.');
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Khong tim thay hoa don.');
         }
 
-        $hoadon->update([
-            'trangthaithanhtoan' => self::TRANGTHAI_DATHANHTOAN,
-        ]);
+        $soNguoiTrongPhong = Sinhvien::where('phong_id', (int) $sinhvien->phong_id)->count();
+        $tienDienMoiNguoi = $soNguoiTrongPhong > 0 ? $hoadon->tiendien / $soNguoiTrongPhong : 0;
+        $tienNuocMoiNguoi = $soNguoiTrongPhong > 0 ? $hoadon->tiennuoc / $soNguoiTrongPhong : 0;
+        $tienPhongMoiNguoi = $soNguoiTrongPhong > 0 ? $hoadon->tienphong / $soNguoiTrongPhong : 0;
+        $phiDichVuMoiNguoi = $soNguoiTrongPhong > 0 ? $hoadon->phidichvu / $soNguoiTrongPhong : 0;
+        $tongTienMoiNguoi = $tienDienMoiNguoi + $tienNuocMoiNguoi + $tienPhongMoiNguoi + $phiDichVuMoiNguoi;
 
-        return redirect()
-            ->back()
-            ->with('toast_loai', 'thanhcong')
-            ->with('toast_noidung', 'Xác nhận thanh toán thành công.');
+        return view('student.phongcuatoi.chiTietHoaDon', [
+            'hoadon' => $hoadon,
+            'soNguoiTrongPhong' => $soNguoiTrongPhong,
+            'chiTietTien' => [
+                'tien_phong' => round($tienPhongMoiNguoi, 0),
+                'tien_dien' => round($tienDienMoiNguoi, 0),
+                'tien_nuoc' => round($tienNuocMoiNguoi, 0),
+                'phi_dich_vu' => round($phiDichVuMoiNguoi, 0),
+                'tong_tien' => round($tongTienMoiNguoi, 0),
+            ],
+        ]);
     }
 
-    /**
-     * Xuất hóa đơn PDF.
-     * - Sử dụng Barryvdh\DomPDF\Facade\Pdf (cần cài đặt package)
-     */
     public function xuatPDF(int $id)
     {
         $hoadon = Hoadon::with(['phong.danhsachsinhvien.taikhoan'])->find($id);
-
         if (! $hoadon) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Không tìm thấy hóa đơn.');
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Khong tim thay hoa don.');
         }
 
         $phong = $hoadon->phong;
         $danhsachsinhvien = $phong ? $phong->danhsachsinhvien : collect();
 
-        // Nếu chưa cài DomPDF, trả về thông báo
         if (! class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Vui lòng cài đặt package barryvdh/laravel-dompdf: composer require barryvdh/laravel-dompdf');
+            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Vui long cai dat barryvdh/laravel-dompdf.');
         }
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.hoadon', [

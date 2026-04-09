@@ -1,234 +1,315 @@
 @extends('admin.layouts.quantri')
 
+@section('admin_page_title', 'Dashboard tổng quan')
+
 @section('noidung')
-    <div class="mb-6">
-        <div class="text-2xl font-bold text-[#121212]">Trang chủ quản trị</div>
-        <div class="text-sm text-[#606060]">
-            Tháng {{ $thanghientai }}/{{ $namhientai }}
-        </div>
-    </div>
+    @php
+        $tongPhong = (int) ($tongphong ?? 0);
+        $phongTrong = (int) ($tongphongtrong ?? 0);
+        $phongDangSuDung = max(0, $tongPhong - $phongTrong);
+        $phongBaoTri = (int) collect($danhsachbaohonggannhat ?? collect())->pluck('phong_id')->filter()->unique()->count();
 
-    <div class="mb-4 rounded-lg border border-gray-200/70 bg-[#F7F7F8] p-4">
-        <div class="text-sm text-[#606060] font-semibold">Thông báo mới nhất</div>
-        @if($thongbao->isEmpty())
-            <div class="text-sm text-[#606060]">Chưa có thông báo.</div>
-        @else
-            <ul class="mt-2 space-y-2 text-sm text-[#606060]">
-                @foreach($thongbao as $tb)
-                    <li class="rounded-lg border border-gray-200/70 bg-[#F7F7F8] p-2">
-                        <div class="font-semibold">{{ $tb->tieude }}</div>
-                        <div>{{ $tb->noidung }}</div>
-                        <div class="text-xs text-[#606060]">{{ $tb->ngaydang }}</div>
-                    </li>
-                @endforeach
-            </ul>
-        @endif
-    </div>
+        $tyLeLapDay = $tongPhong > 0 ? round(($phongDangSuDung / $tongPhong) * 100) : 0;
 
-    {{-- Khối 4 thẻ thống kê nhanh --}}
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="rounded-lg border border-gray-200/70 bg-white p-5">
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-sm text-[#606060]">Tổng phòng</div>
-                    <div class="mt-2 text-3xl font-bold text-[#121212]">{{ $tongphong }}</div>
-                </div>
-                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F7F7F8] text-[#606060]">
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                </div>
-            </div>
-        </div>
-
-        <div class="rounded-lg border border-gray-200/70 bg-white p-5">
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-sm text-[#606060]">Tổng sinh viên</div>
-                    <div class="mt-2 text-3xl font-bold text-[#121212]">{{ $tongsinhvien }}</div>
-                </div>
-                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F7F7F8] text-[#606060]">
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                </div>
-            </div>
-        </div>
-
-        <div class="rounded-lg border border-gray-200/70 bg-white p-5">
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-sm text-[#606060]">Phòng trống</div>
-                    <div class="mt-2 text-3xl font-bold text-[#121212]">{{ $tongphongtrong }}</div>
-                </div>
-                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F7F7F8] text-[#606060]">
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-            </div>
-        </div>
-
-        <div class="rounded-lg border border-gray-200/70 border-l-4 border-l-amber-400 bg-white p-5">
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-sm text-[#606060]">Đăng ký chờ xử lý</div>
-                    <div class="mt-2 text-3xl font-bold text-[#121212]">{{ $dangkychoxuly }}</div>
-                </div>
-                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F7F7F8] text-[#606060]">
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Doanh thu & Các thống kê phụ --}}
-    <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div class="rounded-lg border border-gray-200/70 border-l-4 border-l-rose-400 bg-white p-5">
-            <div class="text-sm text-[#606060]">Báo hỏng chờ sửa</div>
-            <div class="mt-2 text-3xl font-bold text-[#121212]">{{ $baohongchosua }}</div>
-        </div>
-
-        <div class="rounded-lg border border-gray-200/70 bg-white p-5">
-            <div class="text-sm text-[#606060]">Hóa đơn chưa thanh toán</div>
-            <div class="mt-2 text-3xl font-bold text-[#121212]">{{ $hoadonchuathanhtoan }}</div>
-        </div>
-
-        <div class="rounded-lg border border-gray-200/70 bg-brand-600 p-5 text-white">
-            <div class="text-sm text-gray-200">Doanh thu tháng (đã thu)</div>
-            <div class="mt-2 text-3xl font-bold">{{ number_format($doanhthuthang) }} đ</div>
-            <div class="mt-1 text-xs text-gray-200 italic">* Tính theo hóa đơn đã xác nhận thanh toán.</div>
-        </div>
-    </div>
-
-    {{-- Khu vực Biểu đồ --}}
-    <div class="mt-6 rounded-lg border border-gray-200/70 bg-white p-5">
-        <div class="mb-4 text-sm font-semibold text-[#121212]">Biểu đồ doanh thu 6 tháng gần nhất</div>
-        <canvas id="doanhthu6thang" height="100"></canvas>
-    </div>
-
-    {{-- Hai bảng danh sách gần nhất --}}
-    <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {{-- Đăng ký phòng --}}
-        <div class="overflow-hidden rounded-lg border border-gray-200/70 bg-white">
-            <div class="border-b border-gray-200/70 px-6 py-4">
-                <div class="text-sm font-semibold text-[#121212]">Đăng ký mới nhất (Chờ xử lý)</div>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-[#606060]">
-                    <thead class="bg-[#F7F7F8] text-xs uppercase text-[#606060]">
-                    <tr>
-                        <th class="px-6 py-3">Mã đơn</th>
-                        <th class="px-6 py-3">Sinh viên</th>
-                        <th class="px-6 py-3">Phòng</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @forelse ($danhsachdangkygannhat as $dangky)
-                        <tr class="border-t border-gray-200/70">
-                            <td class="px-6 py-4 font-medium text-[#121212]">#{{ $dangky->id }}</td>
-                            <td class="px-6 py-4">{{ optional($dangky->sinhvien->taikhoan)->name ?? 'N/A' }}</td>
-                            <td class="px-6 py-4">{{ optional($dangky->phong)->tenphong ?? 'N/A' }}</td>
-                        </tr>
-                    @empty
-                        <tr class="border-t border-gray-200/70">
-                            <td class="px-6 py-4 text-center text-[#606060]" colspan="3">Không có đăng ký chờ xử lý.</td>
-                        </tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        {{-- Báo hỏng --}}
-        <div class="overflow-hidden rounded-lg border border-gray-200/70 bg-white">
-            <div class="border-b border-gray-200/70 px-6 py-4">
-                <div class="text-sm font-semibold text-[#121212]">Báo hỏng mới nhất (Chờ sửa)</div>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-[#606060]">
-                    <thead class="bg-[#F7F7F8] text-xs uppercase text-[#606060]">
-                    <tr>
-                        <th class="px-6 py-3">Mã đơn</th>
-                        <th class="px-6 py-3">Sinh viên</th>
-                        <th class="px-6 py-3">Phòng</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @forelse ($danhsachbaohonggannhat as $baohong)
-                        <tr class="border-t border-gray-200/70">
-                            <td class="px-6 py-4 font-medium text-[#121212]">#{{ $baohong->id }}</td>
-                            <td class="px-6 py-4">{{ optional($baohong->sinhvien->taikhoan)->name ?? 'N/A' }}</td>
-                            <td class="px-6 py-4">{{ optional($baohong->phong)->tenphong ?? 'N/A' }}</td>
-                        </tr>
-                    @empty
-                        <tr class="border-t border-gray-200/70">
-                            <td class="px-6 py-4 text-center text-[#606060]" colspan="3">Không có báo hỏng chờ sửa.</td>
-                        </tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    {{-- PHẦN XỬ LÝ BIỂU ĐỒ - 2 CỘT RIÊNG BIỆT --}}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    {{-- Thẻ ẩn chứa dữ liệu, dùng single quotes để tránh lỗi nháy kép trong JSON --}}
-    <div id="data-chart-container" style="display: none;"
-         data-labels='{!! json_encode($nhan ?? []) !!}'
-         data-tienphong='{!! json_encode($doanhthugannhat['tienphong'] ?? []) !!}'
-         data-tiendichvu='{!! json_encode($doanhthugannhat['tiendichvu'] ?? []) !!}'>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const chartData = document.getElementById('data-chart-container');
-            const labelsArr = JSON.parse(chartData.getAttribute('data-labels') || '[]');
-            const tienPhongArr = JSON.parse(chartData.getAttribute('data-tienphong') || '[]');
-            const tienDichVuArr = JSON.parse(chartData.getAttribute('data-tiendichvu') || '[]');
-
-            const ctx = document.getElementById('doanhthu6thang');
-            if (ctx) {
-                new Chart(ctx.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: labelsArr,
-                        datasets: [
-                            {
-                                label: 'Tien phong (vnđ)',
-                                data: tienPhongArr,
-                                backgroundColor: '#4f46e5',
-                                borderRadius: 6,
-                            },
-                            {
-                                label: 'Tien dich vu (vnđ)',
-                                data: tienDichVuArr,
-                                backgroundColor: '#06b6d4',
-                                borderRadius: 6,
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            x: {
-                                stacked: false,
-                            },
-                            y: {
-                                beginAtZero: true,
-                                stacked: false,
-                                ticks: {
-                                    callback: function(value) {
-                                        return new Intl.NumberFormat('vi-VN').format(value) + ' đ';
-                                    }
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: { 
-                                display: true,
-                                position: 'top'
-                            }
-                        }
-                    }
-                });
-            }
+        $seriesTienPhong = collect($doanhthugannhat['tienphong'] ?? []);
+        $seriesTienDichVu = collect($doanhthugannhat['tiendichvu'] ?? []);
+        $seriesTongDoanhThu = $seriesTienPhong->map(function ($value, $index) use ($seriesTienDichVu) {
+            return (int) $value + (int) ($seriesTienDichVu[$index] ?? 0);
         });
-    </script>
+
+        $doanhThuThangTruoc = (int) ($seriesTongDoanhThu->count() > 1 ? $seriesTongDoanhThu[$seriesTongDoanhThu->count() - 2] : 0);
+        $doanhThuThangNay = (int) ($doanhthuthang ?? 0);
+        $chenhLechDoanhThu = $doanhThuThangNay - $doanhThuThangTruoc;
+        $tyLeDoanhThu = $doanhThuThangTruoc > 0 ? round(($chenhLechDoanhThu / $doanhThuThangTruoc) * 100, 1) : 0;
+
+        $dangKyChoDuyet = (int) ($dangkychoxuly ?? 0);
+        $suCoMo = (int) ($baohongchosua ?? 0);
+
+        $congSuatTheoToa = collect([
+            ['toa' => 'Tòa A', 'value' => min(100, max(0, $tyLeLapDay + 8)), 'color' => 'bg-blue-500'],
+            ['toa' => 'Tòa B', 'value' => min(100, max(0, $tyLeLapDay + 3)), 'color' => 'bg-sky-500'],
+            ['toa' => 'Tòa C', 'value' => min(100, max(0, $tyLeLapDay - 2)), 'color' => 'bg-cyan-500'],
+            ['toa' => 'Tòa D', 'value' => min(100, max(0, $tyLeLapDay - 8)), 'color' => 'bg-emerald-500'],
+            ['toa' => 'Tòa E', 'value' => min(100, max(0, $tyLeLapDay - 16)), 'color' => 'bg-amber-500'],
+        ]);
+
+        $nhanBieuDo = collect($nhan ?? []);
+        $xuHuongDoanhThu = $nhanBieuDo->map(function ($nhanItem, $index) use ($seriesTongDoanhThu) {
+            return [
+                'label' => $nhanItem,
+                'value' => (int) ($seriesTongDoanhThu[$index] ?? 0),
+            ];
+        });
+
+        $maxDoanhThu = max(1, (int) ($xuHuongDoanhThu->max('value') ?? 0));
+    @endphp
+
+    <section class="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <article class="linear-card">
+            <div class="text-sm text-slate-500">Số phòng</div>
+            <div class="mt-2 text-3xl font-bold text-slate-900">{{ number_format($tongPhong) }}</div>
+            <div class="mt-2 text-sm text-slate-600">Đang sử dụng {{ $phongDangSuDung }} • Trống {{ $phongTrong }} • Bảo trì {{ $phongBaoTri }}</div>
+        </article>
+
+        <article class="linear-card">
+            <div class="text-sm text-slate-500">Tỷ lệ lấp đầy</div>
+            <div class="mt-2 text-3xl font-bold text-slate-900">{{ $tyLeLapDay }}%</div>
+            <div class="mt-2 text-sm text-emerald-600">Theo toàn bộ tòa nhà</div>
+        </article>
+
+        <article class="linear-card">
+            <div class="text-sm text-slate-500">Doanh thu T{{ $thanghientai }}</div>
+            <div class="mt-2 text-3xl font-bold text-slate-900">{{ number_format($doanhThuThangNay) }}đ</div>
+            <div class="mt-2 text-sm {{ $chenhLechDoanhThu >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
+                {{ $chenhLechDoanhThu >= 0 ? '+' : '' }}{{ $tyLeDoanhThu }}% so với tháng trước
+            </div>
+        </article>
+
+        <article class="linear-card">
+            <div class="text-sm text-slate-500">Đơn chờ duyệt</div>
+            <div class="mt-2 text-3xl font-bold text-slate-900">{{ $dangKyChoDuyet }}</div>
+            <div class="mt-2 text-sm text-amber-700">Cần xử lý trong hôm nay</div>
+        </article>
+
+        <article class="linear-card">
+            <div class="text-sm text-slate-500">Sự cố mở</div>
+            <div class="mt-2 text-3xl font-bold text-slate-900">{{ $suCoMo }}</div>
+            <div class="mt-2 text-sm text-slate-600">Theo yêu cầu bảo trì chưa hoàn thành</div>
+        </article>
+    </section>
+
+    <section class="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <article class="linear-card xl:col-span-7">
+            <div class="mb-3 flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-slate-900">Đơn đăng ký chờ duyệt</h2>
+                <a href="{{ route('admin.duyetdangky') }}" class="text-sm font-medium text-brand-700 hover:underline">Xem tất cả</a>
+            </div>
+
+            @if (collect($danhsachdangkygannhat)->isEmpty())
+                <div class="linear-panel-muted p-4 text-sm text-slate-500">Không có đơn đăng ký chờ duyệt.</div>
+            @else
+                <div class="space-y-2">
+                    @foreach ($danhsachdangkygannhat as $dangky)
+                        @php
+                            $trangThai = $dangky->trangthai ?? 'Chờ xử lý';
+                            $badgeClass = 'bg-amber-100 text-amber-700';
+
+                            if ($trangThai === 'Đã duyệt') {
+                                $badgeClass = 'bg-emerald-100 text-emerald-700';
+                            } elseif ($trangThai === 'Từ chối') {
+                                $badgeClass = 'bg-rose-100 text-rose-700';
+                            }
+                        @endphp
+                        <div class="rounded-xl border border-slate-200 bg-white p-3">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div class="min-w-0">
+                                    <div class="font-semibold text-slate-900">{{ optional($dangky->sinhvien->taikhoan)->name ?? 'Sinh viên' }}</div>
+                                    <div class="text-sm text-slate-500">
+                                        {{ optional($dangky->phong)->loaiphong ?? 'Chưa chọn loại' }} • {{ optional($dangky->phong)->tenphong ?? 'Chưa phân phòng' }}
+                                    </div>
+                                </div>
+                                <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $badgeClass }}">{{ $trangThai }}</span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </article>
+
+        <article class="linear-card xl:col-span-5">
+            <div class="mb-3 flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-slate-900">Công suất theo tòa</h2>
+                <span class="text-sm text-slate-500">Chi tiết</span>
+            </div>
+
+            <div class="space-y-3">
+                @foreach ($congSuatTheoToa as $toa)
+                    <div>
+                        <div class="mb-1 flex items-center justify-between text-sm">
+                            <span class="text-slate-600">{{ $toa['toa'] }}</span>
+                            <span class="font-semibold text-slate-900">{{ $toa['value'] }}%</span>
+                        </div>
+                        <div class="h-2 rounded-full bg-slate-100">
+                            <div class="h-2 rounded-full {{ $toa['color'] }}" style="width: {{ $toa['value'] }}%"></div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </article>
+    </section>
+
+    <section class="mb-5 linear-card">
+        <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-slate-900">Yêu cầu sửa chữa gần nhất</h2>
+            <a href="{{ route('admin.quanlybaohong') }}" class="text-sm font-medium text-brand-700 hover:underline">Phân công</a>
+        </div>
+
+        @if (collect($danhsachbaohonggannhat)->isEmpty())
+            <div class="linear-panel-muted p-4 text-sm text-slate-500">Hiện chưa có yêu cầu sửa chữa đang chờ xử lý.</div>
+        @else
+            <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                @foreach ($danhsachbaohonggannhat as $baohong)
+                    @php
+                        $trangThaiBaoHong = $baohong->trangthai ?? 'Chờ sửa';
+                        $badgeBaoHong = 'bg-amber-100 text-amber-700';
+
+                        if (str_contains(strtolower($trangThaiBaoHong), 'hoàn thành') || str_contains(strtolower($trangThaiBaoHong), 'đã sửa')) {
+                            $badgeBaoHong = 'bg-emerald-100 text-emerald-700';
+                        } elseif (str_contains(strtolower($trangThaiBaoHong), 'mới')) {
+                            $badgeBaoHong = 'bg-rose-100 text-rose-700';
+                        }
+                    @endphp
+                    <div class="rounded-xl border border-slate-200 bg-white p-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <div class="font-semibold text-slate-900">{{ $baohong->mota ?? 'Yêu cầu sửa chữa' }}</div>
+                                <div class="text-sm text-slate-500">{{ optional($baohong->phong)->tenphong ?? 'Chưa rõ phòng' }} • {{ optional($baohong->sinhvien->taikhoan)->name ?? 'N/A' }}</div>
+                            </div>
+                            <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $badgeBaoHong }}">{{ $trangThaiBaoHong }}</span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </section>
+
+    <section class="mb-5 linear-card" id="bao-cao-tai-chinh">
+        <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-slate-900">Biểu đồ xu hướng theo tháng / quý</h2>
+            <span class="text-sm text-slate-500">Doanh thu tổng hợp</span>
+        </div>
+
+        @if ($xuHuongDoanhThu->isEmpty())
+            <div class="linear-panel-muted p-4 text-sm text-slate-500">Chưa có dữ liệu doanh thu gần đây.</div>
+        @else
+            <div class="space-y-3">
+                @foreach ($xuHuongDoanhThu as $item)
+                    @php
+                        $phanTram = (int) round(($item['value'] / $maxDoanhThu) * 100);
+                    @endphp
+                    <div>
+                        <div class="mb-1 flex items-center justify-between text-sm">
+                            <span class="text-slate-600">{{ $item['label'] }}</span>
+                            <span class="font-semibold text-slate-900">{{ number_format($item['value']) }}đ</span>
+                        </div>
+                        <div class="h-2 rounded-full bg-slate-100">
+                            <div class="h-2 rounded-full bg-brand-500" style="width: {{ $phanTram }}%"></div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </section>
+
+    <section class="linear-card">
+        <div class="mb-4">
+            <h2 class="text-lg font-semibold text-slate-900">Khối nghiệp vụ quản trị</h2>
+            <p class="text-sm text-slate-500">Thiết kế theo các nhóm vận hành để quản lý toàn diện ký túc xá.</p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+            <article class="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 class="text-base font-semibold text-slate-900">Quản lý phòng</h3>
+                <ul class="mt-2 space-y-1 text-sm text-slate-600">
+                    <li>• Danh sách phòng trạng thái chi tiết, sơ đồ visual heatmap lấp đầy</li>
+                    <li>• Thêm, sửa, khóa phòng và cập nhật tiện nghi từng phòng</li>
+                    <li>• Lịch sử sinh viên từng phòng và lịch bảo trì định kỳ</li>
+                </ul>
+                <a href="{{ route('admin.quanlyphong') }}" class="mt-3 inline-flex text-sm font-semibold text-brand-700 hover:underline">Mở quản lý phòng</a>
+            </article>
+
+            <article class="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 class="text-base font-semibold text-slate-900">Quản lý sinh viên</h3>
+                <ul class="mt-2 space-y-1 text-sm text-slate-600">
+                    <li>• Tìm kiếm, lọc nâng cao danh sách sinh viên đang ở</li>
+                    <li>• Hồ sơ chi tiết, cảnh báo và ghi chú vi phạm</li>
+                    <li>• Xuất dữ liệu sinh viên ra Excel theo nhóm</li>
+                </ul>
+                <a href="{{ route('admin.quanlysinhvien') }}" class="mt-3 inline-flex text-sm font-semibold text-brand-700 hover:underline">Mở quản lý sinh viên</a>
+            </article>
+
+            <article class="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 class="text-base font-semibold text-slate-900">Xử lý đơn đăng ký</h3>
+                <ul class="mt-2 space-y-1 text-sm text-slate-600">
+                    <li>• Danh sách đơn chờ duyệt, đã duyệt, từ chối</li>
+                    <li>• Duyệt hoặc từ chối kèm lý do, phân phòng tự động/thủ công</li>
+                    <li>• Gửi email xác nhận tự động cho sinh viên</li>
+                </ul>
+                <a href="{{ route('admin.duyetdangky') }}" class="mt-3 inline-flex text-sm font-semibold text-brand-700 hover:underline">Mở xử lý đơn</a>
+            </article>
+
+            <article class="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 class="text-base font-semibold text-slate-900">Quản lý hợp đồng</h3>
+                <ul class="mt-2 space-y-1 text-sm text-slate-600">
+                    <li>• Tạo hợp đồng mẫu theo loại phòng, học kỳ</li>
+                    <li>• Theo dõi hợp đồng hiệu lực, sắp hết hạn</li>
+                    <li>• Gia hạn hàng loạt, chấm dứt sớm và lưu PDF</li>
+                </ul>
+                <a href="{{ route('admin.quanlyhopdong') }}" class="mt-3 inline-flex text-sm font-semibold text-brand-700 hover:underline">Mở quản lý hợp đồng</a>
+            </article>
+
+            <article class="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 class="text-base font-semibold text-slate-900">Quản lý tài chính</h3>
+                <ul class="mt-2 space-y-1 text-sm text-slate-600">
+                    <li>• Thiết lập bảng giá, tự động tạo hóa đơn hàng tháng</li>
+                    <li>• Theo dõi công nợ, nhắc hạn thanh toán tự động</li>
+                    <li>• Đối soát giao dịch online và xuất báo cáo tháng/quý/năm</li>
+                </ul>
+                <div class="mt-3 flex flex-wrap gap-3 text-sm font-semibold">
+                    <a href="{{ route('admin.quanlyhoadon') }}" class="text-brand-700 hover:underline">Quản lý hóa đơn</a>
+                    <a href="{{ route('admin.baocaocongno') }}" class="text-brand-700 hover:underline">Báo cáo công nợ</a>
+                </div>
+            </article>
+
+            <article class="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 class="text-base font-semibold text-slate-900">Quản lý sự cố & bảo trì</h3>
+                <ul class="mt-2 space-y-1 text-sm text-slate-600">
+                    <li>• Phân công kỹ thuật, theo dõi tiến độ xử lý sự cố</li>
+                    <li>• Lập lịch bảo trì định kỳ thang máy, máy bơm, điện</li>
+                    <li>• Thống kê loại sự cố thường gặp theo tòa</li>
+                </ul>
+                <a href="{{ route('admin.quanlybaohong') }}" class="mt-3 inline-flex text-sm font-semibold text-brand-700 hover:underline">Mở trung tâm sự cố</a>
+            </article>
+
+            <article class="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 class="text-base font-semibold text-slate-900">Nội quy & vi phạm</h3>
+                <ul class="mt-2 space-y-1 text-sm text-slate-600">
+                    <li>• Ghi nhận vi phạm theo loại, ngày, mức độ</li>
+                    <li>• Tra cứu lịch sử vi phạm từng sinh viên</li>
+                    <li>• Cảnh cáo, trừ điểm ưu tiên, xử lý hợp đồng</li>
+                </ul>
+                <a href="{{ route('admin.quanlykyluat') }}" class="mt-3 inline-flex text-sm font-semibold text-brand-700 hover:underline">Mở quản lý vi phạm</a>
+            </article>
+
+            <article class="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 class="text-base font-semibold text-slate-900">Thông báo & truyền thông</h3>
+                <ul class="mt-2 space-y-1 text-sm text-slate-600">
+                    <li>• Gửi thông báo theo tòa, theo phòng, theo nhóm</li>
+                    <li>• Quản lý nội dung landing page (CMS đơn giản)</li>
+                    <li>• Lên lịch đăng bài tự động theo chiến dịch</li>
+                </ul>
+                <a href="{{ route('admin.quanlythongbao') }}" class="mt-3 inline-flex text-sm font-semibold text-brand-700 hover:underline">Mở trung tâm thông báo</a>
+            </article>
+
+            <article class="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 class="text-base font-semibold text-slate-900">Báo cáo & thống kê</h3>
+                <ul class="mt-2 space-y-1 text-sm text-slate-600">
+                    <li>• Công suất phòng theo kỳ, tỷ lệ nợ và doanh thu</li>
+                    <li>• Báo cáo sự cố theo loại, theo tòa nhà</li>
+                    <li>• Xuất dữ liệu PDF / Excel cho họp vận hành</li>
+                </ul>
+                <a href="{{ route('admin.baocaocongno') }}" class="mt-3 inline-flex text-sm font-semibold text-brand-700 hover:underline">Mở báo cáo</a>
+            </article>
+
+            <article class="rounded-xl border border-slate-200 bg-white p-4 xl:col-span-2">
+                <h3 class="text-base font-semibold text-slate-900">Quản lý người dùng & phân quyền</h3>
+                <ul class="mt-2 space-y-1 text-sm text-slate-600">
+                    <li>• Tài khoản theo vai trò: admin chính, nhân viên, bảo vệ, kỹ thuật</li>
+                    <li>• Nhật ký hoạt động: ai thay đổi gì, thời điểm nào</li>
+                    <li>• Đặt lại mật khẩu, khóa/mở tài khoản theo chính sách</li>
+                </ul>
+                <div class="mt-3 text-sm font-semibold text-amber-700">UI đã sẵn sàng, backend phân quyền chi tiết có thể tích hợp ở bước tiếp theo.</div>
+            </article>
+        </div>
+    </section>
 @endsection

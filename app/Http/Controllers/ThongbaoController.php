@@ -114,6 +114,7 @@ class ThongbaoController extends Controller
             'tieude' => ['required', 'string', 'max:255'],
             'noidung' => ['required', 'string'],
             'doituong' => ['nullable', 'in:sinhvien,admin,tatca'],
+            'ngaydang' => ['nullable', 'date'],
         ], [
             'tieude.required' => 'Vui lòng nhập tiêu đề.',
             'noidung.required' => 'Vui lòng nhập nội dung.',
@@ -123,7 +124,7 @@ class ThongbaoController extends Controller
             'tieude' => $dulieu['tieude'],
             'noidung' => $dulieu['noidung'],
             'doituong' => $dulieu['doituong'] ?? 'tatca',
-            'ngaydang' => now(),
+            'ngaydang' => $dulieu['ngaydang'] ?? now(),
         ]);
 
         return redirect()
@@ -150,12 +151,14 @@ class ThongbaoController extends Controller
             'tieude' => ['required', 'string', 'max:255'],
             'noidung' => ['required', 'string'],
             'doituong' => ['nullable', 'in:sinhvien,admin,tatca'],
+            'ngaydang' => ['nullable', 'date'],
         ]);
 
         $thongbao->update([
             'tieude' => $dulieu['tieude'],
             'noidung' => $dulieu['noidung'],
             'doituong' => $dulieu['doituong'] ?? $thongbao->doituong,
+            'ngaydang' => $dulieu['ngaydang'] ?? $thongbao->ngaydang,
         ]);
 
         return redirect()
@@ -186,4 +189,3 @@ class ThongbaoController extends Controller
             ->with('toast_noidung', 'Xóa thông báo thành công.');
     }
 }
-

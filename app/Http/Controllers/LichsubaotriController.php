@@ -3,11 +3,65 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lichsubaotri;
+use App\Models\Phong;
 use App\Models\Vattu;
 use Illuminate\Http\Request;
 
 class LichsubaotriController extends Controller
 {
+    /**
+     * Trang quản lý bảo trì riêng cho admin.
+     */
+    public function danhsach(Request $request)
+    {
+        $tuKhoa = trim((string) $request->query('q', ''));
+        $phongId = $request->query('phong_id');
+
+        $baseQuery = Lichsubaotri::query()
+            ->when($tuKhoa !== '', function ($query) use ($tuKhoa) {
+                $query->where(function ($innerQuery) use ($tuKhoa) {
+                    $innerQuery->where('noidung', 'like', '%'.$tuKhoa.'%')
+                        ->orWhere('donvithuchien', 'like', '%'.$tuKhoa.'%')
+                        ->orWhereHas('vattu', function ($vattuQuery) use ($tuKhoa) {
+                            $vattuQuery->where('tenvattu', 'like', '%'.$tuKhoa.'%')
+                                ->orWhereHas('phong', function ($phongQuery) use ($tuKhoa) {
+                                    $phongQuery->where('tenphong', 'like', '%'.$tuKhoa.'%');
+                                });
+                        });
+                });
+            })
+            ->when($phongId, function ($query) use ($phongId) {
+                $query->whereHas('vattu', function ($vattuQuery) use ($phongId) {
+                    $vattuQuery->where('phong_id', $phongId);
+                });
+            });
+
+        $thongKe = [
+            'tong_luot' => (clone $baseQuery)->count(),
+            'tong_chiphi' => (clone $baseQuery)->sum('chiphi'),
+            'thang_nay' => (clone $baseQuery)
+                ->whereMonth('ngaybaotri', now()->month)
+                ->whereYear('ngaybaotri', now()->year)
+                ->count(),
+        ];
+
+        $danhsachBaoTri = (clone $baseQuery)
+            ->with(['vattu.phong'])
+            ->orderByDesc('ngaybaotri')
+            ->paginate(15)
+            ->withQueryString();
+
+        $danhsachPhong = Phong::orderBy('tenphong')->get(['id', 'tenphong']);
+
+        return view('admin.baotri.danhsach', [
+            'danhsachBaoTri' => $danhsachBaoTri,
+            'danhsachPhong' => $danhsachPhong,
+            'thongKe' => $thongKe,
+            'tuKhoa' => $tuKhoa,
+            'phongId' => $phongId,
+        ]);
+    }
+
     /**
      * Hiển thị lịch sử bảo trì của vật tư.
      */
@@ -26,7 +80,6 @@ class LichsubaotriController extends Controller
             ->orderByDesc('ngaybaotri')
             ->paginate(10);
 
-        // Kiểm tra bảo hành
         $conBaohanh = $this->kiemTraBaohanh($vattu);
 
         return view('admin.vattu.lichsu', [
@@ -104,12 +157,13 @@ class LichsubaotriController extends Controller
     public function vattuSapHetBaohanh()
     {
         $ngay30NgayToi = now()->addDays(30);
-        
+
         $vattuSapHetBaohanh = Vattu::whereNotNull('ngaymua')
             ->whereNotNull('thoigianbaohanh')
             ->get()
             ->filter(function ($vattu) use ($ngay30NgayToi) {
                 $ngayHetHan = \Carbon\Carbon::parse($vattu->ngaymua)->addMonths($vattu->thoigianbaohanh);
+
                 return $ngayHetHan->isBetween(now(), $ngay30NgayToi);
             });
 

@@ -1,7 +1,7 @@
 @extends('student.layouts.chinh')
 
 @section('noidung')
-    <div class="mb-6">
+    <div id="thanh-toan-online" class="mb-6">
         <div class="text-2xl font-bold text-[#121212]">Hóa đơn của em</div>
         <div class="text-sm text-[#606060]">Danh sách hóa đơn theo phòng của em.</div>
     </div>

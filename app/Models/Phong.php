@@ -17,7 +17,6 @@ class Phong extends Model
         'tang',
         'giaphong',
         'soluongtoida',
-        'succhua',
         'succhuamax',
         'dango',
         'mota',
@@ -52,5 +51,18 @@ class Phong extends Model
     public function danhsachhopdong(): HasMany
     {
         return $this->hasMany(Hopdong::class, 'phong_id');
+    }
+
+    public function getSoNguoiDangOAttribute(): int
+    {
+        if (array_key_exists('danhsachsinhvien_count', $this->attributes)) {
+            return (int) $this->attributes['danhsachsinhvien_count'];
+        }
+
+        if ($this->relationLoaded('danhsachsinhvien')) {
+            return $this->danhsachsinhvien->count();
+        }
+
+        return $this->danhsachsinhvien()->count();
     }
 }

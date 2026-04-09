@@ -14,7 +14,7 @@
         </form>
     </div>
 
-    <div class="overflow-hidden rounded-lg border border-gray-200/70 bg-white">
+    <div id="so-do-tang" class="overflow-hidden rounded-lg border border-gray-200/70 bg-white">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-[#606060]">
                 <thead class="bg-[#F7F7F8] text-xs uppercase text-[#606060]">
@@ -70,4 +70,3 @@
         </div>
     </div>
 @endsection
-

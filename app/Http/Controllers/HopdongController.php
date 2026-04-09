@@ -133,8 +133,6 @@ class HopdongController extends Controller
                     'ngay_het_han' => $dulieu['ngay_ket_thuc'],
                 ]);
 
-                $phong->increment('dango');
-
                 return redirect()
                     ->back()
                     ->with('toast_loai', 'thanhcong')
@@ -165,14 +163,16 @@ class HopdongController extends Controller
                 ->with('toast_noidung', $ketQuaKyluat['ly_do']);
         }
 
+        $ngayKetThucHienTai = (string) $hopdong->ngay_ket_thuc;
+
         $dulieu = $request->validate(
             [
-                'ngay_ket_thuc' => ['required', 'date', 'after:ngay_bat_dau'],
+                'ngay_ket_thuc' => ['required', 'date', 'after:today', 'after:' . $ngayKetThucHienTai],
             ],
             [
                 'ngay_ket_thuc.required' => 'Bạn phải nhập ngày kết thúc.',
                 'ngay_ket_thuc.date' => 'Ngày kết thúc không hợp lệ.',
-                'ngay_ket_thuc.after' => 'Ngày kết thúc phải sau ngày bắt đầu.',
+                'ngay_ket_thuc.after' => 'Ngày kết thúc mới phải sau ngày hôm nay và sau ngày kết thúc hiện tại của hợp đồng (' . $ngayKetThucHienTai . ').',
             ]
         );
 
@@ -190,7 +190,7 @@ class HopdongController extends Controller
         }
 
         $soluonghientai = Sinhvien::where('phong_id', $phong->id)->count();
-        if ($soluonghientai > (int) $phong->soluongtoida) {
+        if ($soluonghientai > (int) $phong->succhuamax) {
             return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Phòng đã đầy, không thể gia hạn hợp đồng.');
         }
 
@@ -235,11 +235,6 @@ class HopdongController extends Controller
                         ->where('trang_thai', self::TRANGTHAI_DANGHIEULUC)
                         ->where('id', '<>', $hopdong->id)
                         ->update(['trang_thai' => self::TRANGTHAI_DATHANHLY]);
-                }
-
-                // Giảm số người đang ở trong phòng
-                if ($phong) {
-                    $phong->decrement('dango');
                 }
 
                 return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Đã thanh lý hợp đồng và giải phóng sinh viên khỏi phòng.');

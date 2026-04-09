@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Hopdong;
 use App\Models\Phong;
 use App\Models\Sinhvien;
 use App\Models\Taisan;
@@ -21,7 +22,7 @@ class PhongController extends Controller
         $tangLoc = $request->query('tang', '');
         $gioiTinhLoc = $request->query('gioitinh', '');
 
-        $danhsachphong = Phong::when($tuKhoa, function ($query, $tuKhoa) {
+        $danhsachphong = Phong::withCount('danhsachsinhvien')->when($tuKhoa, function ($query, $tuKhoa) {
             return $query->where('tenphong', 'like', '%'.trim($tuKhoa).'%');
         })->when($tangLoc, function ($query) use ($tangLoc) {
             return $query->where('tang', $tangLoc);
@@ -30,10 +31,9 @@ class PhongController extends Controller
         })->orderBy('tang')->orderBy('tenphong')->get();
 
         // Tính số người đang ở mỗi phòng
-        $soluongdango_theophong = Sinhvien::all()
-            ->groupBy('phong_id')
-            ->map(function ($nhom) {
-                return $nhom->count();
+        $soluongdango_theophong = $danhsachphong
+            ->mapWithKeys(function ($phong) {
+                return [$phong->id => $phong->so_nguoi_dang_o];
             })
             ->toArray();
 
@@ -87,22 +87,21 @@ class PhongController extends Controller
         $sinhvien = Sinhvien::where('user_id', auth()->id())->first();
         $gioitinhSinhvien = optional($sinhvien->taikhoan)->gioitinh ?? null;
 
-        $danhsachphong = Phong::when($tuKhoa, function ($query, $tuKhoa) {
+        $danhsachphong = Phong::withCount('danhsachsinhvien')->when($tuKhoa, function ($query, $tuKhoa) {
             return $query->where('tenphong', 'like', '%'.trim($tuKhoa).'%');
         })->when($gioitinhSinhvien, function ($query) use ($gioitinhSinhvien) {
             return $query->where('gioitinh', $gioitinhSinhvien);
         })->get();
 
         // Tính số người đang ở cho mỗi phòng
-        $soluongdango_theophong = Sinhvien::all()
-            ->groupBy('phong_id')
-            ->map(function ($nhom) {
-                return $nhom->count();
+        $soluongdango_theophong = $danhsachphong
+            ->mapWithKeys(function ($phong) {
+                return [$phong->id => $phong->so_nguoi_dang_o];
             })
             ->toArray();
 
         $danhsachphongtrong = $danhsachphong->filter(function ($phong) use ($soluongdango_theophong) {
-            $soluonghientai = $soluongdango_theophong[$phong->id] ?? 0;
+            $soluonghientai = $phong->so_nguoi_dang_o;
             return $soluonghientai < (int) $phong->succhuamax;
         });
 
@@ -143,16 +142,15 @@ class PhongController extends Controller
 
         $viewMode = $request->query('view', 'table');
 
-        $danhsachphong = Phong::when($tuKhoa, function ($query, $tuKhoa) {
+        $danhsachphong = Phong::withCount('danhsachsinhvien')->when($tuKhoa, function ($query, $tuKhoa) {
             return $query->where('tenphong', 'like', '%'.trim($tuKhoa).'%');
         })->when($tangLoc, function ($query) use ($tangLoc) {
             return $query->where('tang', $tangLoc);
         })->orderBy('tang')->orderBy('tenphong')->get();
 
-        $soluongdango_theophong = Sinhvien::all()
-            ->groupBy('phong_id')
-            ->map(function ($nhom) {
-                return $nhom->count();
+        $soluongdango_theophong = $danhsachphong
+            ->mapWithKeys(function ($phong) {
+                return [$phong->id => $phong->so_nguoi_dang_o];
             })
             ->toArray();
 
@@ -324,9 +322,9 @@ class PhongController extends Controller
                 'tang' => ['required', 'numeric', 'min:1'],
                 'giaphong' => ['required', 'numeric', 'min:0'],
                 'soluongtoida' => ['required', 'numeric', 'min:1'],
-                'succhuamax' => ['required', 'numeric', 'min:1'],
+                'succhuamax' => ['required', 'numeric', 'min:1', 'same:soluongtoida'],
                 'mota' => ['nullable'],
-                'gioitinh' => ['required', 'in:Nam,Nu'],
+                'gioitinh' => ['required', 'in:Nam,Nữ'],
             ],
             [
                 'tenphong.required' => 'Ten phong khong duoc de trong.',
@@ -337,12 +335,12 @@ class PhongController extends Controller
                 'soluongtoida.numeric' => 'So luong toi da phai la so.',
                 'soluongtoida.min' => 'So luong toi da phai lon hon hoac bang 1.',
                 'succhuamax.required' => 'Suc chua toi da khong duoc de trong.',
+                'succhuamax.same' => 'Suc chua toi da phai bang so luong toi da.',
                 'gioitinh.required' => 'Gioi tinh khong duoc de trong.',
             ]
         );
 
-        // Sync succhuamax with soluongtoida initially
-        $dulieu['succhua'] = 0;
+        $dulieu['dango'] = 0;
 
         Phong::create($dulieu);
 
@@ -374,9 +372,9 @@ class PhongController extends Controller
                 'tang' => ['required', 'numeric', 'min:1'],
                 'giaphong' => ['required', 'numeric', 'min:0'],
                 'soluongtoida' => ['required', 'numeric', 'min:1'],
-                'succhuamax' => ['required', 'numeric', 'min:1'],
+                'succhuamax' => ['required', 'numeric', 'min:1', 'same:soluongtoida'],
                 'mota' => ['nullable'],
-                'gioitinh' => ['required', 'in:Nam,Nu'],
+                'gioitinh' => ['required', 'in:Nam,Nữ'],
             ],
             [
                 'tenphong.required' => 'Ten phong khong duoc de trong.',
@@ -387,6 +385,7 @@ class PhongController extends Controller
                 'soluongtoida.numeric' => 'So luong toi da phai la so.',
                 'soluongtoida.min' => 'So luong toi da phai lon hon hoac bang 1.',
                 'succhuamax.required' => 'Suc chua toi da khong duoc de trong.',
+                'succhuamax.same' => 'Suc chua toi da phai bang so luong toi da.',
                 'gioitinh.required' => 'Gioi tinh khong duoc de trong.',
             ]
         );
@@ -414,11 +413,46 @@ class PhongController extends Controller
                 ->with('toast_noidung', 'Khong tim thay phong.');
         }
 
+        $thongdiepChan = $this->kiemTraDieuKienXoaPhong($phong);
+        if ($thongdiepChan !== null) {
+            return redirect()
+                ->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', $thongdiepChan);
+        }
+
         $phong->delete();
 
         return redirect()
             ->back()
             ->with('toast_loai', 'thanhcong')
             ->with('toast_noidung', 'Xoa phong thanh cong.');
+    }
+
+    private function kiemTraDieuKienXoaPhong(Phong $phong): ?string
+    {
+        $soSinhVienDangO = $phong->danhsachsinhvien()->count();
+        if ($soSinhVienDangO > 0) {
+            return 'Khong the xoa phong nay vi van con '.$soSinhVienDangO.' sinh vien dang o. Hay chuyen het sinh vien sang phong khac truoc.';
+        }
+
+        $soHopDongDangHieuLuc = $phong->danhsachhopdong()
+            ->where('trang_thai', Hopdong::TRANGTHAI_DANG_HIEU_LUC)
+            ->count();
+        if ($soHopDongDangHieuLuc > 0) {
+            return 'Khong the xoa phong nay vi con '.$soHopDongDangHieuLuc.' hop dong dang hieu luc. Hay thanh ly het hop dong truoc khi xoa.';
+        }
+
+        $soHopDongLichSu = $phong->danhsachhopdong()->count();
+        if ($soHopDongLichSu > 0) {
+            return 'Khong the xoa phong nay vi da co du lieu hop dong lich su. Viec xoa phong se lam mat lich su hop dong.';
+        }
+
+        $soHoaDonLichSu = $phong->danhsachhoadon()->count();
+        if ($soHoaDonLichSu > 0) {
+            return 'Khong the xoa phong nay vi da co du lieu hoa don lich su. Viec xoa phong se lam mat lich su hoa don.';
+        }
+
+        return null;
     }
 }

@@ -3,9 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\Hopdong;
-use App\Models\Phong;
 use App\Models\Sinhvien;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class DongBoHopDong extends Command
 {
@@ -30,7 +30,11 @@ class DongBoHopDong extends Command
     {
         $this->info('Bắt đầu đồng bộ hợp đồng từ sinhvien...');
 
-        $sinhs = Sinhvien::with('phong')->whereNotNull('phong_id')->whereNotNull('ngay_vao')->whereNotNull('ngay_het_han')->get();
+        $sinhs = Sinhvien::with('phong')
+            ->whereNotNull('phong_id')
+            ->whereNotNull('ngay_vao')
+            ->whereNotNull('ngay_het_han')
+            ->get();
 
         foreach ($sinhs as $sinhvien) {
             if (! $sinhvien->phong) {
@@ -38,17 +42,41 @@ class DongBoHopDong extends Command
                 continue;
             }
 
-            $hopdong = Hopdong::firstOrNew([
-                'sinhvien_id' => $sinhvien->id,
-                'phong_id' => $sinhvien->phong_id,
-                'ngay_bat_dau' => $sinhvien->ngay_vao,
-                'ngay_ket_thuc' => $sinhvien->ngay_het_han,
-            ]);
+            DB::transaction(function () use ($sinhvien) {
+                $hopdongDangHieuLuc = Hopdong::where('sinhvien_id', $sinhvien->id)
+                    ->where('trang_thai', Hopdong::TRANGTHAI_DANG_HIEU_LUC)
+                    ->orderByDesc('id')
+                    ->lockForUpdate()
+                    ->get();
 
-            $hopdong->giaphong_luc_ky = (int) ($sinhvien->phong->giaphong ?? 0);
-            $hopdong->trang_thai = 'Đang hiệu lực';
-            $hopdong->ghichu = $hopdong->ghichu ?? null;
-            $hopdong->save();
+                $hopdongCungPhong = $hopdongDangHieuLuc->firstWhere('phong_id', $sinhvien->phong_id);
+                $hopdongCanLuu = $hopdongCungPhong;
+                $hopdongCanThanhLy = $hopdongDangHieuLuc;
+
+                if ($hopdongCanLuu) {
+                    $hopdongCanThanhLy = $hopdongCanThanhLy->where('id', '<>', $hopdongCanLuu->id);
+                } else {
+                    $hopdongCanLuu = new Hopdong();
+                    $hopdongCanLuu->sinhvien_id = $sinhvien->id;
+                }
+
+                if ($hopdongCanThanhLy->isNotEmpty()) {
+                    Hopdong::whereIn('id', $hopdongCanThanhLy->pluck('id'))
+                        ->update([
+                            'trang_thai' => Hopdong::TRANGTHAI_DA_THANH_LY,
+                        ]);
+                }
+
+                $hopdongCanLuu->fill([
+                    'phong_id' => $sinhvien->phong_id,
+                    'ngay_bat_dau' => $sinhvien->ngay_vao,
+                    'ngay_ket_thuc' => $sinhvien->ngay_het_han,
+                    'giaphong_luc_ky' => (int) ($sinhvien->phong->giaphong ?? 0),
+                    'trang_thai' => Hopdong::TRANGTHAI_DANG_HIEU_LUC,
+                ]);
+                $hopdongCanLuu->ghichu = $hopdongCanLuu->ghichu ?? null;
+                $hopdongCanLuu->save();
+            });
 
             $this->info("Đồng bộ hợp đồng cho SV {$sinhvien->id} thành công.");
         }

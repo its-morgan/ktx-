@@ -203,9 +203,15 @@
                     <form class="p-4" method="POST" action="{{ route('admin.themphong') }}">
                         @csrf
                         <div class="grid gap-4">
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Tên phòng</label>
-                                <input name="tenphong" value="{{ old('tenphong') }}" class="linear-input mt-1" required />
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Tên phòng</label>
+                                    <input name="tenphong" value="{{ old('tenphong') }}" class="linear-input mt-1" required />
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Tầng</label>
+                                    <input name="tang" value="{{ old('tang') }}" class="linear-input mt-1" required />
+                                </div>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
@@ -217,13 +223,19 @@
                                     <input name="soluongtoida" value="{{ old('soluongtoida') }}" class="linear-input mt-1" required />
                                 </div>
                             </div>
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Giới tính</label>
-                                <select name="gioitinh" class="linear-select mt-1" required>
-                                    <option value="">-- Chọn --</option>
-                                    <option value="Nam" {{ old('gioitinh') === 'Nam' ? 'selected' : '' }}>Nam</option>
-                                    <option value="Nữ" {{ old('gioitinh') === 'Nữ' ? 'selected' : '' }}>Nữ</option>
-                                </select>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Sức chứa</label>
+                                    <input name="succhuamax" value="{{ old('succhuamax', old('soluongtoida')) }}" class="linear-input mt-1" required />
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Giới tính</label>
+                                    <select name="gioitinh" class="linear-select mt-1" required>
+                                        <option value="">-- Chọn --</option>
+                                        <option value="Nam" {{ old('gioitinh') === 'Nam' ? 'selected' : '' }}>Nam</option>
+                                        <option value="Nữ" {{ old('gioitinh') === 'Nữ' ? 'selected' : '' }}>Nữ</option>
+                                    </select>
+                                </div>
                             </div>
                             <div>
                                 <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Mô tả</label>

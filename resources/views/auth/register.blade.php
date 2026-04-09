@@ -23,13 +23,25 @@
         </div>
 
         <div>
+            <x-input-label for="mssv" value="Mã số sinh viên (tùy chọn)" />
+            <x-text-input
+                id="mssv"
+                class="mt-1 block w-full"
+                type="text"
+                name="mssv"
+                :value="old('mssv', $prefillMssv ?? '')"
+                autocomplete="off"
+            />
+        </div>
+
+        <div>
             <x-input-label for="email" value="Email" />
             <x-text-input
                 id="email"
                 class="mt-1 block w-full"
                 type="email"
                 name="email"
-                :value="old('email')"
+                :value="old('email', $prefillEmail ?? '')"
                 required
                 autocomplete="username"
             />

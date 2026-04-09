@@ -108,6 +108,8 @@ class CongnoController extends Controller
             'tieude' => 'Nhắc nhở thanh toán tiền phòng/điện nước',
             'noidung' => "Phòng {$phong->tenphong} có hóa đơn chưa thanh toán tổng số tiền " . number_format($tongNo) . " đ. Vui lòng thanh toán trong vòng 3 ngày để tránh bị phạt hoặc cắt điện nước.",
             'doituong' => 'sinhvien',
+            'phong_id' => (int) $phong->id,
+            'sinhvien_id' => null,
             'ngaydang' => now(),
         ]);
 

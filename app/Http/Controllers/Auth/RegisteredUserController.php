@@ -19,9 +19,12 @@ class RegisteredUserController extends Controller
     /**
      * Display the registration view.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('auth.register');
+        return view('auth.register', [
+            'prefillMssv' => old('mssv', (string) $request->query('mssv', '')),
+            'prefillEmail' => old('email', (string) $request->query('email', '')),
+        ]);
     }
 
     /**

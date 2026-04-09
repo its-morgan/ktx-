@@ -14,7 +14,7 @@ class BaohongController extends Controller
     /**
      * Trạng thái báo hỏng: chờ sửa.
      */
-    private const TRANGTHAI_CHOSUA = 'Cho sua';
+    private const TRANGTHAI_CHOSUA = 'Chờ sửa';
 
     /**
      * Trạng thái báo hỏng: đã hẹn.
@@ -29,7 +29,7 @@ class BaohongController extends Controller
     /**
      * Trạng thái báo hỏng: hoàn thành.
      */
-    private const TRANGTHAI_HOANTHANH = 'Hoan thanh';
+    private const TRANGTHAI_HOANTHANH = 'Đã xong';
 
     /**
      * Hàm này hiển thị danh sách báo hỏng của sinh viên đang đăng nhập.
@@ -163,7 +163,7 @@ class BaohongController extends Controller
 
         $dulieu = $request->validate(
             [
-                'trangthai' => ['required', 'in:Cho sua,Da hen,Dang sua,Hoan thanh'],
+                'trangthai' => ['required', 'in:Chờ sửa,Đã xong'],
                 'ngayhen' => ['nullable', 'date'],
                 'noidung' => ['nullable', 'string'],
             ],
@@ -181,7 +181,7 @@ class BaohongController extends Controller
         ]);
 
         // Tao thong bao cho sinh vien khi admin cap nhat ngay hen
-        if ($dulieu['ngayhen'] && in_array($dulieu['trangthai'], ['Da hen', 'Dang sua'])) {
+        if ($dulieu['ngayhen']) {
             \App\Models\Thongbao::create([
                 'tieude' => 'Cap nhat lich hen sua chua',
                 'noidung' => 'Yeu cau bao hong cua ban da duoc hen ngay sua chua: ' . date('d/m/Y', strtotime($dulieu['ngayhen'])) . '. Noi dung: ' . ($dulieu['noidung'] ?? 'Khong co'),

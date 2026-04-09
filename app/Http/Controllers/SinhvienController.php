@@ -127,7 +127,7 @@ class SinhvienController extends Controller
         // Đếm số sinh viên hiện tại trong phòng mới
         $soluonghientai = Sinhvien::where('phong_id', $phong->id)->count();
 
-        if ($soluonghientai >= (int) $phong->soluongtoida) {
+        if ($soluonghientai >= (int) $phong->succhuamax) {
             return redirect()
                 ->back()
                 ->with('toast_loai', 'loi')
