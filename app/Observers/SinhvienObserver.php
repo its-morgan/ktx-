@@ -7,46 +7,56 @@ use App\Models\Sinhvien;
 
 class SinhvienObserver
 {
+    /**
+     * Handle the Sinhvien "created" event.
+     */
+    public function created(Sinhvien $sinhvien): void
+    {
+        if ($sinhvien->phong_id) {
+            $this->syncRoomOccupancy((int) $sinhvien->phong_id);
+        }
+    }
+
+    /**
+     * Handle the Sinhvien "updated" event.
+     */
     public function updated(Sinhvien $sinhvien): void
     {
-        if (! $sinhvien->wasChanged('phong_id')) {
-            return;
-        }
+        if ($sinhvien->wasChanged('phong_id')) {
+            $oldRoomId = $sinhvien->getOriginal('phong_id');
+            $newRoomId = $sinhvien->phong_id;
 
-        $phongCuId = $this->toPhongId($sinhvien->getOriginal('phong_id'));
-        $phongMoiId = $this->toPhongId($sinhvien->phong_id);
+            if ($oldRoomId) {
+                $this->syncRoomOccupancy((int) $oldRoomId);
+            }
 
-        if ($phongCuId !== null && $phongCuId !== $phongMoiId) {
-            Phong::where('id', $phongCuId)
-                ->where('dango', '>', 0)
-                ->decrement('dango');
-        }
-
-        if ($phongMoiId !== null && $phongMoiId !== $phongCuId) {
-            Phong::where('id', $phongMoiId)->increment('dango');
+            if ($newRoomId) {
+                $this->syncRoomOccupancy((int) $newRoomId);
+            }
         }
     }
 
+    /**
+     * Handle the Sinhvien "deleted" event.
+     */
     public function deleted(Sinhvien $sinhvien): void
     {
-        $phongId = $this->toPhongId($sinhvien->phong_id ?? $sinhvien->getOriginal('phong_id'));
-        if ($phongId === null) {
+        $phongId = $sinhvien->phong_id ?? $sinhvien->getOriginal('phong_id');
+        if ($phongId) {
+            $this->syncRoomOccupancy((int) $phongId);
+        }
+    }
+
+    /**
+     * Synchronize actual occupancy count (dango) for a specific room.
+     */
+    private function syncRoomOccupancy(int $roomId): void
+    {
+        if ($roomId <= 0) {
             return;
         }
 
-        Phong::where('id', $phongId)
-            ->where('dango', '>', 0)
-            ->decrement('dango');
-    }
-
-    private function toPhongId(mixed $value): ?int
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        $phongId = (int) $value;
-
-        return $phongId > 0 ? $phongId : null;
+        $occupancy = Sinhvien::where('phong_id', $roomId)->count();
+        Phong::where('id', $roomId)->update(['dango' => $occupancy]);
     }
 }
