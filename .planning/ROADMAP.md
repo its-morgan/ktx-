@@ -2,6 +2,7 @@
 
 ## Milestone 1: GSD Integration & Baseline Audit
 - [x] Phase 1: Framework Installation & Codebase Mapping (danh sách hiện tại)
+- [ ] Phase 1.5: Architectural Refactor - Resolve Linguistic Fragmentation (Enums) and Duplicate Logic (Student vs Sinhvien observers) as detected by GitNexus.
 - [ ] Phase 2: UI/UX Audit & Standardization - Utilizing **UI/UX Pro Max** intelligence to ensure all admin and student views follow the professional Indigo/Quicksand design system.
 - [ ] Phase 3: Core Logic Validation - Audit Room and Student management CRUD for business rules compliance.
 
