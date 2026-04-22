@@ -3,23 +3,23 @@
 ## Naming Conventions
 
 | Controllers | PascalCase + Controller | `SinhvienController` |
-| Models | PascalCase, singular | `Phong`, `HopDong` |
+| Models | **Tiếng Việt** (PascalCase, singular) | `Sinhvien`, `Phong`, `Hopdong` |
+| Variables/Methods | **Tiếng Việt** (camelCase) | `$tuKhoa`, `$danhSachPhong` |
+| Database Tables | **Tiếng Việt** (snake_case, singular) | `sinhvien`, `phong` |
+| Enums (Strict) | **Tiếng Anh** (PascalCase) | `ContractStatus`, `RegistrationType` (Bắt buộc dùng English để chuẩn hóa logic) |
 | Views | kebab-case folders | `admin/sinhvien/danhsach.blade.php` |
-| Variables/Methods | camelCase | `$soPhong`, `getDanhSach()` |
-| Database Tables | snake_case, plural | `sinh_viens`, `hop_dongs` |
-| Enums (Strict) | **Luôn dùng English** | `UserRole`, `ContractStatus` (TUYỆT ĐỐI CẤM dùng tiếng Việt như `LoaiDangKy` để tránh phân mảnh) |
-| Observers (Strict)| Tương ứng 1-1 với Model | CẤM tạo Observer trùng lặp concept (e.g. `StudentObserver` vs `SinhvienObserver`) |
+| Observers | PascalCase | `SinhvienObserver` |
 ## UI & Localization Rules
 
-- **Code (classes, variables, DB):** Tiếng Anh
+- **Code DNA:** Giữ nguyên phong cách **Tiếng Việt** cho Models, Variables và DB Tables. Chỉ dùng **Tiếng Anh** cho Enums.
 - **Giao diện người dùng (Blade templates):** Tiếng Việt **có dấu**, giọng chuyên nghiệp
 - **Styling:** Tailwind utility classes ưu tiên, kết hợp Flowbite components
 - **Design tokens:** Xem `.planning/CONTEXT.md` — font Quicksand, màu Indigo
 
 ## Nếp gấp kiến trúc (Phát hiện từ GitNexus)
 ***Dành cho AI Agent làm việc:***
-- **Linguistic Fragmentation:** Hệ thống đang bị phân mảnh Enum (`ContractStatus` vs `LoaiDangKy`). Khi sinh code mới, phải ƯU TIÊN tìm và dùng hoặc tạo Enum tiếng Anh. Trưởng nhóm sẽ tiến hành refactor các class tiếng Việt dần dần.
-- **Duplicate Logic Checks:** Dự án có sự nhập nhằng giữa tiếng Anh và tiếng Việt trong tên bảng/tên file (e.g., Sinhvien vs Student). Phải luôn chạy `gitnexus_query("concept")` trước khi tạo Model/Observer/Controller mới để tránh làm duplicate tính năng.
+- **Linguistic Strategy:** Dự án sử dụng mô hình "Hybrid": Logic điều hướng/trạng thái (Enums) dùng English, Nghiệp vụ thực thể (Models/Variables) dùng Vietnamese.
+- **Duplicate Logic Checks:** Luôn chạy `gitnexus_query("concept")` để tránh tạo trùng các Class trùng tên khác ngôn ngữ (e.g., Student vs Sinhvien).
 
 ## Patterns
 
