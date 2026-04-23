@@ -18,6 +18,7 @@ yarn-error.log
 /.idea
 /.vscode
 .gitnexus
+tools/
 scratch/
 repomix-output.xml
 `%APPDATA%/`
