@@ -2,13 +2,17 @@
 
 namespace App\Services;
 
+use App\Interfaces\ContractServiceInterface;
 use App\Enums\ContractStatus;
 use App\Models\Hopdong;
 use App\Models\Sinhvien;
+use App\Traits\HoTroNghiepVu;
+use App\Traits\PhanHoiService;
 use Illuminate\Support\Facades\DB;
 
-class ContractService
+class ContractService implements ContractServiceInterface
 {
+    use HoTroNghiepVu, PhanHoiService;
     /**
      * Create a new contract.
      * 
@@ -50,10 +54,15 @@ class ContractService
                     return ['success' => false, 'message' => 'Phòng đã đầy, không thể thêm sinh viên.', 'contract' => null];
                 }
 
-                // Check gender compatibility
+                // Check gender compatibility - always enforce if room has gender
                 $gioitinhSV = $sinhvien->taikhoan->gioitinh ?? null;
-                if ($phong->gioitinh && $gioitinhSV && $phong->gioitinh !== $gioitinhSV) {
-                    return ['success' => false, 'message' => 'Giới tính sinh viên không phù hợp với phòng.', 'contract' => null];
+                if ($phong->gioitinh) {
+                    if (!$gioitinhSV) {
+                        return ['success' => false, 'message' => 'Sinh viên chưa có thông tin giới tính, không thể xếp phòng.', 'contract' => null];
+                    }
+                    if ($phong->gioitinh !== $gioitinhSV) {
+                        return ['success' => false, 'message' => 'Giới tính sinh viên không phù hợp với phòng.', 'contract' => null];
+                    }
                 }
 
                 // Create contract
@@ -73,9 +82,7 @@ class ContractService
                     'ngay_vao' => $data['ngay_bat_dau'],
                     'ngay_het_han' => $data['ngay_ket_thuc'],
                 ]);
-
-                // Sync occupancy count
-                $this->syncOccupancy([(int) $phong->id]);
+                // SinhvienObserver sẽ tự động sync Phong.dango
 
                 return ['success' => true, 'message' => 'Tạo hợp đồng thành công.', 'contract' => $contract];
             });
@@ -119,9 +126,8 @@ class ContractService
             return ['success' => false, 'message' => 'Phòng đã đổi giới tính, không thể gia hạn hợp đồng.'];
         }
 
-        // Check room still has capacity
-        $currentOccupancy = Sinhvien::where('phong_id', $phong->id)->count();
-        if ($currentOccupancy > (int) $phong->succhuamax) {
+        // Check room still has capacity (dùng dango đã được sync bởi SinhvienObserver)
+        if ($phong->fresh()->dango >= (int) $phong->succhuamax) {
             return ['success' => false, 'message' => 'Phòng đã đầy, không thể gia hạn hợp đồng.'];
         }
 
@@ -169,13 +175,11 @@ class ContractService
                     ]);
 
                     // Terminate all other active contracts for this student
-                    Hopdong::where('sinhvien_id', $sinhvien->id)
-                        ->where('trang_thai', ContractStatus::ACTIVE->value)
-                        ->where('id', '<>', $hopdong->id)
-                        ->update(['trang_thai' => ContractStatus::TERMINATED->value]);
+                    $this->chamDutHopDongHienTai($sinhvien->id);
+                    Hopdong::where('id', $hopdong->id)
+                        ->update(['trang_thai' => ContractStatus::ACTIVE->value]);
 
-                    // Update occupancy count
-                    $this->syncOccupancy([$currentRoomId]);
+                    // SinhvienObserver sẽ tự động sync Phong.dango
                 }
 
                 return ['success' => true, 'message' => 'Đã thanh lý hợp đồng và giải phóng sinh viên khỏi phòng.'];
@@ -185,17 +189,4 @@ class ContractService
         }
     }
 
-    /**
-     * Synchronize occupancy count (dango) for given rooms.
-     * 
-     * @param array $roomIds
-     * @return void
-     */
-    private function syncOccupancy(array $roomIds): void
-    {
-        foreach ($roomIds as $roomId) {
-            $count = Sinhvien::where('phong_id', $roomId)->count();
-            \App\Models\Phong::where('id', $roomId)->update(['dango' => $count]);
-        }
-    }
 }

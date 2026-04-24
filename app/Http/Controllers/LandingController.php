@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lienhe;
+use App\Models\Phong;
+use App\Models\Sinhvien;
 use App\Models\Thongbao;
+use App\Traits\PhanHoiService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,9 +14,43 @@ use Illuminate\View\View;
 
 class LandingController extends Controller
 {
+    use PhanHoiService;
     public function index(): View
     {
-        return view('landing.index');
+        // Dùng Phong.dango được sync bởi SinhvienObserver làm source of truth
+        $tongCho = \App\Models\Phong::sum('dango');
+        
+        // Lấy danh sách phòng
+        $phongList = Phong::all();
+
+        // Tính thống kê phòng
+        $tongPhong = $phongList->count();
+        $tongSucChua = $phongList->sum('succhuamax');
+        $tongConTrong = $tongSucChua - $tongCho;
+        
+        // Lấy giá phòng trung bình
+        $giaTrungBinh = $phongList->avg('giaphong') ?? 1200000;
+        
+        // Đếm số phòng hoàn toàn trống (không có sinh viên nào) - dùng query builder
+        $phongHoanToanTrong = Phong::whereDoesntHave('danhsachsinhvien')->count();
+        
+        // Đếm số phòng còn chỗ (dango < succhuamax) - dùng dango field được sync bởi observer
+        $phongConCho = Phong::whereColumn('dango', '<', 'succhuamax')->count();
+
+        // Số liệu nổi bật
+        $sinhVienDangO = $tongCho;
+        $soTang = $phongList->pluck('tang')->unique()->count();
+
+        return view('landing.index', [
+            'tongPhong' => $tongPhong,
+            'tongCho' => $tongCho,
+            'tongConTrong' => $tongConTrong,
+            'phongHoanToanTrong' => $phongHoanToanTrong,
+            'phongConCho' => $phongConCho,
+            'giaTrungBinh' => $giaTrungBinh,
+            'sinhVienDangO' => $sinhVienDangO,
+            'soTang' => $soTang,
+        ]);
     }
 
     public function guiLienHe(Request $request): RedirectResponse

@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Hopdong;
-use App\Models\Phong;
-use App\Models\Sinhvien;
-use App\Models\Taisan;
-use App\Models\Vattu;
+use App\Interfaces\PhongAssetServiceInterface;
+use App\Interfaces\PhongServiceInterface;
+use App\Interfaces\PhongSupplyServiceInterface;
 use Illuminate\Http\Request;
 
 class PhongController extends Controller
 {
+    public function __construct(
+        private readonly PhongServiceInterface $phongService,
+        private readonly PhongAssetServiceInterface $assetService,
+        private readonly PhongSupplyServiceInterface $supplyService,
+    ) {}
+
     /**
      * PUBLIC ROUTE: Display list of rooms for visitors (no login required).
      * - Group rooms by floor
@@ -18,39 +22,8 @@ class PhongController extends Controller
      */
     public function listRoomsPublic(Request $request)
     {
-        $tuKhoa = $request->query('q', '');
-        $tangLoc = $request->query('tang', '');
-        $gioiTinhLoc = $request->query('gioitinh', '');
-
-        $danhsachphong = Phong::withCount('danhsachsinhvien')->when($tuKhoa, function ($query, $tuKhoa) {
-            return $query->where('tenphong', 'like', '%'.trim($tuKhoa).'%');
-        })->when($tangLoc, function ($query) use ($tangLoc) {
-            return $query->where('tang', $tangLoc);
-        })->when($gioiTinhLoc, function ($query) use ($gioiTinhLoc) {
-            return $query->where('gioitinh', $gioiTinhLoc);
-        })->orderBy('tang')->orderBy('tenphong')->get();
-
-        // Tính số người đang ở mỗi phòng
-        $soluongdango_theophong = $danhsachphong
-            ->mapWithKeys(function ($phong) {
-                return [$phong->id => $phong->so_nguoi_dang_o];
-            })
-            ->toArray();
-
-        // Nhóm phòng theo tầng
-        $phongTheoTang = $danhsachphong->groupBy('tang');
-
-        // Lấy danh sách tầng cho filter
-        $danhsachtang = Phong::select('tang')->distinct()->orderBy('tang')->pluck('tang');
-
-        return view('public.phong.danhsach', [
-            'phongTheoTang' => $phongTheoTang,
-            'soluongdango_theophong' => $soluongdango_theophong,
-            'tuKhoa' => $tuKhoa,
-            'tangLoc' => $tangLoc,
-            'gioiTinhLoc' => $gioiTinhLoc,
-            'danhsachtang' => $danhsachtang,
-        ]);
+        $data = $this->phongService->listRoomsPublic($request);
+        return view('public.phong.danhsach', $data);
     }
 
     /**
@@ -58,57 +31,19 @@ class PhongController extends Controller
      */
     public function viewRoomAssetsPublic(int $id)
     {
-        $phong = Phong::find($id);
-
-        if (! $phong) {
-            return redirect()->route('public.danhsachphong')
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Khong tim thay phong.');
-        }
-
-        $vattu = Vattu::where('phong_id', $id)->get();
-        $taisan = Taisan::where('phong_id', $id)->get();
-
-        // Tính số người đang ở
-        $soluongdango = Sinhvien::where('phong_id', $id)->count();
-        $sochocontrong = $phong->succhuamax - $soluongdango;
-
-        return view('public.phong.vattu', compact('phong', 'vattu', 'taisan', 'soluongdango', 'sochocontrong'));
+        return $this->assetService->getPublic($id);
     }
 
     /**
      * Display available rooms for students.
-     * - Get rooms from: phong table
-     * - Current occupancy from: sinhvien table (phong_id column)
      */
     public function listStudentRooms(Request $request)
     {
-        $tuKhoa = $request->query('q', '');
-        $sinhvien = Sinhvien::where('user_id', auth()->id())->first();
-        $gioitinhSinhvien = optional($sinhvien->taikhoan)->gioitinh ?? null;
-
-        $danhsachphong = Phong::withCount('danhsachsinhvien')->when($tuKhoa, function ($query, $tuKhoa) {
-            return $query->where('tenphong', 'like', '%'.trim($tuKhoa).'%');
-        })->when($gioitinhSinhvien, function ($query) use ($gioitinhSinhvien) {
-            return $query->where('gioitinh', $gioitinhSinhvien);
-        })->get();
-
-        // Tính số người đang ở cho mỗi phòng
-        $soluongdango_theophong = $danhsachphong
-            ->mapWithKeys(function ($phong) {
-                return [$phong->id => $phong->so_nguoi_dang_o];
-            })
-            ->toArray();
-
-        $danhsachphongtrong = $danhsachphong->filter(function ($phong) use ($soluongdango_theophong) {
-            $soluonghientai = $phong->so_nguoi_dang_o;
-            return $soluonghientai < (int) $phong->succhuamax;
-        });
-
+        $data = $this->phongService->listStudentRooms($request);
         return view('student.phong.danhsach', [
-            'danhsachphong' => $danhsachphongtrong,
-            'soluongdango_theophong' => $soluongdango_theophong,
-            'tuKhoa' => $tuKhoa,
+            'danhsachphong' => $data['danhsachphongtrong'],
+            'soluongdango_theophong' => $data['soluongdango_theophong'],
+            'tuKhoa' => $data['tuKhoa'],
         ]);
     }
 
@@ -117,75 +52,32 @@ class PhongController extends Controller
      */
     public function studentAssets()
     {
-        $sinhvien = Sinhvien::where('user_id', auth()->id())->first();
-
-        if (! $sinhvien || ! $sinhvien->phong_id) {
-            return view('student.taisanphong', ['taisan' => collect(), 'phong' => null]);
-        }
-
-        $phong = Phong::find($sinhvien->phong_id);
-
-        $taisan = Taisan::where('phong_id', $sinhvien->phong_id)->get();
-
-        return view('student.taisanphong', compact('taisan', 'phong'));
+        return $this->assetService->getByStudent();
     }
 
     /**
-     * Hàm này hiển thị danh sách phòng cho admin (quản trị).
-     * - Danh sách phòng lấy từ: bảng phong
-     * - Số lượng đang ở lấy từ: bảng sinhvien (đếm theo phong_id)
+     * Danh sách phòng cho admin (quản trị).
      */
     public function listRooms(Request $request)
     {
-        $tuKhoa = $request->query('q', '');
-        $tangLoc = $request->query('tang', '');
-
-        $viewMode = $request->query('view', 'table');
-
-        $danhsachphong = Phong::withCount('danhsachsinhvien')->when($tuKhoa, function ($query, $tuKhoa) {
-            return $query->where('tenphong', 'like', '%'.trim($tuKhoa).'%');
-        })->when($tangLoc, function ($query) use ($tangLoc) {
-            return $query->where('tang', $tangLoc);
-        })->orderBy('tang')->orderBy('tenphong')->get();
-
-        $soluongdango_theophong = $danhsachphong
-            ->mapWithKeys(function ($phong) {
-                return [$phong->id => $phong->so_nguoi_dang_o];
-            })
-            ->toArray();
-
-        // Nhóm phòng theo tầng cho hiển thị
-        $phongTheoTang = $danhsachphong->groupBy('tang');
-
-        // Lấy danh sách tầng cho filter
-        $danhsachtang = Phong::select('tang')->distinct()->orderBy('tang')->pluck('tang');
-
-        return view('admin.phong.danhsach', [
-            'danhsachphong' => $danhsachphong,
-            'phongTheoTang' => $phongTheoTang,
-            'soluongdango_theophong' => $soluongdango_theophong,
-            'tuKhoa' => $tuKhoa,
-            'tangLoc' => $tangLoc,
-            'danhsachtang' => $danhsachtang,
-            'viewMode' => $viewMode,
-        ]);
+        $data = $this->phongService->listRooms($request);
+        return view('admin.phong.danhsach', $data);
     }
 
     /**
-     * Hàm này hiển thị chi tiết phòng (admin) bao gồm tài sản.
+     * Chi tiết phòng (admin) bao gồm tài sản.
      */
     public function viewRoom(int $id)
     {
-        $phong = Phong::find($id);
+        $data = $this->phongService->viewRoom($id);
 
-        if (! $phong) {
-            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy phòng.');
+        if (isset($data['error'])) {
+            return redirect()->back()
+                ->with('toast_loai', 'loi')
+                ->with('toast_noidung', $data['error']);
         }
 
-        $taisan = $phong->danhsachtaisan()->get();
-        $vattu = $phong->danhsachvattu()->get();
-
-        return view('admin.phong.chitiet', compact('phong', 'taisan', 'vattu'));
+        return view('admin.phong.chitiet', $data);
     }
 
     /**
@@ -193,21 +85,7 @@ class PhongController extends Controller
      */
     public function storeAsset(Request $request, int $id)
     {
-        $phong = Phong::find($id);
-
-        if (! $phong) {
-            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy phòng.');
-        }
-
-        $dulieu = $request->validate([
-            'tentaisan' => ['required', 'string'],
-            'soluong' => ['required', 'numeric', 'min:1'],
-            'tinhtrang' => ['required', 'string'],
-        ]);
-
-        Taisan::create(array_merge($dulieu, ['phong_id' => $phong->id]));
-
-        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Thêm tài sản thành công.');
+        return $this->assetService->store($request, $id);
     }
 
     /**
@@ -215,21 +93,7 @@ class PhongController extends Controller
      */
     public function updateAsset(Request $request, int $id, int $taisanId)
     {
-        $taisan = Taisan::find($taisanId);
-
-        if (! $taisan || $taisan->phong_id !== $id) {
-            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy tài sản.');
-        }
-
-        $dulieu = $request->validate([
-            'tentaisan' => ['required', 'string'],
-            'soluong' => ['required', 'numeric', 'min:1'],
-            'tinhtrang' => ['required', 'string'],
-        ]);
-
-        $taisan->update($dulieu);
-
-        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Cập nhật tài sản thành công.');
+        return $this->assetService->update($request, $id, $taisanId);
     }
 
     /**
@@ -237,15 +101,7 @@ class PhongController extends Controller
      */
     public function destroyAsset(int $id, int $taisanId)
     {
-        $taisan = Taisan::find($taisanId);
-
-        if (! $taisan || $taisan->phong_id !== $id) {
-            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Không tìm thấy tài sản.');
-        }
-
-        $taisan->delete();
-
-        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Xóa tài sản thành công.');
+        return $this->assetService->destroy($id, $taisanId);
     }
 
     /**
@@ -253,22 +109,7 @@ class PhongController extends Controller
      */
     public function storeSupply(Request $request, int $id)
     {
-        $phong = Phong::find($id);
-
-        if (! $phong) {
-            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Khong tim thay phong.');
-        }
-
-        $dulieu = $request->validate([
-            'tenvattu' => ['required', 'string'],
-            'soluong' => ['required', 'numeric', 'min:1'],
-            'tinhtrang' => ['required', 'string'],
-            'mota' => ['nullable', 'string'],
-        ]);
-
-        Vattu::create(array_merge($dulieu, ['phong_id' => $phong->id]));
-
-        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Them vat tu thanh cong.');
+        return $this->supplyService->store($request, $id);
     }
 
     /**
@@ -276,22 +117,7 @@ class PhongController extends Controller
      */
     public function updateSupply(Request $request, int $id, int $vattuId)
     {
-        $vattu = Vattu::find($vattuId);
-
-        if (! $vattu || $vattu->phong_id !== $id) {
-            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Khong tim thay vat tu.');
-        }
-
-        $dulieu = $request->validate([
-            'tenvattu' => ['required', 'string'],
-            'soluong' => ['required', 'numeric', 'min:1'],
-            'tinhtrang' => ['required', 'string'],
-            'mota' => ['nullable', 'string'],
-        ]);
-
-        $vattu->update($dulieu);
-
-        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Cap nhat vat tu thanh cong.');
+        return $this->supplyService->update($request, $id, $vattuId);
     }
 
     /**
@@ -299,160 +125,42 @@ class PhongController extends Controller
      */
     public function destroySupply(int $id, int $vattuId)
     {
-        $vattu = Vattu::find($vattuId);
-
-        if (! $vattu || $vattu->phong_id !== $id) {
-            return redirect()->back()->with('toast_loai', 'loi')->with('toast_noidung', 'Khong tim thay vat tu.');
-        }
-
-        $vattu->delete();
-
-        return redirect()->back()->with('toast_loai', 'thanhcong')->with('toast_noidung', 'Xoa vat tu thanh cong.');
+        return $this->supplyService->destroy($id, $vattuId);
     }
 
     /**
-     * Hàm này xử lý thêm mới phòng (admin).
-     * - Dữ liệu lấy từ form: tenphong, giaphong, soluongtoida, mota
+     * Thêm mới phòng (admin).
      */
     public function storeRoom(Request $request)
     {
-        $dulieu = $request->validate(
-            [
-                'tenphong' => ['required'],
-                'tang' => ['required', 'numeric', 'min:1'],
-                'giaphong' => ['required', 'numeric', 'min:0'],
-                'soluongtoida' => ['required', 'numeric', 'min:1'],
-                'succhuamax' => ['required', 'numeric', 'min:1', 'same:soluongtoida'],
-                'mota' => ['nullable'],
-                'gioitinh' => ['required', 'in:Nam,Nữ'],
-            ],
-            [
-                'tenphong.required' => 'Ten phong khong duoc de trong.',
-                'tang.required' => 'Tang khong duoc de trong.',
-                'giaphong.required' => 'Gia phong khong duoc de trong.',
-                'giaphong.numeric' => 'Gia phong phai la so.',
-                'soluongtoida.required' => 'So luong toi da khong duoc de trong.',
-                'soluongtoida.numeric' => 'So luong toi da phai la so.',
-                'soluongtoida.min' => 'So luong toi da phai lon hon hoac bang 1.',
-                'succhuamax.required' => 'Suc chua toi da khong duoc de trong.',
-                'succhuamax.same' => 'Suc chua toi da phai bang so luong toi da.',
-                'gioitinh.required' => 'Gioi tinh khong duoc de trong.',
-            ]
-        );
+        $result = $this->phongService->storeRoom($request);
 
-        $dulieu['dango'] = 0;
-
-        Phong::create($dulieu);
-
-        return redirect()
-            ->back()
-            ->with('toast_loai', 'thanhcong')
-            ->with('toast_noidung', 'Them phong thanh cong.');
+        return redirect()->back()
+            ->with('toast_loai', $result['success'] ? 'thanhcong' : 'loi')
+            ->with('toast_noidung', $result['message']);
     }
 
     /**
-     * Hàm này xử lý cập nhật phòng (admin).
-     * - $id lấy từ route
-     * - Dữ liệu lấy từ form: tenphong, giaphong, soluongtoida, mota
+     * Cập nhật phòng (admin).
      */
     public function updateRoom(Request $request, int $id)
     {
-        $phong = Phong::find($id);
+        $result = $this->phongService->updateRoom($request, $id);
 
-        if (! $phong) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Khong tim thay phong.');
-        }
-
-        $dulieu = $request->validate(
-            [
-                'tenphong' => ['required'],
-                'tang' => ['required', 'numeric', 'min:1'],
-                'giaphong' => ['required', 'numeric', 'min:0'],
-                'soluongtoida' => ['required', 'numeric', 'min:1'],
-                'succhuamax' => ['required', 'numeric', 'min:1', 'same:soluongtoida'],
-                'mota' => ['nullable'],
-                'gioitinh' => ['required', 'in:Nam,Nữ'],
-            ],
-            [
-                'tenphong.required' => 'Ten phong khong duoc de trong.',
-                'tang.required' => 'Tang khong duoc de trong.',
-                'giaphong.required' => 'Gia phong khong duoc de trong.',
-                'giaphong.numeric' => 'Gia phong phai la so.',
-                'soluongtoida.required' => 'So luong toi da khong duoc de trong.',
-                'soluongtoida.numeric' => 'So luong toi da phai la so.',
-                'soluongtoida.min' => 'So luong toi da phai lon hon hoac bang 1.',
-                'succhuamax.required' => 'Suc chua toi da khong duoc de trong.',
-                'succhuamax.same' => 'Suc chua toi da phai bang so luong toi da.',
-                'gioitinh.required' => 'Gioi tinh khong duoc de trong.',
-            ]
-        );
-
-        $phong->update($dulieu);
-
-        return redirect()
-            ->back()
-            ->with('toast_loai', 'thanhcong')
-            ->with('toast_noidung', 'Cap nhat phong thanh cong.');
+        return redirect()->back()
+            ->with('toast_loai', $result['success'] ? 'thanhcong' : 'loi')
+            ->with('toast_noidung', $result['message']);
     }
 
     /**
-     * Hàm này xử lý xóa phòng (admin).
-     * - $id lấy từ route
+     * Xóa phòng (admin).
      */
     public function destroyRoom(int $id)
     {
-        $phong = Phong::find($id);
+        $result = $this->phongService->destroyRoom($id);
 
-        if (! $phong) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', 'Khong tim thay phong.');
-        }
-
-        $thongdiepChan = $this->kiemTraDieuKienXoaPhong($phong);
-        if ($thongdiepChan !== null) {
-            return redirect()
-                ->back()
-                ->with('toast_loai', 'loi')
-                ->with('toast_noidung', $thongdiepChan);
-        }
-
-        $phong->delete();
-
-        return redirect()
-            ->back()
-            ->with('toast_loai', 'thanhcong')
-            ->with('toast_noidung', 'Xoa phong thanh cong.');
-    }
-
-    private function kiemTraDieuKienXoaPhong(Phong $phong): ?string
-    {
-        $soSinhVienDangO = $phong->danhsachsinhvien()->count();
-        if ($soSinhVienDangO > 0) {
-            return 'Khong the xoa phong nay vi van con '.$soSinhVienDangO.' sinh vien dang o. Hay chuyen het sinh vien sang phong khac truoc.';
-        }
-
-        $soHopDongDangHieuLuc = $phong->danhsachhopdong()
-            ->where('trang_thai', Hopdong::TRANGTHAI_DANG_HIEU_LUC)
-            ->count();
-        if ($soHopDongDangHieuLuc > 0) {
-            return 'Khong the xoa phong nay vi con '.$soHopDongDangHieuLuc.' hop dong dang hieu luc. Hay thanh ly het hop dong truoc khi xoa.';
-        }
-
-        $soHopDongLichSu = $phong->danhsachhopdong()->count();
-        if ($soHopDongLichSu > 0) {
-            return 'Khong the xoa phong nay vi da co du lieu hop dong lich su. Viec xoa phong se lam mat lich su hop dong.';
-        }
-
-        $soHoaDonLichSu = $phong->danhsachhoadon()->count();
-        if ($soHoaDonLichSu > 0) {
-            return 'Khong the xoa phong nay vi da co du lieu hoa don lich su. Viec xoa phong se lam mat lich su hoa don.';
-        }
-
-        return null;
+        return redirect()->back()
+            ->with('toast_loai', $result['success'] ? 'thanhcong' : 'loi')
+            ->with('toast_noidung', $result['message']);
     }
 }
