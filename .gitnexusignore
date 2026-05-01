@@ -1,4 +1,4 @@
-# GitNexus Ignore - Exclude directories to speed up analysis
+# GitNexus Ignore - Exclude directories to speed up analysis and focus on core logic
 
 # Dependencies
 vendor/
@@ -7,6 +7,7 @@ node_modules/
 # Storage & Cache
 storage/
 public/storage/
+bootstrap/cache/
 
 # Git
 .git/
@@ -23,6 +24,20 @@ build/
 *.tmp
 *.temp
 .cache/
+
+# Framework boilerplate & tests (giữ lại core app/)
+public/
+tests/
+database/migrations/
+database/seeders/
+database/factories/
+config/
+routes/console.php
+routes/channels.php
+
+# Frontend assets
+resources/css/
+resources/js/
 
 # Tools (already indexed separately)
 tools/

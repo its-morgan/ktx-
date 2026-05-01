@@ -1,137 +1,142 @@
-@extends('admin.layouts.quantri')
+<x-admin-layout>
+    <x-slot:title>Hồ sơ sinh viên nội trú</x-slot:title>
 
-@section('noidung')
-    <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <div class="text-2xl font-bold text-[#121212]">Quản lý sinh viên</div>
-            <div class="text-sm text-[#606060]">Danh sách sinh viên và chuyển phòng nhanh.</div>
+            <h1 class="text-xl font-bold text-ink-primary font-display uppercase tracking-tight">Cơ sở dữ liệu sinh viên</h1>
+            <p class="text-xs font-medium text-ink-secondary/60">Quản lý hồ sơ nhân khẩu và lịch sử lưu trú cư dân.</p>
         </div>
 
-        <form method="GET" action="{{ route('admin.quanlysinhvien') }}" class="flex items-center gap-2">
-            <input name="q" value="{{ old('q', $tuKhoa ?? '') }}" type="text" placeholder="Tìm theo mã sinh viên"
-                   class="rounded-lg border border-gray-200/80 p-2 text-sm" />
-            <button type="submit" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">Tìm</button>
-        </form>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <form action="{{ route('admin.quanlysinhvien') }}" method="GET" class="flex items-center gap-2">
+                <div class="relative group">
+                    <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-secondary/40 group-focus-within:text-ink-primary transition-colors">
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Mã số hoặc họ tên..." class="w-full sm:w-56 rounded-xl border border-ui-border bg-white py-2 pl-9 pr-4 text-xs font-medium text-ink-primary placeholder:text-ink-secondary/30 focus:border-ink-primary/30 focus:outline-none focus:ring-4 focus:ring-ink-primary/5 transition-all" />
+                </div>
+                <button type="submit" class="rounded-xl bg-ink-primary px-4 py-2 text-[10px] font-bold text-white shadow-sm transition-all hover:bg-ink-primary/90 active:scale-[0.98]">
+                    Truy vấn
+                </button>
+            </form>
+        </div>
     </div>
 
-    @php
-        $maptenphong = $danhsachphong->keyBy('id');
-    @endphp
-
-    <div class="overflow-hidden rounded-lg border border-gray-200/70 bg-white shadow-none">
+    <article class="overflow-hidden rounded-2xl bg-white border border-ui-border shadow-sm">
         <div class="overflow-x-auto">
-            <table class="table-fixed w-full min-w-full divide-y divide-gray-200 text-sm text-[#606060]">
-                <thead class="bg-[#F7F7F8] text-xs uppercase text-[#606060]">
-                <tr>
-                    <th class="w-24 px-6 py-3 text-left font-semibold">Mã SV</th>
-                    <th class="w-40 px-6 py-3 text-left font-semibold">Họ và tên</th>
-                    <th class="w-20 px-6 py-3 text-left font-semibold">Giới tính</th>
-                    <th class="w-24 px-6 py-3 text-left font-semibold">Lớp</th>
-                    <th class="w-36 px-6 py-3 text-left font-semibold">Số điện thoại</th>
-                    <th class="w-32 px-6 py-3 text-left font-semibold">Phòng</th>
-                    <th class="w-52 px-6 py-3 text-right font-semibold">Chỉnh sửa</th>
-                </tr>
+            <table class="w-full text-left text-sm text-ink-primary">
+                <thead class="bg-ui-bg/50 border-b border-ui-border text-[10px] font-bold uppercase tracking-widest text-ink-secondary">
+                    <tr>
+                        <th class="px-6 py-4 font-bold">Danh tính cư dân</th>
+                        <th class="px-6 py-4 font-bold">Mã số & Lớp</th>
+                        <th class="px-6 py-4 font-bold">Vị trí hiện tại</th>
+                        <th class="px-6 py-4 font-bold">Liên lạc</th>
+                        <th class="px-6 py-4 font-bold">Ngày tham gia</th>
+                        <th class="px-6 py-4 font-bold text-right">Điều phối</th>
+                    </tr>
                 </thead>
-                <tbody>
-                @forelse ($danhsachsinhvien as $sinhvien)
-                    <tr class="border-t border-gray-200/70 bg-white hover:bg-[#F7F7F8]">
-                        <td class="px-6 py-4 font-semibold text-[#121212]">{{ $sinhvien->masinhvien }}</td>
-                        <td class="px-6 py-4 font-medium text-[#121212]">{{ optional($sinhvien->taikhoan)->name ?? 'Chưa có' }}</td>
-                        @php
-                            $gioitinh = optional($sinhvien->taikhoan)->gioitinh ?? 'Khác';
-                            $badgeClass = $gioitinh === 'Nữ' ? 'bg-[#F7F7F8] text-[#606060]' : 'bg-[#F7F7F8] text-[#606060]';
-                        @endphp
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold {{ $badgeClass }}">{{ $gioitinh }}</span>
-                        </td>
-                        <td class="px-6 py-4">{{ $sinhvien->lop }}</td>
-                        <td class="px-6 py-4">{{ $sinhvien->sodienthoai }}</td>
-                        <td class="w-32 px-6 py-4">
-                            @if ($sinhvien->phong_id && isset($maptenphong[$sinhvien->phong_id]))
-                                {{ $maptenphong[$sinhvien->phong_id]->tenphong }}
-                            @else
-                                <span class="text-[#9A9A9A]">Chưa có</span>
-                            @endif
-                        </td>
-                        <td class="w-52 px-6 py-4">
-                            <div class="flex items-center justify-end gap-2 whitespace-nowrap">
-                                <button type="button" data-modal-target="modal-suasinhvien-{{ $sinhvien->id }}" data-modal-toggle="modal-suasinhvien-{{ $sinhvien->id }}" class="h-8 min-w-[46px] rounded-lg border border-gray-200/70 bg-[#F7F7F8] px-2 text-xs font-semibold text-[#606060] hover:bg-[#F1F1F2]">Sửa</button>
-
-                                <form method="POST" action="{{ route('admin.chuyenphong', ['id' => $sinhvien->id]) }}" class="flex items-center gap-2 min-w-max">
-                                    @csrf
-                                    <select name="phong_id" class="h-8 w-28 rounded-lg border border-gray-200/80 px-2 text-xs text-[#121212] focus:border-gray-900 focus:ring-gray-900">
-                                        <option value="0" {{ $sinhvien->phong_id ? '' : 'selected' }}>Chưa có</option>
-                                        @foreach ($danhsachphong as $phong)
-                                            <option value="{{ $phong->id }}" {{ (int) $sinhvien->phong_id === (int) $phong->id ? 'selected' : '' }}>{{ $phong->tenphong }}</option>
-                                        @endforeach
-                                    </select>
-                                    <button type="submit" class="linear-btn-primary px-3 py-1.5 text-xs">Lưu</button>
-                                </form>
-
-                                @if($sinhvien->phong_id)
-                                    <form method="POST" action="{{ route('admin.choroiophong', ['id' => $sinhvien->id]) }}" onsubmit="return confirm('Bạn có chắc muốn cho sinh viên này rời phòng?')" class="inline">
-                                        @csrf
-                                        <button type="submit" class="h-8 min-w-[98px] rounded-lg bg-red-600 px-2 text-xs font-semibold text-white hover:bg-red-700" title="Cho rời phòng">Cho rời phòng</button>
-                                    </form>
+                <tbody class="divide-y divide-ui-border">
+                    @forelse($danhsachsinhvien as $sinhvien)
+                        <tr class="group transition-colors hover:bg-ui-bg/50">
+                            <td class="px-6 py-5">
+                                <div class="flex items-center gap-4">
+                                    <div class="h-10 w-10 flex-shrink-0 overflow-hidden rounded-xl bg-ui-bg ring-1 ring-ui-border">
+                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($sinhvien->taikhoan->name ?? 'N/A') }}&background=f8f9fa&color=0f172a&bold=true" alt="Avatar" />
+                                    </div>
+                                    <div class="font-bold text-ink-primary font-display text-base">{{ $sinhvien->taikhoan->name ?? 'N/A' }}</div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-5">
+                                <div class="text-sm font-bold text-ink-primary tabular-nums">{{ $sinhvien->masinhvien }}</div>
+                                <div class="text-[10px] font-bold uppercase tracking-widest text-ink-secondary mt-0.5">{{ $sinhvien->lop }}</div>
+                            </td>
+                            <td class="px-6 py-5">
+                                @if($sinhvien->phong)
+                                    <div class="flex items-center gap-2 font-bold text-ink-primary">
+                                        <div class="h-7 w-7 flex items-center justify-center rounded-lg bg-ui-bg text-ink-secondary/60 ring-1 ring-ui-border">
+                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                                        </div>
+                                        {{ $sinhvien->phong->tenphong }}
+                                    </div>
+                                @else
+                                    <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-ui-bg text-ink-secondary/40 ring-1 ring-inset ring-ui-border">Chưa xếp phòng</span>
                                 @endif
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr class="border-t border-gray-200/70">
-                        <td class="px-6 py-4" colspan="7">
-                            <x-empty-state
-                                title="Chưa có sinh viên"
-                                description="Danh sách sinh viên sẽ hiển thị tại đây khi có dữ liệu."
-                                actionLabel="Tải lại trang"
-                                :actionHref="request()->fullUrl()"
-                            />
-                        </td>
-                    </tr>
-                @endforelse
+                            </td>
+                            <td class="px-6 py-5">
+                                <div class="text-xs font-bold text-ink-primary tabular-nums">{{ $sinhvien->sodienthoai }}</div>
+                                <div class="text-[10px] font-medium text-ink-secondary/40 mt-0.5">{{ $sinhvien->taikhoan->email ?? 'N/A' }}</div>
+                            </td>
+                            <td class="px-6 py-5">
+                                <div class="text-sm font-bold text-ink-primary tabular-nums">{{ $sinhvien->created_at->format('d/m/Y') }}</div>
+                            </td>
+                            <td class="px-6 py-5 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <button type="button" data-modal-target="modal-chitiet-{{ $sinhvien->id }}" data-modal-toggle="modal-chitiet-{{ $sinhvien->id }}" class="flex h-8 w-8 items-center justify-center rounded-lg border border-ui-border bg-white text-ink-secondary shadow-sm transition-colors hover:bg-ui-bg hover:text-ink-primary" title="Hồ sơ chi tiết">
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="px-6 py-24 text-center">
+                                <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-ui-bg text-ink-secondary/50 mb-3">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                </div>
+                                <div class="text-sm font-bold text-ink-primary">Không có dữ liệu sinh viên</div>
+                                <div class="text-[11px] text-ink-secondary mt-1">Chưa có sinh viên nào hoặc không tìm thấy kết quả phù hợp.</div>
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
-
         </div>
-    </div>
-    @push('modals')
-        @foreach ($danhsachsinhvien as $sinhvien)
-            <div id="modal-suasinhvien-{{ $sinhvien->id }}" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                <div class="w-full max-w-lg rounded-lg bg-white p-5">
-                    <h3 class="mb-4 text-lg font-semibold">Sửa thông tin sinh viên</h3>
-                    <form method="POST" action="{{ route('admin.capnhatsinhvien', ['id' => $sinhvien->id]) }}" class="space-y-3">
-                        @csrf
-                        <div>
-                            <label class="block text-sm font-medium text-[#606060]">Họ và tên</label>
-                            <input type="text" name="name" value="{{ optional($sinhvien->taikhoan)->name }}" class="mt-1 block w-full rounded-lg border border-gray-200/80 px-3 py-2 text-sm" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-[#606060]">Mã sinh viên</label>
-                            <input type="text" name="masinhvien" value="{{ $sinhvien->masinhvien }}" class="mt-1 block w-full rounded-lg border border-gray-200/80 px-3 py-2 text-sm" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-[#606060]">Lớp</label>
-                            <input type="text" name="lop" value="{{ $sinhvien->lop }}" class="mt-1 block w-full rounded-lg border border-gray-200/80 px-3 py-2 text-sm" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-[#606060]">Số điện thoại</label>
-                            <input type="text" name="sodienthoai" value="{{ $sinhvien->sodienthoai }}" class="mt-1 block w-full rounded-lg border border-gray-200/80 px-3 py-2 text-sm" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-[#606060]">Giới tính</label>
-                            <select name="gioitinh" class="mt-1 block w-full rounded-lg border border-gray-200/80 px-3 py-2 text-sm" required>
-                                <option value="Nam" {{ optional($sinhvien->taikhoan)->gioitinh === 'Nam' ? 'selected' : '' }}>Nam</option>
-                                <option value="Nữ" {{ optional($sinhvien->taikhoan)->gioitinh === 'Nữ' ? 'selected' : '' }}>Nữ</option>
-                            </select>
-                        </div>
-                        <div class="flex justify-end gap-2">
-                            <button type="button" data-modal-hide="modal-suasinhvien-{{ $sinhvien->id }}" class="rounded-lg border border-gray-200/80 px-3 py-2 text-sm">Hủy</button>
-                            <button type="submit" class="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white hover:bg-[#1C1C1C]">Lưu</button>
-                        </div>
-                    </form>
-                </div>
+        @if(method_exists($danhsachsinhvien, 'links'))
+            <div class="border-t border-ui-border px-6 py-4 bg-ui-bg/30">
+                {{ $danhsachsinhvien->withQueryString()->links() }}
             </div>
+        @endif
+    </article>
+
+    @push('modals')
+        @foreach($danhsachsinhvien as $sinhvien)
+            <x-modal id="modal-chitiet-{{ $sinhvien->id }}" title="Hồ sơ nhân khẩu cư dân" subtitle="Thông tin định danh và lịch sử lưu trú của sinh viên.">
+                <div class="space-y-6">
+                    <div class="flex items-center gap-5 p-4 rounded-2xl bg-ui-bg/50 ring-1 ring-inset ring-ui-border">
+                        <div class="h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-ui-border">
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode($sinhvien->taikhoan->name ?? 'N/A') }}&background=ffffff&color=0f172a&bold=true&size=128" alt="Avatar Large" />
+                        </div>
+                        <div>
+                            <div class="font-bold text-ink-primary font-display text-2xl leading-tight">{{ $sinhvien->taikhoan->name ?? 'N/A' }}</div>
+                            <div class="text-xs font-bold text-ink-secondary/60 uppercase tracking-widest mt-1">{{ $sinhvien->masinhvien }} • {{ $sinhvien->lop }}</div>
+                        </div>
+                    </div>
+
+                    <div class="divide-y divide-ui-border rounded-2xl bg-white p-6 ring-1 ring-inset ring-ui-border">
+                        <div class="flex items-center justify-between py-3">
+                            <span class="text-xs font-bold text-ink-secondary uppercase tracking-widest">Email học thuật</span>
+                            <span class="text-sm font-bold text-ink-primary">{{ $sinhvien->taikhoan->email ?? 'N/A' }}</span>
+                        </div>
+                        <div class="flex items-center justify-between py-3">
+                            <span class="text-xs font-bold text-ink-secondary uppercase tracking-widest">Số điện thoại</span>
+                            <span class="text-sm font-bold text-ink-primary tabular-nums">{{ $sinhvien->sodienthoai }}</span>
+                        </div>
+                        <div class="flex items-center justify-between py-3">
+                            <span class="text-xs font-bold text-ink-secondary uppercase tracking-widest">Giới tính</span>
+                            <span class="text-sm font-bold text-ink-primary">{{ $sinhvien->gioitinh }}</span>
+                        </div>
+                        <div class="flex items-center justify-between py-3">
+                            <span class="text-xs font-bold text-ink-secondary uppercase tracking-widest">Vị trí phòng</span>
+                            <span class="text-sm font-bold text-ink-primary">{{ $sinhvien->phong->tenphong ?? 'Chưa xếp' }}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" data-modal-hide="modal-chitiet-{{ $sinhvien->id }}" class="w-full rounded-xl bg-ui-bg py-3 text-sm font-bold text-ink-primary ring-1 ring-ui-border transition-colors hover:bg-white">Đóng hồ sơ</button>
+                    </div>
+                </div>
+            </x-modal>
         @endforeach
     @endpush
-@endsection
+</x-admin-layout>
 

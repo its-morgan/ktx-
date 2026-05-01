@@ -4,9 +4,18 @@ namespace App\Enums;
 
 enum UserRole: string
 {
-    case ADMIN = 'admin';
-    case STUDENT = 'sinhvien';
-    case MANAGER = 'quanly';
+    case Admin = 'admin';
+    case Student = 'student';
+    case Manager = 'manager';
+
+    public function label(): string
+    {
+        return match($this) {
+            self::Admin => 'Quản trị viên',
+            self::Student => 'Sinh viên',
+            self::Manager => 'Quản lý',
+        };
+    }
 
     public static function values(): array
     {

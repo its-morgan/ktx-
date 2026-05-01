@@ -1,157 +1,220 @@
 <?php
 
-use App\Http\Controllers\BaohongController;
-use App\Http\Controllers\CauhinhController;
-use App\Http\Controllers\CongnoController;
-use App\Http\Controllers\DanhgiaController;
-use App\Http\Controllers\DangkyController;
-use App\Http\Controllers\HopdongController;
-use App\Http\Controllers\HoadonController;
-use App\Http\Controllers\KyluatController;
-use App\Http\Controllers\LandingController;
-use App\Http\Controllers\LienheController;
-use App\Http\Controllers\LichsubaotriController;
-use App\Http\Controllers\PhongController;
-use App\Http\Controllers\PhongCuaToiController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\SinhvienController;
-use App\Http\Controllers\ThongbaoController;
-use App\Http\Controllers\TrangchuController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
-Route::get('/', [LandingController::class, 'index'])->name('home');
-Route::post('/lien-he', [LandingController::class, 'guiLienHe'])->name('landing.lienhe');
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
 
-/**
- * ROUTE CÔNG KHAI (Public Access) - Không cần đăng nhập
- * Cho phép khách xem danh sách phòng và vật tư trước khi thuê
- */
-Route::get('/phong', [PhongController::class, 'listRoomsPublic'])->name('public.danhsachphong');
-Route::get('/phong/{id}/vattu', [PhongController::class, 'viewRoomAssetsPublic'])->name('public.chitietvattu');
+// Giao thức Shared Controllers
+use App\Http\Controllers\Shared\FileController;
+use App\Http\Controllers\Shared\ProfileController;
 
-/**
- * Nhóm route cho ADMIN:
- */
+// --------------------------------------------------------------------------
+// 1. GUEST / PUBLIC ROUTES
+// --------------------------------------------------------------------------
+Route::namespace('App\Http\Controllers\Guest')->group(function () {
+    Route::get('/', 'LandingController@index')->name('home');
+    Route::post('/lien-he', 'LandingController@guiLienHe')->name('landing.lienhe');
+
+    // Guest Registration & Lookup
+    Route::prefix('dang-ky-ktx')->name('guest.dangky.')->group(function () {
+        Route::get('/', 'DangkyController@create')->name('create');
+        Route::post('/', 'DangkyController@store')->name('store');
+    });
+    Route::get('/tra-cuu-don/{token?}', 'DangkyController@lookup')->name('guest.lookup');
+
+    // Public Room Info
+    Route::prefix('phong')->name('public.')->group(function () {
+        Route::get('/', 'PhongController@index')->name('danhsachphong');
+        Route::get('/{id}/vattu', 'PhongController@assets')->name('chitietvattu');
+    });
+});
+
+// --------------------------------------------------------------------------
+// 2. ADMIN ROUTES
+// --------------------------------------------------------------------------
 Route::prefix('admin')
     ->middleware(['auth', 'kiemtravaitro:admin,admin_truong,admin_toanha,le_tan'])
+    ->namespace('App\Http\Controllers\Admin')
     ->name('admin.')
     ->group(function () {
-        Route::get('/trangchu', [TrangchuController::class, 'showAdminDashboard'])->name('trangchu');
+        
+        Route::get('/trangchu', 'TrangchuController@index')->name('trangchu');
 
-        Route::get('/quanlyphong', [PhongController::class, 'listRooms'])->name('quanlyphong');
-        Route::post('/themphong', [PhongController::class, 'storeRoom'])->name('themphong');
-        Route::post('/capnhatphong/{id}', [PhongController::class, 'updateRoom'])->name('capnhatphong');
-        Route::post('/xoaphong/{id}', [PhongController::class, 'destroyRoom'])->name('xoaphong');
-        Route::get('/quanlysinhvien', [SinhvienController::class, 'listStudents'])->name('quanlysinhvien');
-        Route::post('/chuyenphong/{id}', [SinhvienController::class, 'assignRoom'])->name('chuyenphong');
-        Route::post('/choroiophong/{id}', [SinhvienController::class, 'removeFromRoom'])->name('choroiophong');
-        Route::post('/capnhatsinhvien/{id}', [SinhvienController::class, 'updateStudent'])->name('capnhatsinhvien');
-        Route::get('/duyetdangky', [DangkyController::class, 'listRegistrations'])->middleware('can:dangky.review')->name('duyetdangky');
-        Route::post('/duyetdangky/{id}', [DangkyController::class, 'approveRegistration'])->middleware('can:dangky.review')->name('xulyduyetdangky');
-        Route::post('/tuchoidangky/{id}', [DangkyController::class, 'rejectRegistration'])->middleware('can:dangky.review')->name('xulytuchoidangky');
-        Route::get('/quanlyhoadon', [HoadonController::class, 'listInvoicesAdmin'])->middleware('can:hoadon.manage')->name('quanlyhoadon');
-        Route::post('/xulyhoadon', [HoadonController::class, 'processInvoices'])->middleware('can:hoadon.manage')->name('xulyhoadon');
-        Route::post('/xacnhanthanhtoan/{id}', [HoadonController::class, 'confirmPayment'])->middleware('can:hoadon.manage')->name('xacnhanthanhtoan');
-        Route::get('/hoadon/{id}/pdf', [HoadonController::class, 'downloadInvoicePDF'])->middleware('can:hoadon.manage')->name('hoadon.pdf');
-        Route::get('/baocaocongno', [CongnoController::class, 'showArrearage'])->name('baocaocongno');
-        Route::post('/guinhacnho/{phongId}', [CongnoController::class, 'sendReminderNotification'])->name('guinhacnho');
-        Route::get('/quanlybaohong', [BaohongController::class, 'listMaintenanceRequestsAdmin'])->name('quanlybaohong');
-        Route::post('/capnhatbaohong/{id}', [BaohongController::class, 'updateMaintenance'])->name('capnhatbaohong');
-        Route::get('/quanlybaotri', [LichsubaotriController::class, 'listMaintenanceHistory'])->name('quanlybaotri');
-        // Quản lý kỷ luật
-        Route::get('/quanlykyluat', [KyluatController::class, 'listDisciplines'])->middleware('can:kyluat.manage')->name('quanlykyluat');
-        Route::post('/them/kyluat', [KyluatController::class, 'storeDiscipline'])->middleware('can:kyluat.manage')->name('themkyluat');
-        Route::post('/capnhat/kyluat/{id}', [KyluatController::class, 'updateDiscipline'])->middleware('can:kyluat.manage')->name('capnhatkyluat');
+        // Quản lý Phòng & Sơ đồ
+        Route::controller('PhongController')->group(function () {
+            Route::get('/quanlyphong', 'index')->name('quanlyphong');
+            Route::get('/sodophong', 'map')->name('phong.map');
+            Route::post('/themphong', 'store')->name('themphong');
+            Route::post('/capnhatphong/{id}', 'update')->name('capnhatphong');
+            Route::post('/xoaphong/{id}', 'destroy')->name('xoaphong');
+            Route::get('/quanlyphong/{id}', 'show')->name('chitietphong');
+            
+            // Tài sản & Vật tư (Inventory)
+            Route::post('/quanlyphong/{id}/themtaisan', 'storeAsset')->name('themtaisan');
+            Route::post('/quanlyphong/{id}/capnhattaisan/{taisanId}', 'updateAsset')->name('capnhattaisan');
+            Route::post('/quanlyphong/{id}/xoataisan/{taisanId}', 'destroyAsset')->name('xoataisan');
+            Route::post('/quanlyphong/{id}/themvattu', 'storeSupply')->name('themvattu');
+            Route::post('/quanlyphong/{id}/capnhatvattu/{vattuId}', 'updateSupply')->name('capnhatvattu');
+            Route::post('/quanlyphong/{id}/xoavattu/{vattuId}', 'destroySupply')->name('xoavattu');
+        });
 
-        // Quản lý tài sản phòng
-        Route::get('/quanlyphong/{id}', [PhongController::class, 'viewRoom'])->name('chitietphong');
-        Route::post('/quanlyphong/{id}/themtaisan', [PhongController::class, 'storeAsset'])->name('themtaisan');
-        Route::post('/quanlyphong/{id}/capnhattaisan/{taisanId}', [PhongController::class, 'updateAsset'])->name('capnhattaisan');
-        Route::post('/quanlyphong/{id}/xoataisan/{taisanId}', [PhongController::class, 'destroyAsset'])->name('xoataisan');
-        Route::post('/quanlyphong/{id}/themvattu', [PhongController::class, 'storeSupply'])->name('themvattu');
-        Route::post('/quanlyphong/{id}/capnhatvattu/{vattuId}', [PhongController::class, 'updateSupply'])->name('capnhatvattu');
-        Route::post('/quanlyphong/{id}/xoavattu/{vattuId}', [PhongController::class, 'destroySupply'])->name('xoavattu');
-        Route::get('/quanlyphong/{id}/danhgia', [DanhgiaController::class, 'listReviews'])->name('phong.danhgia');
-        Route::post('/vattu/{id}/baotri', [LichsubaotriController::class, 'storeMaintenanceRecord'])->name('vattu.baotri');
-        Route::get('/quanlycauhinh', [CauhinhController::class, 'showSettings'])->middleware('can:cauhinh.manage')->name('quanlycauhinh');
-        Route::post('/quanlycauhinh', [CauhinhController::class, 'updateSettings'])->middleware('can:cauhinh.manage')->name('capnhatcauhinh');
-        Route::get('/quanlythongbao', [ThongbaoController::class, 'listAnnouncementsAdmin'])->name('quanlythongbao');
-        Route::post('/quanlythongbao', [ThongbaoController::class, 'storeAnnouncement'])->name('themthongbao');
-        Route::post('/quanlythongbao/xoa/{id}', [ThongbaoController::class, 'destroyAnnouncement'])->whereNumber('id')->name('xoathongbao');
-        Route::post('/quanlythongbao/{id}', [ThongbaoController::class, 'updateAnnouncement'])->whereNumber('id')->name('capnhatthongbao');
-        Route::get('/quanlylienhe', [LienheController::class, 'listInquiries'])->name('quanlylienhe');
-        Route::post('/quanlylienhe/{id}/trangthai', [LienheController::class, 'updateStatus'])->whereNumber('id')->name('capnhattrangthailienhe');
-        // Quản lý hợp đồng
-        Route::get('/quanlyhopdong', [HopdongController::class, 'listContracts'])->middleware('can:hopdong.manage')->name('quanlyhopdong');
-        Route::post('/taohopdong', [HopdongController::class, 'store'])->middleware('can:hopdong.manage')->name('taohopdong');
-        Route::post('/hopdong/{id}/giahan', [HopdongController::class, 'extend'])->middleware('can:hopdong.manage')->name('hopdong.giahan');
-        Route::post('/hopdong/{id}/thanhly', [HopdongController::class, 'close'])->middleware('can:hopdong.manage')->name('hopdong.thanhly');
-        Route::get('/hopdong/{id}/pdf', [HopdongController::class, 'downloadPDF'])->middleware('can:hopdong.manage')->name('hopdong.pdf');
+        // Quản lý Sinh viên
+        Route::controller('SinhvienController')->group(function () {
+            Route::get('/quanlysinhvien', 'lietKeSinhVien')->name('quanlysinhvien');
+            Route::post('/chuyenphong/{id}', 'chuyenPhong')->name('chuyenphong');
+            Route::post('/choroiophong/{id}', 'choRoiOPhong')->name('choroiophong');
+            Route::post('/capnhatsinhvien/{id}', 'capNhatSinhVien')->name('capnhatsinhvien');
+        });
+
+        // Quản lý Đăng ký (Registrations)
+        Route::controller('DangkyController')->middleware('can:dangky.review')->group(function () {
+            Route::get('/duyetdangky', 'lietKeDangKyAdmin')->name('duyetdangky');
+            Route::post('/duyetdangky/{id}', 'duyetDangKy')->name('xulyduyetdangky');
+            Route::post('/duyethoso/{id}', 'duyetHoSo')->name('duyethoso');
+            Route::post('/xacnhanthanhtoan-dangky/{id}', 'confirmPayment')->name('dangky.xacnhanthanhtoan');
+            Route::post('/tuchoidangky/{id}', 'tuChoiDangKy')->name('xulytuchoidangky');
+        });
+
+        // Quản lý Hóa đơn & Công nợ
+        Route::controller('HoadonController')->middleware('can:hoadon.manage')->group(function () {
+            Route::get('/quanlyhoadon', 'lietKeHoaDonAdmin')->name('quanlyhoadon');
+            Route::post('/xulyhoadon', 'xuLyHoaDon')->name('xulyhoadon');
+            Route::post('/xacnhanthanhtoan/{id}', 'confirmPayment')->name('xacnhanthanhtoan');
+            Route::get('/hoadon/{id}/pdf', 'downloadInvoicePDF')->name('hoadon.pdf');
+        });
+        Route::controller('CongnoController')->group(function () {
+            Route::get('/baocaocongno', 'index')->name('baocaocongno');
+            Route::post('/guinhacnho/{phongId}', 'update')->name('guinhacnho');
+        });
+
+        // Quản lý Bảo hỏng & Bảo trì
+        Route::get('/quanlybaohong', 'BaohongController@lietKeBaoHongAdmin')->name('quanlybaohong');
+        Route::post('/capnhatbaohong/{id}', 'BaohongController@capNhatBaoHong')->name('capnhatbaohong');
+        Route::controller('LichsubaotriController')->group(function () {
+            Route::get('/quanlybaotri', 'index')->name('quanlybaotri');
+            Route::post('/thembaotri', 'store')->name('thembaotri');
+            Route::post('/suabaotri/{id}', 'update')->name('suabaotri');
+            Route::post('/xoabaotri/{id}', 'destroy')->name('xoabaotri');
+            Route::post('/hoanthanhbaotri/{id}', 'hoanThanh')->name('hoanthanhbaotri');
+        });
+        Route::post('/vattu/{id}/baotri', 'LichsubaotriController@store')->name('vattu.baotri');
+
+        // Quản lý Kỷ luật
+        Route::controller('KyluatController')->middleware('can:kyluat.manage')->group(function () {
+            Route::get('/quanlykyluat', 'lietKeKyLuatAdmin')->name('quanlykyluat');
+            Route::post('/them/kyluat', 'storeDiscipline')->name('themkyluat');
+            Route::post('/capnhat/kyluat/{id}', 'updateDiscipline')->name('capnhatkyluat');
+        });
+
+        // Đánh giá & Phản hồi
+        Route::get('/quanlyphong/{id}/danhgia', 'DanhgiaController@listReviews')->name('phong.danhgia');
+
+        // Cấu hình & Thông báo
+        Route::get('/quanlycauhinh', 'CauhinhController@index')->middleware('can:cauhinh.manage')->name('quanlycauhinh');
+        Route::post('/quanlycauhinh', 'CauhinhController@update')->middleware('can:cauhinh.manage')->name('capnhatcauhinh');
+        
+        Route::controller('ThongbaoController')->group(function () {
+            Route::get('/quanlythongbao', 'index')->name('quanlythongbao');
+            Route::post('/quanlythongbao', 'store')->name('themthongbao');
+            Route::post('/quanlythongbao/xoa/{id}', 'destroy')->whereNumber('id')->name('xoathongbao');
+            Route::post('/quanlythongbao/{id}', 'update')->whereNumber('id')->name('capnhatthongbao');
+        });
+
+        Route::get('/quanlylienhe', 'LienheController@index')->name('quanlylienhe');
+        Route::post('/quanlylienhe/{id}/trangthai', 'LienheController@update')->whereNumber('id')->name('capnhattrangthailienhe');
+
+        // Quản lý Hợp đồng
+        Route::controller('HopdongController')->middleware('can:hopdong.manage')->group(function () {
+            Route::get('/quanlyhopdong', 'index')->name('quanlyhopdong');
+            Route::post('/taohopdong', 'store')->name('taohopdong');
+            Route::post('/hopdong/{id}/giahan', 'extend')->name('hopdong.giahan');
+            Route::post('/hopdong/{id}/thanhly', 'destroy')->name('hopdong.thanhly');
+            Route::get('/hopdong/{id}/pdf', 'downloadPDF')->name('hopdong.pdf');
+        });
     });
 
-/**
- * Nhóm route cho SINH VIÊN:
- */
+// --------------------------------------------------------------------------
+// 3. STUDENT ROUTES
+// --------------------------------------------------------------------------
 Route::prefix('student')
     ->middleware(['auth', 'kiemtravaitro:sinhvien'])
+    ->namespace('App\Http\Controllers\Student')
     ->name('student.')
     ->group(function () {
-        Route::get('/trangchu', [TrangchuController::class, 'showStudentDashboard'])->name('trangchu');
+        
+        Route::get('/trangchu', 'TrangchuController@index')->name('trangchu');
 
-        // Trang phòng của tôi - Tổng quan
-        Route::get('/phongcuatoi', [PhongCuaToiController::class, 'index'])->name('phongcuatoi');
-        Route::get('/hoadoncuaem', [HoadonController::class, 'myInvoices'])->name('hoadoncuaem');
-        Route::get('/phongcuatoi/hoadon', [HoadonController::class, 'myInvoices'])->name('phongcuatoi.hoadon');
-        Route::get('/phongcuatoi/hoadon/{id}', [HoadonController::class, 'viewMyInvoiceDetails'])->name('phongcuatoi.hoadon.chitiet');
+        // Phòng của tôi & Hóa đơn
+        Route::get('/phongcuatoi', 'PhongCuaToiController@index')->name('phongcuatoi');
+        Route::controller('HoadonController')->group(function () {
+            Route::get('/hoadoncuaem', 'layHoaDonSinhVien')->name('hoadoncuaem');
+            Route::get('/phongcuatoi/hoadon', 'layHoaDonSinhVien')->name('phongcuatoi.hoadon');
+            Route::get('/phongcuatoi/hoadon/{id}', 'layChiTietHoaDonSinhVien')->name('phongcuatoi.hoadon.chitiet');
+            Route::post('/hoadon/{id}/xac-nhan-loi', 'confirmPenalty')->name('hoadon.confirm_penalty');
+        });
 
-        // Danh sách phòng và đăng ký
-        Route::get('/danhsachphong', [PhongController::class, 'listStudentRooms'])->name('danhsachphong');
-        Route::post('/dangkyphong', [DangkyController::class, 'storeRegistration'])->name('dangkyphong');
-        Route::post('/yeucautraphong', [DangkyController::class, 'requestLeaveRoom'])->name('yeucautraphong');
-        Route::post('/yeucaudoiphong', [DangkyController::class, 'requestRoomChange'])->name('yeucaudoiphong');
+        // Đăng ký & Chuyển phòng
+        Route::get('/danhsachphong', 'PhongController@index')->name('danhsachphong');
+        Route::controller('DangkyController')->group(function () {
+            Route::post('/dangkyphong', 'luuDangKySinhVien')->name('dangkyphong');
+            Route::post('/yeucautraphong', 'yeuCauTraPhong')->name('yeucautraphong');
+            Route::post('/yeucaudoiphong', 'yeuCauDoiPhong')->name('yeucaudoiphong');
+        });
 
-        // Hóa đơn và hợp đồng
-        Route::get('/hopdongcuatoi', [HopdongController::class, 'myContracts'])->name('hopdongcuatoi');
+        // Hợp đồng
+        Route::get('/hopdongcuatoi', 'HopdongController@index')->name('hopdongcuatoi');
 
-        // Báo hỏng và tài sản
-        Route::get('/baohong', [BaohongController::class, 'listMaintenanceRequests'])->name('danhsachbaohong');
-        Route::post('/baohong', [BaohongController::class, 'storeMaintenance'])->name('thembaohong');
-        Route::get('/taisanphong', [PhongController::class, 'studentAssets'])->name('taisanphong');
+        // Bảo hỏng & Tài sản
+        Route::get('/baohong', 'BaohongController@lietKeBaoHongSinhVien')->name('danhsachbaohong');
+        Route::post('/baohong', 'BaohongController@luuBaoHong')->name('thembaohong');
+        Route::redirect('/taisanphong', '/student/phongcuatoi')->name('taisanphong');
 
-        // Thông tin cá nhân
-        Route::get('/kyluatcuaem', [KyluatController::class, 'myDisciplines'])->name('kyluatcuaem');
-        Route::get('/danhgia', [DanhgiaController::class, 'showReviewForm'])->name('danhgia');
-        Route::post('/danhgia', [DanhgiaController::class, 'storeReview'])->name('themdanhgia');
+        // Kỷ luật & Đánh giá
+        Route::get('/kyluatcuaem', 'KyluatController@lietKeKyLuatSinhVien')->name('kyluatcuaem');
+        Route::get('/danhgia', 'DanhgiaController@showReviewForm')->name('danhgia');
+        Route::post('/danhgia', 'DanhgiaController@storeReview')->name('themdanhgia');
 
         // Thông báo
-        Route::get('/thongbao', [ThongbaoController::class, 'listAnnouncements'])->name('thongbao');
-        Route::get('/thongbao/{id}', [ThongbaoController::class, 'viewAnnouncement'])->name('chitietthongbao');
+        Route::controller('ThongbaoController')->group(function () {
+            Route::get('/thongbao', 'index')->name('thongbao');
+            Route::get('/thongbao/{id}', 'show')->name('chitietthongbao');
+            Route::patch('/thongbao', function () {
+                auth()->user()->unreadNotifications->markAsRead();
+                return back()->with('success', 'Đã đánh dấu tất cả là đã đọc.');
+            })->name('thongbao.markAllRead');
+        });
     });
 
-// Các route có sẵn của Breeze (profile)
+// --------------------------------------------------------------------------
+// 4. SHARED & AUTH ROUTES
+// --------------------------------------------------------------------------
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::get('/private-files/{path}', [FileController::class, 'showPrivateFile'])
+    ->where('path', '.*')
+    ->middleware(['auth', 'kiemtravaitro:admin,admin_truong,admin_toanha,le_tan'])
+    ->name('private.file');
+
 // Trạm điều hướng trung gian
 Route::get('/dieuhuong', function () {
-    // Lấy vai trò của người dùng vừa đăng nhập
     $vaitro = Auth::user()->vaitro;
-
-    // Nếu là quản trị viên thì đẩy vào khu vực admin
     if (in_array($vaitro, ['admin', 'admin_truong', 'admin_toanha', 'le_tan'], true)) {
         return redirect()->route('admin.trangchu');
     }
-
-    // Nếu là sinh viên thì đẩy vào khu vực student
     return redirect()->route('student.trangchu');
 })->middleware(['auth'])->name('dieuhuong');
 
-// Route mặc định của Breeze: chuyển về dieuhuong
 Route::get('/dashboard', function () {
     return redirect()->route('dieuhuong');
 })->middleware(['auth'])->name('dashboard');
+
 require __DIR__.'/auth.php';

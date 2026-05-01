@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,6 +22,12 @@ class Baohong extends Model
         'trangthai',
         'ngayhen',
         'noidung',
+        'do_sinh_vien_gay_ra',
+        'phi_boi_thuong',
+    ];
+
+    protected $casts = [
+        'do_sinh_vien_gay_ra' => 'boolean',
     ];
 
     public function sinhvien(): BelongsTo

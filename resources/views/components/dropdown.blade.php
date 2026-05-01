@@ -1,4 +1,4 @@
-@props(['align' => 'right', 'width' => '48', 'contentClasses' => 'py-1 bg-white'])
+@props(['align' => 'right', 'width' => '48', 'contentClasses' => 'py-1 bg-ui-card'])
 
 @php
 $alignmentClasses = match ($align) {
@@ -28,7 +28,7 @@ $width = match ($width) {
             class="absolute z-50 mt-2 {{ $width }} {{ $alignmentClasses }}"
             style="display: none;"
             @click="open = false">
-        <div class="rounded-lg border border-gray-200/80 bg-white p-1 {{ $contentClasses }}">
+        <div class="rounded-lg border border-gray-200/80 bg-ui-card p-1 {{ $contentClasses }}">
             {{ $content }}
         </div>
     </div>

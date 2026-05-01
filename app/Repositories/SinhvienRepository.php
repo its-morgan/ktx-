@@ -3,7 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Sinhvien;
-use App\Repositories\Interfaces\SinhvienRepositoryInterface;
+use App\Contracts\Repositories\SinhvienRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 
 class SinhvienRepository implements SinhvienRepositoryInterface
@@ -48,3 +48,4 @@ class SinhvienRepository implements SinhvienRepositoryInterface
         return Sinhvien::with($with)->get();
     }
 }
+

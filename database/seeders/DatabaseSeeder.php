@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             PhongSeeder::class,
             UserSeeder::class,
             SinhvienSeeder::class,
+            KyLuatSeeder::class,
         ]);
     }
 }

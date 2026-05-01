@@ -1,5 +1,5 @@
 @props([
-    'name',
+    'name' => null,
     'show' => false,
     'maxWidth' => '2xl'
 ])
@@ -60,7 +60,7 @@ $maxWidth = [
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
     >
-        <div class="absolute inset-0 bg-black/40"></div>
+        <div class="absolute inset-0 bg-slate-900/40"></div>
     </div>
 
     <div

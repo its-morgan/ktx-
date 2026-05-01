@@ -19,7 +19,7 @@ return new class extends Migration
             $table->date('ngay_bat_dau');
             $table->date('ngay_ket_thuc');
             $table->unsignedBigInteger('giaphong_luc_ky');
-            $table->string('trang_thai')->default(ContractStatus::ACTIVE->value);
+            $table->string('trang_thai')->default(ContractStatus::Active->value);
             $table->text('ghichu')->nullable();
             $table->timestamps();
         });

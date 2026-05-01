@@ -44,7 +44,7 @@ class DongBoHopDong extends Command
 
             DB::transaction(function () use ($sinhvien) {
                 $hopdongDangHieuLuc = Hopdong::where('sinhvien_id', $sinhvien->id)
-                    ->where('trang_thai', Hopdong::TRANGTHAI_DANG_HIEU_LUC)
+                    ->where('trang_thai', Hopdong::trangThaiDangHieuLuc())
                     ->orderByDesc('id')
                     ->lockForUpdate()
                     ->get();
@@ -63,7 +63,7 @@ class DongBoHopDong extends Command
                 if ($hopdongCanThanhLy->isNotEmpty()) {
                     Hopdong::whereIn('id', $hopdongCanThanhLy->pluck('id'))
                         ->update([
-                            'trang_thai' => Hopdong::TRANGTHAI_DA_THANH_LY,
+                            'trang_thai' => Hopdong::trangThaiDaThanhLy(),
                         ]);
                 }
 
@@ -72,7 +72,7 @@ class DongBoHopDong extends Command
                     'ngay_bat_dau' => $sinhvien->ngay_vao,
                     'ngay_ket_thuc' => $sinhvien->ngay_het_han,
                     'giaphong_luc_ky' => (int) ($sinhvien->phong->giaphong ?? 0),
-                    'trang_thai' => Hopdong::TRANGTHAI_DANG_HIEU_LUC,
+                    'trang_thai' => Hopdong::trangThaiDangHieuLuc(),
                 ]);
                 $hopdongCanLuu->ghichu = $hopdongCanLuu->ghichu ?? null;
                 $hopdongCanLuu->save();

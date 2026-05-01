@@ -38,7 +38,7 @@
     </div>
 
     {{-- Chi tiết từng khoản --}}
-    <div class="mb-6 rounded-xl border border-gray-200/70 bg-white p-6">
+    <div class="mb-6 rounded-xl border border-gray-200/70 bg-ui-card p-6">
         <h3 class="mb-4 font-semibold text-[#121212]">Chi tiết hóa đơn</h3>
         <div class="space-y-3">
             <div class="flex items-center justify-between border-b border-gray-100 pb-3">

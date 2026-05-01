@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('sinhvien_id')->constrained('sinhvien')->cascadeOnDelete();
             $table->text('noidung');
             $table->date('ngayvipham');
-            $table->string('mucdo')->default(DisciplineLevel::MEDIUM->value);
+            $table->string('mucdo')->default(DisciplineLevel::Medium->value);
             $table->timestamps();
         });
     }

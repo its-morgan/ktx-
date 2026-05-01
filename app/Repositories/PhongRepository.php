@@ -3,7 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Phong;
-use App\Repositories\Interfaces\PhongRepositoryInterface;
+use App\Contracts\Repositories\PhongRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 
 class PhongRepository implements PhongRepositoryInterface
@@ -79,3 +79,4 @@ class PhongRepository implements PhongRepositoryInterface
         return Phong::where('dango', 0)->count();
     }
 }
+

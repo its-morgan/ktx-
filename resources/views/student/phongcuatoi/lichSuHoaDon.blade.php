@@ -1,20 +1,18 @@
 @extends('student.layouts.chinh')
 
 @section('noidung')
-    <div id="thanh-toan-online" class="mb-6">
-        <a href="{{ route('student.phongcuatoi') }}" class="mb-2 inline-flex items-center text-sm text-[#606060] hover:text-[#121212]">
-            <svg class="mr-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    <div class="mb-6">
+        <a href="{{ route('student.phongcuatoi') }}" class="inline-flex items-center text-xs font-bold text-ink-secondary/40 hover:text-brand-emerald transition-colors">
+            <svg class="mr-2 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
             </svg>
             Quay lại Phòng của tôi
         </a>
-        <div class="text-2xl font-bold text-[#121212]">Lịch sử hóa đơn</div>
-        <div class="text-sm text-[#606060]">Xem tất cả hóa đơn của phòng.</div>
     </div>
 
     {{-- Thống kê --}}
     <div class="mb-6 grid gap-4 sm:grid-cols-4">
-        <div class="rounded-xl border border-gray-200/70 bg-white p-4">
+        <div class="rounded-xl border border-gray-200/70 bg-ui-card p-4">
             <div class="text-2xl font-bold text-[#121212]">{{ $thongKe['tong_hoa_don'] }}</div>
             <div class="text-xs text-[#606060]">Tổng hóa đơn</div>
         </div>
@@ -33,10 +31,10 @@
     </div>
 
     {{-- Danh sách hóa đơn --}}
-    <div class="rounded-xl border border-gray-200/70 bg-white">
+    <div class="rounded-xl border border-gray-200/70 bg-ui-card">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-[#606060]">
-                <thead class="bg-[#F7F7F8] text-xs uppercase text-[#606060]">
+                <x-table-header>
                     <tr>
                         <th class="px-6 py-3">Tháng/Năm</th>
                         <th class="px-6 py-3">Tổng tiền</th>
@@ -44,9 +42,9 @@
                         <th class="px-6 py-3">Ngày xuất</th>
                         <th class="px-6 py-3 text-right">Thao tác</th>
                     </tr>
-                </thead>
+                </x-table-header>
                 <tbody>
-                    @forelse($lichSuHoaDon as $hoadon)
+                    @forelse($hoadon as $hoadon)
                         <tr class="border-t border-gray-200/70">
                             <td class="px-6 py-4 font-medium text-[#121212]">{{ $hoadon->thang }}/{{ $hoadon->nam }}</td>
                             <td class="px-6 py-4">{{ number_format($hoadon->tongtien) }} đ</td>
@@ -80,7 +78,7 @@
             </table>
         </div>
         <div class="px-6 py-4">
-            {{ $lichSuHoaDon->links() }}
+            {{ $hoadon->links() }}
         </div>
     </div>
 @endsection

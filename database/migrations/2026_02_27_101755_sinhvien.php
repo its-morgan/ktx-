@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('masinhvien')->unique()->nullable();
             $table->string('lop')->nullable();
-            $table->string('sodienthoai')->nullable();
+            $table->text('sodienthoai')->nullable();
+            $table->text('so_cccd')->nullable();
             $table->foreignId('phong_id')->nullable()->constrained('phong')->nullOnDelete();
             $table->timestamps();
         });

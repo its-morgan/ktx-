@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('sinhvien_id')->constrained('sinhvien')->cascadeOnDelete();
             $table->foreignId('phong_id')->constrained('phong')->cascadeOnDelete();
-            $table->string('trangthai')->default(RegistrationStatus::PENDING->value);
+            $table->string('trangthai')->default(RegistrationStatus::Pending->value);
             $table->text('ghichu')->nullable();
             $table->timestamps();
         });

@@ -120,7 +120,7 @@ trait KiemtraKyluat
 
         $giaTri = strtolower($giaTri);
 
-        return preg_replace('/\\s+/', ' ', $giaTri) ?? $giaTri;
+        return preg_replace('/\s+/', ' ', $giaTri) ?? $giaTri;
     }
 
     private function taoThongDiepChanKyluat(Collection $loiConHieuLuc): string
@@ -141,3 +141,4 @@ trait KiemtraKyluat
         })->all();
     }
 }
+

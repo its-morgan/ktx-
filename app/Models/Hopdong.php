@@ -6,27 +6,39 @@ use App\Enums\ContractStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Hopdong extends Model
 {
-    use HasFactory;
-
-    public const TRANGTHAI_DANG_HIEU_LUC = ContractStatus::ACTIVE->value;
-    public const TRANGTHAI_HET_HAN = ContractStatus::EXPIRED->value;
-    public const TRANGTHAI_DA_THANH_LY = ContractStatus::TERMINATED->value;
-
-    private const ALLOWED_TRANSITIONS = [
-        self::TRANGTHAI_DANG_HIEU_LUC => [
-            self::TRANGTHAI_HET_HAN,
-            self::TRANGTHAI_DA_THANH_LY,
-        ],
-        self::TRANGTHAI_HET_HAN => [
-            self::TRANGTHAI_DA_THANH_LY,
-        ],
-        self::TRANGTHAI_DA_THANH_LY => [],
-    ];
+    use HasFactory, SoftDeletes;
 
     protected $table = 'hopdong';
+
+    public static function trangThaiDangHieuLuc(): string
+    {
+        return ContractStatus::Active->value;
+    }
+
+    public static function trangThaiHetHan(): string
+    {
+        return ContractStatus::Expired->value;
+    }
+
+    public static function trangThaiDaThanhLy(): string
+    {
+        return ContractStatus::Terminated->value;
+    }
+
+    private const ALLOWED_TRANSITIONS = [
+        'Dang hieu luc' => [
+            'Het han',
+            'Da thanh ly',
+        ],
+        'Het han' => [
+            'Da thanh ly',
+        ],
+        'Da thanh ly' => [],
+    ];
 
     protected $fillable = [
         'sinhvien_id',
@@ -77,9 +89,9 @@ class Hopdong extends Model
     private function normalizeState(string $state): string
     {
         return match ($state) {
-            'Dang hieu luc' => self::TRANGTHAI_DANG_HIEU_LUC,
-            'Het han' => self::TRANGTHAI_HET_HAN,
-            'Da thanh ly' => self::TRANGTHAI_DA_THANH_LY,
+            'Dang hieu luc' => self::trangThaiDangHieuLuc(),
+            'Het han' => self::trangThaiHetHan(),
+            'Da thanh ly' => self::trangThaiDaThanhLy(),
             default => $state,
         };
     }

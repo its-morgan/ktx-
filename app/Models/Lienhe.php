@@ -19,5 +19,6 @@ class Lienhe extends Model
         'email',
         'noi_dung',
         'trang_thai',
+        'ghi_chu_admin',
     ];
 }

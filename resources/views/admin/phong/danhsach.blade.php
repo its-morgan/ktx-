@@ -1,131 +1,143 @@
-@extends('admin.layouts.quantri')
+<x-admin-layout>
+    <x-slot:title>Quản lý phòng</x-slot:title>
 
-@section('noidung')
-    <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h1 class="linear-page-title">Quản lý phòng</h1>
-            <p class="linear-page-subtitle">Admin thêm/sửa/xóa phòng bằng modal.</p>
+            <h1 class="text-xl font-bold text-ink-primary font-display uppercase tracking-tight">Hệ thống phòng nội trú</h1>
+            <p class="text-xs font-medium text-ink-secondary/60">Quản lý quỹ phòng và nhân khẩu lưu trú.</p>
         </div>
 
-        <form method="GET" action="{{ route('admin.quanlyphong') }}" class="flex items-center gap-2">
-            <input name="q" value="{{ old('q', $tuKhoa ?? '') }}" type="text" placeholder="Tìm theo tên phòng" class="linear-input w-64" />
-            <button type="submit" class="linear-btn-secondary">Tìm</button>
-        </form>
-
-        <button type="button" data-modal-target="modal-themphong" data-modal-toggle="modal-themphong" class="linear-btn-primary">Thêm phòng</button>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <form action="{{ route('admin.quanlyphong') }}" method="GET" class="flex flex-wrap items-center gap-2">
+                <div class="relative group">
+                    <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-secondary/40 group-focus-within:text-ink-primary transition-colors">
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Tên phòng..." class="w-full sm:w-44 rounded-xl border border-ui-border bg-white py-2 pl-9 pr-4 text-xs font-medium text-ink-primary placeholder:text-ink-secondary/30 focus:border-ink-primary/30 focus:outline-none focus:ring-4 focus:ring-ink-primary/5 transition-all" />
+                </div>
+                
+                <select name="tang" class="rounded-xl border border-ui-border bg-white py-2 pl-3 pr-8 text-[10px] font-bold text-ink-primary focus:border-ink-primary/30 focus:outline-none focus:ring-4 focus:ring-ink-primary/5 transition-all" onchange="this.form.submit()">
+                    <option value="">Tất cả tầng</option>
+                    @for ($i = 1; $i <= 3; $i++)
+                        <option value="{{ $i }}" {{ request('tang') == $i ? 'selected' : '' }}>Tầng {{ $i }}</option>
+                    @endfor
+                </select>
+                
+                <button type="submit" class="rounded-xl bg-ink-primary px-4 py-2 text-[10px] font-bold text-white shadow-sm transition-all hover:bg-ink-primary/90 active:scale-[0.98]">
+                    Truy vấn
+                </button>
+            </form>
+        </div>
     </div>
 
-    <div class="mb-6 rounded-lg border border-gray-200/70 bg-white p-1 shadow-none">
-        <div class="flex h-10 overflow-hidden rounded-lg bg-gray-100">
-            <a href="{{ route('admin.quanlyphong', array_merge(request()->query(), ['view' => 'table'])) }}" class="flex-1 text-center text-sm font-semibold transition-colors {{ $viewMode === 'table' ? 'bg-white text-[#121212]' : 'text-[#606060] hover:bg-gray-200' }} px-4 py-2">Danh sách</a>
-            <a href="{{ route('admin.quanlyphong', array_merge(request()->query(), ['view' => 'grid'])) }}" class="flex-1 text-center text-sm font-semibold transition-colors {{ $viewMode === 'grid' ? 'bg-white text-[#121212]' : 'text-[#606060] hover:bg-gray-200' }} px-4 py-2">Sơ đồ phòng</a>
+    <div class="mb-8 flex items-center justify-center">
+        <div class="inline-flex rounded-2xl bg-ui-card p-1.5 shadow-sm border border-ui-border">
+            <a href="{{ route('admin.quanlyphong', array_merge(request()->query(), ['view' => 'table'])) }}" 
+               class="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-black uppercase tracking-widest transition-all {{ $viewMode === 'table' ? 'bg-ui-bg text-brand-emerald shadow-sm' : 'text-ink-secondary hover:text-ink-primary' }}">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                Danh sách
+            </a>
+            <a href="{{ route('admin.quanlyphong', array_merge(request()->query(), ['view' => 'grid'])) }}" 
+               class="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-black uppercase tracking-widest transition-all {{ $viewMode === 'grid' ? 'bg-ui-bg text-brand-emerald shadow-sm' : 'text-ink-secondary hover:text-ink-primary' }}">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                Sơ đồ khối
+            </a>
         </div>
     </div>
 
     @if ($viewMode === 'table')
-        <div class="overflow-hidden rounded-lg border border-gray-200/70 bg-white shadow-none">
+        <article class="overflow-hidden rounded-2xl bg-white border border-ui-border shadow-sm">
             <div class="overflow-x-auto">
-                <table class="linear-table">
-                    <thead>
-                    <tr>
-                        <th class="group cursor-pointer hover:bg-slate-100 transition-colors">
-                            <div class="flex items-center gap-2">
-                                Phòng
-                                <svg class="h-3.5 w-3.5 text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
-                                </svg>
-                            </div>
-                        </th>
-                        <th class="group cursor-pointer hover:bg-slate-100 transition-colors">
-                            <div class="flex items-center gap-2">
-                                Giới tính
-                                <svg class="h-3.5 w-3.5 text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
-                                </svg>
-                            </div>
-                        </th>
-                        <th class="group cursor-pointer hover:bg-slate-100 transition-colors">
-                            <div class="flex items-center gap-2">
-                                Số lượng
-                                <svg class="h-3.5 w-3.5 text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
-                                </svg>
-                            </div>
-                        </th>
-                        <th>Tình trạng</th>
-                        <th class="group cursor-pointer hover:bg-slate-100 transition-colors">
-                            <div class="flex items-center gap-2">
-                                Giá
-                                <svg class="h-3.5 w-3.5 text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
-                                </svg>
-                            </div>
-                        </th>
-                        <th class="text-right">Thao tác</th>
-                    </tr>
+                <table class="w-full text-left text-sm text-ink-primary">
+                    <thead class="bg-ui-bg/50 border-b border-ui-border text-[10px] font-bold uppercase tracking-widest text-ink-secondary">
+                        <tr>
+                            <th class="px-6 py-4 font-bold">Tên phòng</th>
+                            <th class="px-6 py-4 font-bold">Loại phòng</th>
+                            <th class="px-6 py-4 font-bold">Giới tính</th>
+                            <th class="px-6 py-4 font-bold">Lấp đầy</th>
+                            <th class="px-6 py-4 font-bold">Tình trạng</th>
+                            <th class="px-6 py-4 font-bold">Đơn giá</th>
+                            <th class="px-6 py-4 font-bold text-right">Thao tác</th>
+                        </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
-                    @forelse ($danhsachphong as $phong)
-                        @php
-                            $soluongdango = $soluongdango_theophong[$phong->id] ?? 0;
-                            $daydu = $soluongdango >= (int) $phong->soluongtoida;
-                            $phantram = $phong->soluongtoida > 0 ? min(100, round($soluongdango / $phong->soluongtoida * 100)) : 0;
-                        @endphp
-                        <tr class="hover:bg-slate-50/80 transition-colors">
-                            <td class="px-4 py-3 font-semibold text-slate-900">{{ $phong->tenphong }}</td>
-                            <td class="px-4 py-3"><span class="linear-badge">{{ $phong->gioitinh }}</span></td>
-                            <td class="px-4 py-3">
-                                <div class="text-sm font-semibold text-slate-900">{{ $soluongdango }}/{{ $phong->soluongtoida }}</div>
-                                <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                                    <div class="h-full rounded-full transition-all duration-500 {{ $daydu ? 'bg-slate-800' : 'bg-brand-500' }}" style="width: {{ $phantram }}%"></div>
-                                </div>
-                            </td>
-                            <td class="px-4 py-3">
-                                <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold {{ $daydu ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100' }}">
-                                    <span class="h-1.5 w-1.5 rounded-full {{ $daydu ? 'bg-red-500' : 'bg-emerald-500' }}"></span>
-                                    {{ $daydu ? 'Đầy' : 'Còn chỗ' }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-3 text-slate-900 font-semibold tabular-nums">{{ number_format($phong->giaphong, 0, ',', '.') }}₫</td>
-                            <td class="px-4 py-3">
-                                <div class="linear-row-action flex flex-wrap justify-end gap-2">
-                                    <a href="{{ route('admin.chitietphong', ['id' => $phong->id]) }}" class="linear-btn-secondary text-xs" aria-label="Xem chi tiết phòng {{ $phong->tenphong }}">Chi tiết</a>
-                                    <button type="button" data-modal-target="modal-capnhatphong-{{ $phong->id }}" data-modal-toggle="modal-capnhatphong-{{ $phong->id }}" class="linear-btn-secondary text-xs" aria-label="Sửa phòng {{ $phong->tenphong }}">Sửa</button>
-                                    <form method="POST" action="{{ route('admin.xoaphong', ['id' => $phong->id]) }}" class="inline" x-data="{ showConfirm: false }" @confirmed="$el.submit()">
+                    <tbody class="divide-y divide-ui-border">
+                        @forelse ($danhsachphong as $phong)
+                            @php
+                                $soluongdango = $soluongdango_theophong[$phong->id] ?? 0;
+                                $daydu = $soluongdango >= (int) $phong->soluongtoida;
+                                $phantram = $phong->soluongtoida > 0 ? min(100, round($soluongdango / $phong->soluongtoida * 100)) : 0;
+                            @endphp
+                            <tr class="group transition-colors hover:bg-ui-bg/50">
+                                <td class="px-6 py-4">
+                                    <div class="font-black text-ink-primary font-display text-lg uppercase tracking-tight">{{ $phong->tenphong }}</div>
+                                    <div class="text-[10px] font-bold uppercase tracking-[0.2em] text-ink-secondary mt-0.5">Tầng vận hành {{ $phong->tang }}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-sm font-bold text-ink-secondary">{{ $phong->succhuamax }} người</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider {{ $phong->gioitinh === 'Nam' ? 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10' : 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-700/10' }}">
+                                        {{ $phong->gioitinh }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex-1 h-1.5 min-w-[80px] overflow-hidden rounded-full bg-ui-bg ring-1 ring-inset ring-ui-border">
+                                            <div class="h-full rounded-full transition-all duration-1000 ease-out {{ $daydu ? 'bg-ink-primary' : 'bg-brand-emerald' }}" style="width: {{ $phantram }}%"></div>
+                                        </div>
+                                        <span class="text-xs font-black text-ink-primary tabular-nums tracking-widest">{{ $soluongdango }}/{{ $phong->soluongtoida }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider {{ $daydu ? 'bg-ink-primary text-white' : 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20' }}">
+                                        <span class="h-1.5 w-1.5 rounded-full {{ $daydu ? 'bg-white' : 'bg-emerald-500' }}"></span>
+                                        {{ $daydu ? 'Đầy' : 'Còn chỗ' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="font-bold text-ink-primary tabular-nums">{{ number_format($phong->giaphong, 0, ',', '.') }}đ</div>
+                                    <div class="text-[10px] text-ink-secondary font-bold uppercase mt-0.5">Mỗi tháng</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <a href="{{ route('admin.chitietphong', ['id' => $phong->id]) }}" class="flex h-8 w-8 items-center justify-center rounded-lg border border-ui-border bg-white text-ink-secondary shadow-sm transition-colors hover:bg-ui-bg hover:text-ink-primary" title="Chi tiết">
+                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        </a>
+                                        <button type="button" data-modal-target="modal-capnhatphong-{{ $phong->id }}" data-modal-toggle="modal-capnhatphong-{{ $phong->id }}" class="flex h-8 w-8 items-center justify-center rounded-lg border border-ui-border bg-white text-ink-secondary shadow-sm transition-colors hover:bg-ui-bg hover:text-ink-primary" title="Chỉnh sửa">
+                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        </button>
+                                    <form method="POST" action="{{ route('admin.xoaphong', ['id' => $phong->id]) }}" x-data="{ showConfirm: false }" @confirmed="$el.submit()">
                                         @csrf
-                                        <button type="button" @click="showConfirm = true" class="linear-btn-danger text-xs" aria-label="Xóa phòng {{ $phong->tenphong }}">Xóa</button>
-                                        <x-confirmation-modal 
-                                            x-show="showConfirm" 
-                                            @close="showConfirm = false"
-                                            @confirmed="$el.closest('form').submit()"
-                                            title="Xác nhận xóa phòng"
-                                            message="Bạn có chắc muốn xóa phòng {{ $phong->tenphong }}?"
-                                            confirm-text="Xóa"
-                                            cancel-text="Hủy"
-                                            type="danger"
-                                        />
+                                        @method('DELETE')
+                                        <button type="button" @click="$dispatch('open-confirm', { message: 'Xóa phòng {{ $phong->tenphong }}?', action: () => showConfirm = true })" class="flex h-8 w-8 items-center justify-center rounded-lg border border-rose-100 bg-rose-50 text-rose-600 shadow-sm transition-colors hover:bg-rose-600 hover:text-white" title="Xóa">
+                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-10">
-                                <x-empty-state
-                                    title="Chưa có phòng"
-                                    description="Danh sách phòng sẽ hiển thị tại đây sau khi thêm mới."
-                                    actionLabel="Tải lại trang"
-                                    :actionHref="request()->fullUrl()"
-                                />
+                            <td colspan="7" class="px-6 py-24 text-center">
+                                <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-ui-bg text-ink-secondary/50 mb-3">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m4 0h1m-4 12h1m4 0h1m-4-4h1m4 0h1m-4-4h1m4 0h1"/></svg>
+                                </div>
+                                <div class="text-sm font-bold text-ink-primary">Không tìm thấy phòng nào</div>
+                                <div class="text-[11px] text-ink-secondary mt-1">Thử thay đổi từ khóa tìm kiếm hoặc tạo phòng mới.</div>
                             </td>
                         </tr>
                     @endforelse
-                    </tbody>
-                </table>
-            </div>
+                </tbody>
+            </table>
         </div>
+        @if(method_exists($danhsachphong, 'links'))
+            <div class="border-t border-ui-border px-6 py-4 bg-ui-bg/30">
+                {{ $danhsachphong->appends(request()->query())->links() }}
+            </div>
+        @endif
+    </article>
     @else
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
             @forelse ($danhsachphong as $phong)
                 @php
                     $soluongdango = $soluongdango_theophong[$phong->id] ?? 0;
@@ -133,179 +145,174 @@
                     $phantram = $phong->soluongtoida > 0 ? min(100, round($soluongdango / $phong->soluongtoida * 100)) : 0;
                     $isFemale = $phong->gioitinh === 'Nữ';
                 @endphp
-                <article class="flex flex-col rounded-lg border border-gray-200/70 bg-white p-4 transition hover:-translate-y-0.5 hover:bg-[#F7F7F8]">
-                    <header class="mb-3 flex items-center justify-between">
-                        <h2 class="text-lg font-bold text-[#121212]">{{ $phong->tenphong }}</h2>
-                        <span class="text-sm font-semibold {{ $isFemale ? 'text-[#606060]' : 'text-[#606060]' }}">{{ $isFemale ? '♀' : '♂' }}</span>
-                    </header>
+                <article class="overflow-hidden rounded-2xl border border-ui-border bg-white shadow-sm transition-all hover:shadow-md flex flex-col">
+                    <div class="h-2.5 w-full {{ $daydu ? 'bg-ink-primary' : ($isFemale ? 'bg-rose-500' : 'bg-brand-emerald') }}"></div>
+                    
+                    <div class="p-6 flex-1 flex flex-col">
+                        <header class="mb-6 flex items-start justify-between">
+                            <div>
+                                <h2 class="text-3xl font-black text-ink-primary font-display uppercase tracking-tight">{{ $phong->tenphong }}</h2>
+                                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-ink-secondary mt-1">Tầng vận hành {{ $phong->tang }}</p>
+                            </div>
+                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl {{ $isFemale ? 'bg-rose-50 text-rose-600 ring-1 ring-inset ring-rose-500/20' : 'bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-500/20' }}">
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            </div>
+                        </header>
 
-                    <div class="mb-3 space-y-2">
-                        <p class="text-sm font-semibold text-[#121212]">Giới tính: <span class="font-bold">{{ $phong->gioitinh }}</span></p>
-                        <p class="text-sm font-semibold text-[#121212]">Sức chứa: <span class="font-bold">{{ $soluongdango }}/{{ $phong->soluongtoida }}</span></p>
-                        <div class="h-2 w-full overflow-hidden rounded-full bg-white/70">
-                            <div class="h-full rounded-full {{ $daydu ? 'bg-[#121212]' : 'bg-[#606060]' }}" style="<?php echo 'width: '.$phantram.'%;'; ?>"></div>
+                        <div class="mb-6 flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-ink-secondary">Tỷ lệ lấp đầy</span>
+                                <span class="text-sm font-black text-ink-primary tabular-nums">{{ $soluongdango }}/{{ $phong->soluongtoida }}</span>
+                            </div>
+                            <div class="h-2 w-full overflow-hidden rounded-full bg-ui-bg ring-1 ring-inset ring-ui-border">
+                                <div class="h-full rounded-full transition-all duration-1000 ease-out {{ $daydu ? 'bg-ink-primary' : 'bg-brand-emerald' }}" style="width: {{ $phantram }}%"></div>
+                            </div>
+                            
+                            <div class="mt-4 flex items-center justify-between">
+                                <div class="text-[10px] font-bold uppercase tracking-widest text-ink-secondary">Giá thuê</div>
+                                <div class="font-bold text-ink-primary tabular-nums">{{ number_format($phong->giaphong, 0, ',', '.') }}đ</div>
+                            </div>
                         </div>
-                        <p class="text-xs text-[#606060]">Đầy: <span class="font-semibold text-[#606060]">{{ $phantram }}%</span></p>
-                        <p class="text-sm font-semibold {{ $daydu ? 'text-[#121212]' : 'text-[#606060]' }}">{{ $daydu ? 'Đầy' : 'Còn chỗ' }}</p>
-                    </div>
 
-                    <p class="text-sm font-semibold text-[#121212]">Giá: <span class="text-[#606060]">{{ number_format($phong->giaphong, 0, ',', '.') }}₫</span></p>
-                    <p class="text-xs text-[#606060]">{{ $phong->mota }}</p>
-
-                    <footer class="mt-auto pt-4">
-                        <div class="flex flex-wrap gap-2">
-                            <a href="{{ route('admin.chitietphong', ['id' => $phong->id]) }}" class="flex-1 linear-btn-secondary text-xs text-center justify-center">Chi tiết</a>
-                            <button type="button" data-modal-target="modal-capnhatphong-{{ $phong->id }}" data-modal-toggle="modal-capnhatphong-{{ $phong->id }}" class="flex-1 linear-btn-secondary text-xs text-center justify-center">Sửa</button>
-                            <form method="POST" action="{{ route('admin.xoaphong', ['id' => $phong->id]) }}" class="flex-1" x-data="{ showConfirm: false }" @confirmed="$el.submit()">
+                        <div class="flex items-center justify-end gap-2 border-t border-ui-border pt-4">
+                            <a href="{{ route('admin.chitietphong', ['id' => $phong->id]) }}" class="flex h-9 w-9 items-center justify-center rounded-xl border border-ui-border bg-white text-ink-secondary shadow-sm transition-colors hover:bg-ui-bg hover:text-ink-primary" title="Chi tiết">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </a>
+                            <button type="button" data-modal-target="modal-capnhatphong-{{ $phong->id }}" data-modal-toggle="modal-capnhatphong-{{ $phong->id }}" class="flex h-9 w-9 items-center justify-center rounded-xl border border-ui-border bg-white text-ink-secondary shadow-sm transition-colors hover:bg-ui-bg hover:text-ink-primary" title="Chỉnh sửa">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </button>
+                            <form method="POST" action="{{ route('admin.xoaphong', ['id' => $phong->id]) }}" x-data="{ showConfirm: false }" @confirmed="$el.submit()">
                                 @csrf
-                                <button type="button" @click="showConfirm = true" class="w-full linear-btn-danger text-xs text-center justify-center" aria-label="Xóa phòng {{ $phong->tenphong }}">Xóa</button>
-                                <x-confirmation-modal 
-                                    x-show="showConfirm" 
-                                    @close="showConfirm = false"
-                                    @confirmed="$el.closest('form').submit()"
-                                    title="Xác nhận xóa phòng"
-                                    message="Bạn có chắc muốn xóa phòng {{ $phong->tenphong }}?"
-                                    confirm-text="Xóa"
-                                    cancel-text="Hủy"
-                                    type="danger"
-                                />
+                                @method('DELETE')
+                                <button type="button" @click="$dispatch('open-confirm', { message: 'Xóa phòng {{ $phong->tenphong }}?', action: () => showConfirm = true })" class="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-rose-600 shadow-sm transition-colors hover:bg-rose-600 hover:text-white" title="Xóa">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
                             </form>
                         </div>
-                    </footer>
+                    </div>
                 </article>
             @empty
                 <div class="col-span-full">
-                    <x-empty-state
-                        title="Chưa có phòng"
-                        description="Sơ đồ phòng sẽ hiển thị tại đây khi có dữ liệu."
-                        actionLabel="Tải lại trang"
-                        :actionHref="request()->fullUrl()"
-                    />
+                    <div class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-ui-border bg-ui-bg/50 py-24 text-center">
+                        <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white text-ink-secondary/50 mb-4 shadow-sm border border-ui-border">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m4 0h1m-4 12h1m4 0h1m-4-4h1m4 0h1m-4-4h1m4 0h1"/></svg>
+                        </div>
+                        <h3 class="text-sm font-bold text-ink-primary">Dữ liệu trống</h3>
+                        <p class="mt-1 text-[11px] text-ink-secondary max-w-sm mx-auto">Vui lòng thêm phòng mới để bắt đầu quản lý vận hành cơ sở vật chất.</p>
+                    </div>
                 </div>
             @endforelse
         </div>
+        @if(method_exists($danhsachphong, 'links'))
+            <div class="mt-6">
+                {{ $danhsachphong->appends(request()->query())->links() }}
+            </div>
+        @endif
     @endif
 
     @push('modals')
-        <div id="modal-themphong" tabindex="-1" aria-hidden="true" class="hidden fixed left-0 right-0 top-0 z-50 h-[calc(100%-1rem)] max-h-full w-full overflow-y-auto overflow-x-hidden p-4 md:inset-0">
-            <div class="relative max-h-full w-full max-w-lg">
-                <div class="relative rounded-lg border border-gray-200/70 bg-white">
-                    <div class="flex items-start justify-between rounded-t border-b p-4">
-                        <h3 class="text-lg font-semibold text-[#121212]">Thêm phòng</h3>
-                        <button type="button" class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#9A9A9A] hover:bg-[#F7F7F8] hover:text-[#121212]" data-modal-hide="modal-themphong" aria-label="Đóng hộp thoại thêm phòng">
-                            <span class="sr-only">Đóng</span>
-                            <svg class="h-3 w-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 12 12M13 1 1 13"/>
-                            </svg>
-                        </button>
+        <x-modal id="modal-themphong" title="Kiến tạo phòng mới" subtitle="Nhập thông số cơ bản để khởi tạo thực thể phòng trong hệ thống.">
+            <form method="POST" action="{{ route('admin.themphong') }}" class="space-y-6">
+                @csrf
+                <div class="grid grid-cols-2 gap-5">
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Tên phòng nhận diện</label>
+                        <input name="tenphong" value="{{ old('tenphong') }}" class="linear-input mt-1.5" placeholder="VD: P.101" required />
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Tầng vận hành</label>
+                        <input name="tang" type="number" value="{{ old('tang') }}" class="linear-input mt-1.5" placeholder="1-8" required />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-5">
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Đơn giá thuê (VND)</label>
+                        <input name="giaphong" type="number" value="{{ old('giaphong') }}" class="linear-input mt-1.5" placeholder="1200000" required />
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Giới tính chỉ định</label>
+                        <select name="gioitinh" class="linear-select mt-1.5" required>
+                            <option value="Nam">Nam giới</option>
+                            <option value="Nữ">Nữ giới</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-5">
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Số lượng giường</label>
+                        <input name="soluongtoida" type="number" value="{{ old('soluongtoida', 8) }}" class="linear-input mt-1.5" required />
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sức chứa tối đa</label>
+                        <input name="succhuamax" type="number" value="{{ old('succhuamax', 8) }}" class="linear-input mt-1.5" required />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Mô tả đặc tính</label>
+                    <textarea name="mota" rows="3" class="linear-textarea mt-1.5" placeholder="Tiện nghi, ghi chú đặc biệt..."></textarea>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button type="button" data-modal-hide="modal-themphong" class="flex-1 linear-btn-secondary py-3 font-bold">Hủy bỏ</button>
+                    <button type="submit" class="flex-[2] linear-btn-primary py-3 font-bold shadow-lg shadow-brand/20">Khởi tạo thực thể</button>
+                </div>
+            </form>
+        </x-modal>
+
+        @foreach ($danhsachphong as $phong)
+            <x-modal id="modal-capnhatphong-{{ $phong->id }}" title="Hiệu chỉnh tham số" subtitle="Cập nhật thông tin thực thể phòng {{ $phong->tenphong }}.">
+                <form method="POST" action="{{ route('admin.capnhatphong', ['id' => $phong->id]) }}" class="space-y-6">
+                    @csrf
+                    <div class="grid grid-cols-2 gap-5">
+                        <div>
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Tên phòng</label>
+                            <input name="tenphong" value="{{ $phong->tenphong }}" class="linear-input mt-1.5" required />
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Giới tính</label>
+                            <select name="gioitinh" class="linear-select mt-1.5" required>
+                                <option value="Nam" {{ $phong->gioitinh === 'Nam' ? 'selected' : '' }}>Nam</option>
+                                <option value="Nữ" {{ $phong->gioitinh === 'Nữ' ? 'selected' : '' }}>Nữ</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <form class="p-4" method="POST" action="{{ route('admin.themphong') }}">
-                        @csrf
-                        <div class="grid gap-4">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Tên phòng</label>
-                                    <input name="tenphong" value="{{ old('tenphong') }}" class="linear-input mt-1" required />
-                                </div>
-                                <div>
-                                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Tầng</label>
-                                    <input name="tang" value="{{ old('tang') }}" class="linear-input mt-1" required />
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Giá phòng</label>
-                                    <input name="giaphong" value="{{ old('giaphong') }}" class="linear-input mt-1" required />
-                                </div>
-                                <div>
-                                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Số lượng tối đa</label>
-                                    <input name="soluongtoida" value="{{ old('soluongtoida') }}" class="linear-input mt-1" required />
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Sức chứa</label>
-                                    <input name="succhuamax" value="{{ old('succhuamax', old('soluongtoida')) }}" class="linear-input mt-1" required />
-                                </div>
-                                <div>
-                                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Giới tính</label>
-                                    <select name="gioitinh" class="linear-select mt-1" required>
-                                        <option value="">-- Chọn --</option>
-                                        <option value="Nam" {{ old('gioitinh') === 'Nam' ? 'selected' : '' }}>Nam</option>
-                                        <option value="Nữ" {{ old('gioitinh') === 'Nữ' ? 'selected' : '' }}>Nữ</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Mô tả</label>
-                                <textarea name="mota" rows="3" class="linear-textarea mt-1">{{ old('mota') }}</textarea>
-                            </div>
-                        </div>
-                        <button type="submit" class="mt-4 w-full rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-800">Thêm</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        @foreach ($danhsachphong as $phong)
-            <div id="modal-capnhatphong-{{ $phong->id }}" tabindex="-1" aria-hidden="true" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4 md:p-6">
-                <div class="mx-auto mt-12 w-full max-w-2xl rounded-lg border border-gray-200/70 bg-white p-6 shadow-none">
-                    <div class="flex items-start justify-between border-b border-gray-200/70 pb-4">
+                    <div class="grid grid-cols-2 gap-5">
                         <div>
-                            <h3 class="text-xl font-bold text-[#121212]">Cập nhật phòng</h3>
-                            <p class="text-sm text-[#606060]">Chỉnh sửa thông tin phòng và lưu thay đổi.</p>
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Tầng</label>
+                            <input name="tang" type="number" value="{{ $phong->tang }}" class="linear-input mt-1.5" required />
                         </div>
-                        <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200/70 text-[#606060] hover:bg-[#F7F7F8] hover:text-[#121212]" data-modal-hide="modal-capnhatphong-{{ $phong->id }}" aria-label="Đóng hộp thoại cập nhật phòng">
-                            <span class="sr-only">Đóng</span>
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 12 12M13 1 1 13"/></svg>
-                        </button>
+                        <div>
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Đơn giá</label>
+                            <input name="giaphong" type="number" value="{{ $phong->giaphong }}" class="linear-input mt-1.5" required />
+                        </div>
                     </div>
-                    <form class="mt-5 space-y-4" method="POST" action="{{ route('admin.capnhatphong', ['id' => $phong->id]) }}">
-                        @csrf
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Tên phòng</label>
-                                <input name="tenphong" value="{{ $phong->tenphong }}" required class="linear-input mt-1" />
-                            </div>
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Giới tính</label>
-                                <select name="gioitinh" required class="linear-select mt-1">
-                                    <option value="Nam" {{ $phong->gioitinh === 'Nam' ? 'selected' : '' }}>Nam</option>
-                                    <option value="Nữ" {{ $phong->gioitinh === 'Nữ' ? 'selected' : '' }}>Nữ</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Tầng</label>
-                                <input name="tang" value="{{ $phong->tang }}" required class="linear-input mt-1" />
-                            </div>
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Giá phòng</label>
-                                <input name="giaphong" value="{{ $phong->giaphong }}" required class="linear-input mt-1" />
-                            </div>
-                        </div>
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Số lượng tối đa</label>
-                                <input name="soluongtoida" value="{{ $phong->soluongtoida }}" required class="linear-input mt-1" />
-                            </div>
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Sức chứa</label>
-                                <input name="succhuamax" value="{{ $phong->succhuamax }}" required class="linear-input mt-1" />
-                            </div>
+
+                    <div class="grid grid-cols-2 gap-5">
+                        <div>
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Số giường</label>
+                            <input name="soluongtoida" type="number" value="{{ $phong->soluongtoida }}" class="linear-input mt-1.5" required />
                         </div>
                         <div>
-                            <label class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Mô tả</label>
-                            <textarea name="mota" rows="3" class="linear-textarea mt-1">{{ $phong->mota }}</textarea>
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sức chứa</label>
+                            <input name="succhuamax" type="number" value="{{ $phong->succhuamax }}" class="linear-input mt-1.5" required />
                         </div>
-                        <div class="mt-4 flex justify-end gap-2">
-                            <button type="button" data-modal-hide="modal-capnhatphong-{{ $phong->id }}" class="linear-btn-secondary">Hủy</button>
-                            <button type="submit" class="linear-btn-primary">Lưu thay đổi</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Mô tả đặc tính</label>
+                        <textarea name="mota" rows="3" class="linear-textarea mt-1.5">{{ $phong->mota }}</textarea>
+                    </div>
+
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" data-modal-hide="modal-capnhatphong-{{ $phong->id }}" class="flex-1 linear-btn-secondary py-3 font-bold">Hủy bỏ</button>
+                        <button type="submit" class="flex-[2] linear-btn-primary py-3 font-bold">Lưu thay đổi</button>
+                    </div>
+                </form>
+            </x-modal>
         @endforeach
     @endpush
-@endsection
+</x-admin-layout>

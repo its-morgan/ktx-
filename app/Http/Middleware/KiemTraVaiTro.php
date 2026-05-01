@@ -19,9 +19,9 @@ class KiemTraVaiTro
             return redirect()->route('login');
         }
 
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-        $vaitrohientai = $user->vaitro ?? null;
+        /** @var \App\Models\User $nguoiDung */
+        $nguoiDung = Auth::user();
+        $vaitrohientai = $nguoiDung->vaitro ?? null;
 
         $danhSachVaiTroBatBuoc = collect(explode(',', $vaitrobatbuoc))
             ->map(static fn (string $vaiTro): string => trim($vaiTro))

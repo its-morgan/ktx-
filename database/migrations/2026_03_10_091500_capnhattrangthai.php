@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         // Dang ky
-        DB::table('dangky')->where('trangthai', 'choxuly')->update(['trangthai' => RegistrationStatus::PENDING->value]);
-        DB::table('dangky')->where('trangthai', 'duyet')->update(['trangthai' => RegistrationStatus::APPROVED->value]);
-        DB::table('dangky')->where('trangthai', 'tuchoi')->update(['trangthai' => RegistrationStatus::REJECTED->value]);
+        DB::table('dangky')->where('trangthai', 'choxuly')->update(['trangthai' => RegistrationStatus::Pending->value]);
+        DB::table('dangky')->where('trangthai', 'duyet')->update(['trangthai' => RegistrationStatus::Approved->value]);
+        DB::table('dangky')->where('trangthai', 'tuchoi')->update(['trangthai' => RegistrationStatus::Rejected->value]);
 
         // Hoa don
         DB::table('hoadon')->where('trangthaithanhtoan', 'chuathanhtoan')->update(['trangthaithanhtoan' => 'Chưa thanh toán']);
@@ -24,7 +24,7 @@ return new class extends Migration
         DB::table('baohong')->where('trangthai', 'chosua')->update(['trangthai' => 'Chờ sửa']);
         DB::table('baohong')->where('trangthai', 'daxong')->update(['trangthai' => 'Đã xong']);
 
-        DB::statement("ALTER TABLE `dangky` MODIFY `trangthai` VARCHAR(255) NOT NULL DEFAULT '" . RegistrationStatus::PENDING->value . "'");
+        DB::statement("ALTER TABLE `dangky` MODIFY `trangthai` VARCHAR(255) NOT NULL DEFAULT '" . RegistrationStatus::Pending->value . "'");
         DB::statement("ALTER TABLE `hoadon` MODIFY `trangthaithanhtoan` VARCHAR(255) NOT NULL DEFAULT 'Chưa thanh toán'");
         DB::statement("ALTER TABLE `baohong` MODIFY `trangthai` VARCHAR(255) NOT NULL DEFAULT 'Chờ sửa'");
     }
@@ -34,9 +34,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::table('dangky')->where('trangthai', RegistrationStatus::PENDING->value)->update(['trangthai' => 'choxuly']);
-        DB::table('dangky')->where('trangthai', RegistrationStatus::APPROVED->value)->update(['trangthai' => 'duyet']);
-        DB::table('dangky')->where('trangthai', RegistrationStatus::REJECTED->value)->update(['trangthai' => 'tuchoi']);
+        DB::table('dangky')->where('trangthai', RegistrationStatus::Pending->value)->update(['trangthai' => 'choxuly']);
+        DB::table('dangky')->where('trangthai', RegistrationStatus::Approved->value)->update(['trangthai' => 'duyet']);
+        DB::table('dangky')->where('trangthai', RegistrationStatus::Rejected->value)->update(['trangthai' => 'tuchoi']);
 
         DB::table('hoadon')->where('trangthaithanhtoan', 'Chưa thanh toán')->update(['trangthaithanhtoan' => 'chuathanhtoan']);
         DB::table('hoadon')->where('trangthaithanhtoan', 'Đã thanh toán')->update(['trangthaithanhtoan' => 'dathanhtoan']);

@@ -14,14 +14,22 @@ class Lichsubaotri extends Model
 
     protected $fillable = [
         'vattu_id',
+        'phong_id',
         'ngaybaotri',
         'noidung',
         'chiphi',
         'donvithuchien',
+        'nguoithuchien',
+        'trangthai',
     ];
 
     public function vattu(): BelongsTo
     {
         return $this->belongsTo(Vattu::class, 'vattu_id');
+    }
+
+    public function phong(): BelongsTo
+    {
+        return $this->belongsTo(Phong::class, 'phong_id');
     }
 }

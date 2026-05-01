@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
+use App\Events\GiuongStatusChanged;
+use App\Listeners\SyncRoomAvailability;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -17,6 +21,11 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         Registered::class => [
             SendEmailVerificationNotification::class,
+        ],
+
+        // Đồng bộ trạng thái phòng khi giường thay đổi
+        GiuongStatusChanged::class => [
+            SyncRoomAvailability::class,
         ],
     ];
 
@@ -36,3 +45,4 @@ class EventServiceProvider extends ServiceProvider
         return false;
     }
 }
+

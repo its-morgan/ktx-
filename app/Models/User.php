@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -17,6 +19,18 @@ class User extends Authenticatable
     public const ROLE_ADMIN_TOA_NHA = 'admin_toanha';
     public const ROLE_LE_TAN = 'le_tan';
     public const ROLE_SINH_VIEN = 'sinhvien';
+    public const ROLE_EX_STUDENT = 'cuu_sinhvien';
+
+    /**
+     * Chuyển sinh viên sang trạng thái Cựu sinh viên (Read-only access)
+     */
+    public function moveToExStudent(): bool
+    {
+        return $this->update([
+            'vaitro' => self::ROLE_EX_STUDENT,
+            'is_active' => true // Still active to allow login
+        ]);
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -29,6 +43,7 @@ class User extends Authenticatable
         'password',
         'vaitro',
         'gioitinh',
+        'is_active',
     ];
 
     /**
@@ -49,6 +64,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -72,5 +88,13 @@ class User extends Authenticatable
             self::ROLE_ADMIN_TOA_NHA,
             self::ROLE_LE_TAN,
         ]);
+    }
+
+    /**
+     * Vô hiệu hóa tài khoản sinh viên khi offboarding.
+     */
+    public function deactivate(): bool
+    {
+        return $this->update(['is_active' => false]);
     }
 }
