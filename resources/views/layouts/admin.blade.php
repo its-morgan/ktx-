@@ -12,6 +12,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-ui-bg font-sans antialiased text-ink-primary">
+    <div id="page-loading-indicator" class="fixed inset-x-0 top-0 z-[120] hidden h-1 bg-brand-emerald"></div>
     <div class="linear-shell flex min-h-screen">
         <!-- Sidebar -->
         @include('admin.partials.sidebar')
@@ -97,5 +98,34 @@
     </div>
     @stack('modals')
     @stack('scripts')
+    <script>
+        const pageLoadingIndicator = document.getElementById('page-loading-indicator');
+        document.addEventListener('click', function (event) {
+            const link = event.target.closest('a[href]');
+            if (!link) {
+                return;
+            }
+
+            const href = link.getAttribute('href') ?? '';
+            if (!href || href.startsWith('#') || href.startsWith('javascript:')) {
+                return;
+            }
+
+            pageLoadingIndicator?.classList.remove('hidden');
+        });
+
+        document.addEventListener('submit', function () {
+            pageLoadingIndicator?.classList.remove('hidden');
+        });
+
+        window.addEventListener('open-confirm', function (event) {
+            const message = event?.detail?.message ?? 'Bạn có chắc chắn muốn tiếp tục?';
+            const action = event?.detail?.action;
+
+            if (typeof action === 'function' && window.confirm(message)) {
+                action();
+            }
+        });
+    </script>
 </body>
 </html>

@@ -60,5 +60,13 @@ class AuthServiceProvider extends ServiceProvider
                 User::ROLE_ADMIN_TOA_NHA,
             ]);
         });
+
+        Gate::define('phong.manage', fn (User $user): bool => $user->isAdminGroup());
+        Gate::define('sinhvien.manage', fn (User $user): bool => $user->isAdminGroup());
+        Gate::define('baohong.manage', fn (User $user): bool => $user->isAdminGroup());
+        Gate::define('baotri.manage', fn (User $user): bool => $user->isAdminGroup());
+        Gate::define('thongbao.manage', fn (User $user): bool => $user->isAdminGroup());
+        Gate::define('lienhe.manage', fn (User $user): bool => $user->isAdminGroup());
+        Gate::define('congno.manage', fn (User $user): bool => $user->isAdminGroup());
     }
 }

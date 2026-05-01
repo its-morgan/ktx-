@@ -18,6 +18,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-ui-bg font-sans antialiased text-ink-primary transition-colors duration-300">
+<div id="page-loading-indicator" class="fixed inset-x-0 top-0 z-[120] hidden h-1 bg-brand-emerald"></div>
 @php
     $hoadonCanXuLy = isset($hoadonchuathanhtoan) && method_exists($hoadonchuathanhtoan, 'count') ? $hoadonchuathanhtoan->count() : 0;
     $hotroCanXuLy = $hoadonCanXuLy > 0 ? 1 : 0;
@@ -160,8 +161,9 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <a href="{{ route('student.thongbao') }}" class="flex h-10 w-10 items-center justify-center rounded-xl border border-ui-border bg-ui-card text-ink-secondary hover:bg-ui-bg hover:text-ink-primary transition-colors">
+                    <a href="{{ route('student.thongbao') }}" class="relative flex h-10 w-10 items-center justify-center rounded-xl border border-ui-border bg-ui-card text-ink-secondary hover:bg-ui-bg hover:text-ink-primary transition-colors">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 17h5l-1.4-1.4a2 2 0 0 1-.6-1.4V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0a3 3 0 0 1-6 0"/></svg>
+                        <span id="student-notification-badge" class="hidden absolute -top-1 -right-1 min-w-[18px] rounded-full bg-rose-500 px-1.5 py-0.5 text-center text-[9px] font-black leading-none text-white"></span>
                     </a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -218,5 +220,57 @@
         </div>
     </nav>
 </div>
+<script>
+    const pageLoadingIndicator = document.getElementById('page-loading-indicator');
+    document.addEventListener('click', function (event) {
+        const link = event.target.closest('a[href]');
+        if (!link) {
+            return;
+        }
+
+        const href = link.getAttribute('href') ?? '';
+        if (!href || href.startsWith('#') || href.startsWith('javascript:')) {
+            return;
+        }
+
+        pageLoadingIndicator?.classList.remove('hidden');
+    });
+
+    document.addEventListener('submit', function () {
+        pageLoadingIndicator?.classList.remove('hidden');
+    });
+
+    async function capNhatSoThongBaoChuaDoc() {
+        try {
+            const response = await fetch("{{ route('student.thongbao.unread_count') }}", {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            const badge = document.getElementById('student-notification-badge');
+            const soLuong = Number(data?.unread_count ?? 0);
+
+            if (!badge) {
+                return;
+            }
+
+            if (soLuong > 0) {
+                badge.textContent = soLuong > 99 ? '99+' : String(soLuong);
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        } catch (error) {
+            // Silent fail for lightweight polling.
+        }
+    }
+
+    capNhatSoThongBaoChuaDoc();
+    setInterval(capNhatSoThongBaoChuaDoc, 30000);
+</script>
 </body>
 </html>

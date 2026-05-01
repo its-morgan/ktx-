@@ -56,6 +56,15 @@ class DangkyService implements DangkyServiceInterface
                     return $this->traVeLoi(self::MESSAGE_ROOM_CONFLICT);
                 }
 
+                $giuongNo = (int) ($data['giuong_no'] ?? 0);
+                if ($giuongNo <= 0 || $giuongNo > (int) $phong->succhuamax) {
+                    return $this->traVeLoi('Giường không hợp lệ.');
+                }
+
+                if (! $this->kiemTraGiuongConTrong((int) $phong->id, $giuongNo)) {
+                    return $this->traVeLoi('Giường đã có người đăng ký hoặc đang sử dụng.');
+                }
+
                 if (Dangky::where('sinhvien_id', $sinhvien->id)->where('trangthai', RegistrationStatus::Pending->value)->exists()) {
                     return $this->traVeLoi('Bạn đã gửi đăng ký, vui lòng chờ admin xử lý.');
                 }
@@ -63,6 +72,7 @@ class DangkyService implements DangkyServiceInterface
                 Dangky::create([
                     'sinhvien_id' => $sinhvien->id,
                     'phong_id' => $phong->id,
+                    'giuong_no' => $giuongNo,
                     'loaidangky' => RegistrationType::Rental->value,
                     'trangthai' => RegistrationStatus::Pending->value,
                 ]);
@@ -261,10 +271,17 @@ class DangkyService implements DangkyServiceInterface
                 // Tạo Hopdong
                 $hopdong = $this->taoHopdongChoSinhvien($sinhvien, $dangky);
 
+                // Tạo hóa đơn thế chân + hóa đơn tháng đầu cho luồng guest.
+                $hoaDonService = app(HoadonService::class);
+                $hoaDonService->taoHoaDonTheChan($sinhvien);
+                $hoaDonService->taoHoaDonHangThang($sinhvien, (int) now()->month, (int) now()->year);
+
                 // Cập nhật Dangky
                 $dangky->update([
                     'trangthai' => RegistrationStatus::Completed->value,
-                    'sinhvien_id' => $sinhvien->id
+                    'sinhvien_id' => $sinhvien->id,
+                    'anh_the_path' => $filePaths['anh_the'] ?? $dangky->anh_the_path,
+                    'anh_cccd_path' => $filePaths['anh_cccd'] ?? $dangky->anh_cccd_path,
                 ]);
 
                 // Dispatch event cho giường
@@ -295,6 +312,15 @@ class DangkyService implements DangkyServiceInterface
                     return $this->traVeLoi('Phòng đã đầy.');
                 }
 
+                $giuongNo = (int) ($data['giuong_no'] ?? 0);
+                if ($giuongNo <= 0 || $giuongNo > (int) $phong->succhuamax) {
+                    return $this->traVeLoi('Số giường không hợp lệ.');
+                }
+
+                if (! $this->kiemTraGiuongConTrong($phong->id, $giuongNo)) {
+                    return $this->traVeLoi('Giường bạn chọn đã được giữ hoặc đã có người ở.');
+                }
+
                 $filePaths = $this->luuAnhDangKy($data);
                 $lookupToken = Str::random(32);
                 $dangky = Dangky::create([
@@ -304,6 +330,7 @@ class DangkyService implements DangkyServiceInterface
                     'so_dien_thoai' => $data['so_dien_thoai'],
                     'truong_hoc' => $data['truong_hoc'],
                     'phong_id' => $data['phong_id'],
+                    'giuong_no' => $giuongNo,
                     'anh_the_path' => $filePaths['anh_the'],
                     'anh_cccd_path' => $filePaths['anh_cccd'],
                     'trangthai' => RegistrationStatus::Pending->value,
@@ -373,7 +400,7 @@ class DangkyService implements DangkyServiceInterface
             'email' => $dangky->email,
             'password' => bcrypt(Str::random(12)),
             'vaitro' => 'sinhvien',
-            'is_active' => true
+            'is_active' => true,
         ]);
     }
 
@@ -415,6 +442,7 @@ class DangkyService implements DangkyServiceInterface
             'success' => true,
             'phong' => $phong,
             'giuong_no' => $giuongNo,
+            'giuong_trong' => $this->layDanhSachGiuongTrong($phong),
         ];
     }
 
@@ -431,6 +459,53 @@ class DangkyService implements DangkyServiceInterface
             'token' => $token,
             'dangky' => $dangky,
         ];
+    }
+
+    private function layDanhSachGiuongTrong(Phong $phong): array
+    {
+        $giuongDaSuDung = Sinhvien::query()
+            ->where('phong_id', $phong->id)
+            ->whereNotNull('giuong_no')
+            ->pluck('giuong_no')
+            ->map(fn ($value) => (int) $value)
+            ->all();
+
+        $giuongDangGiu = Dangky::query()
+            ->where('phong_id', $phong->id)
+            ->where('trangthai', RegistrationStatus::Pending->value)
+            ->whereNotNull('giuong_no')
+            ->pluck('giuong_no')
+            ->map(fn ($value) => (int) $value)
+            ->all();
+
+        $giuongKhongTrong = array_unique(array_merge($giuongDaSuDung, $giuongDangGiu));
+        $tatCaGiuong = range(1, max(1, (int) $phong->succhuamax));
+
+        return array_values(array_filter(
+            $tatCaGiuong,
+            fn (int $soGiuong) => ! in_array($soGiuong, $giuongKhongTrong, true)
+        ));
+    }
+
+    private function kiemTraGiuongConTrong(int $phongId, int $giuongNo): bool
+    {
+        $sinhVienDaO = Sinhvien::query()
+            ->where('phong_id', $phongId)
+            ->where('giuong_no', $giuongNo)
+            ->exists();
+
+        if ($sinhVienDaO) {
+            return false;
+        }
+
+        return ! Dangky::query()
+            ->where('phong_id', $phongId)
+            ->where('giuong_no', $giuongNo)
+            ->whereIn('trangthai', [
+                RegistrationStatus::Pending->value,
+                RegistrationStatus::ApprovedPendingPayment->value,
+            ])
+            ->exists();
     }
 
     private function approveLeaveRoomLogic(Dangky $dangky, Sinhvien $sinhvien): array

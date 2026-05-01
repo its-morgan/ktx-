@@ -38,6 +38,7 @@ class DangkyController extends Controller
         return view($viewDangKy, [
             'phong' => $duLieu['phong'],
             'giuong_no' => $duLieu['giuong_no'] ?? null,
+            'giuong_trong' => $duLieu['giuong_trong'] ?? [],
         ]);
     }
 
@@ -47,7 +48,16 @@ class DangkyController extends Controller
 
         $result = $this->dangkyService->luuDangkyKhach($dulieu);
 
-        return redirect()->back()->with([
+        if (($result['success'] ?? false) && str_contains((string) ($result['toast_noidung'] ?? ''), 'Token tra cứu: ')) {
+            $token = trim((string) str($result['toast_noidung'])->after('Token tra cứu:'));
+
+            return redirect()->route('guest.lookup', ['token' => $token])->with([
+                'toast_loai' => $result['toast_loai'],
+                'toast_noidung' => 'Đăng ký thành công. Vui lòng theo dõi trạng thái hồ sơ tại trang tra cứu.',
+            ]);
+        }
+
+        return redirect()->back()->withInput()->with([
             'toast_loai' => $result['toast_loai'],
             'toast_noidung' => $result['toast_noidung'],
         ]);

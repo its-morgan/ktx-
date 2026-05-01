@@ -25,6 +25,7 @@ class PhongController extends Controller
             'danhsachphong' => $data['danhsachphongtrong'],
             'soluongdango_theophong' => $data['soluongdango_theophong'],
             'tuKhoa' => $data['tuKhoa'],
+            'giuongtrong_theophong' => $data['giuongtrong_theophong'] ?? [],
         ]);
     }
 

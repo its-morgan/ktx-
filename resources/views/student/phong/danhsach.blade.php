@@ -66,12 +66,20 @@
                                     <div class="text-[8px] font-bold text-ink-secondary/30 uppercase tracking-[0.2em] mt-1.5 tabular-nums">{{ $soNguoiDangO }}/{{ $phong->succhuamax }} Đang ở</div>
                                 </td>
                                 <td class="px-8 py-6 text-right">
+                                    @php $giuongTrong = $giuongtrong_theophong[$phong->id] ?? []; @endphp
                                     <form method="POST" action="{{ route('student.dangkyphong') }}">
                                         @csrf
                                         <input type="hidden" name="phong_id" value="{{ $phong->id }}">
+                                        <select name="giuong_no" required class="mb-2 w-full border border-ui-border bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-ink-primary">
+                                            <option value="">Chọn giường</option>
+                                            @foreach($giuongTrong as $soGiuong)
+                                                <option value="{{ $soGiuong }}">Giường {{ $soGiuong }}</option>
+                                            @endforeach
+                                        </select>
                                         <button type="submit"
+                                                @disabled(empty($giuongTrong))
                                                 class="pdu-btn-primary px-6 py-2.5 text-[9px] font-black uppercase tracking-widest shadow-lg shadow-brand-emerald/10 transition-all hover:-translate-y-0.5 active:translate-y-0">
-                                            Gửi đăng ký
+                                            {{ empty($giuongTrong) ? 'Hết giường' : 'Gửi đăng ký' }}
                                         </button>
                                     </form>
                                 </td>

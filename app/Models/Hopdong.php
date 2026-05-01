@@ -14,6 +14,10 @@ class Hopdong extends Model
 
     protected $table = 'hopdong';
 
+    public const TRANGTHAI_DANG_HIEU_LUC = 'active';
+    public const TRANGTHAI_HET_HAN = 'expired';
+    public const TRANGTHAI_DA_THANH_LY = 'terminated';
+
     public static function trangThaiDangHieuLuc(): string
     {
         return ContractStatus::Active->value;
@@ -30,14 +34,14 @@ class Hopdong extends Model
     }
 
     private const ALLOWED_TRANSITIONS = [
-        'Dang hieu luc' => [
-            'Het han',
-            'Da thanh ly',
+        self::TRANGTHAI_DANG_HIEU_LUC => [
+            self::TRANGTHAI_HET_HAN,
+            self::TRANGTHAI_DA_THANH_LY,
         ],
-        'Het han' => [
-            'Da thanh ly',
+        self::TRANGTHAI_HET_HAN => [
+            self::TRANGTHAI_DA_THANH_LY,
         ],
-        'Da thanh ly' => [],
+        self::TRANGTHAI_DA_THANH_LY => [],
     ];
 
     protected $fillable = [
@@ -88,11 +92,6 @@ class Hopdong extends Model
 
     private function normalizeState(string $state): string
     {
-        return match ($state) {
-            'Dang hieu luc' => self::trangThaiDangHieuLuc(),
-            'Het han' => self::trangThaiHetHan(),
-            'Da thanh ly' => self::trangThaiDaThanhLy(),
-            default => $state,
-        };
+        return $state;
     }
 }

@@ -8,26 +8,29 @@ use App\Models\Lienhe;
 use App\Models\Phong;
 use App\Models\Thongbao;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class TrangChuService implements TrangChuServiceInterface
 {
     public function layDuLieuTrangChu(): array
     {
-        $phongList = Phong::all();
-        $tongCho = $phongList->sum('dango');
+        return Cache::remember('landing.trang_chu_data', 300, function () {
+            $phongList = Phong::all();
+            $tongCho = $phongList->sum('dango');
 
-        return [
-            'tongPhong' => $phongList->count(),
-            'tongCho' => $tongCho,
-            'tongConTrong' => $phongList->sum('succhuamax') - $tongCho,
-            'phongHoanToanTrong' => Phong::whereDoesntHave('danhsachsinhvien')->count(),
-            'phongConCho' => Phong::whereColumn('dango', '<', 'succhuamax')->count(),
-            'giaTrungBinh' => $phongList->avg('giaphong') ?? 1200000,
-            'sinhVienDangO' => $tongCho,
-            'soTang' => $phongList->pluck('tang')->unique()->count(),
-            'phongList' => $phongList,
-            'cauhinh' => Cauhinh::pluck('giatri', 'ten')->toArray(),
-        ];
+            return [
+                'tongPhong' => $phongList->count(),
+                'tongCho' => $tongCho,
+                'tongConTrong' => $phongList->sum('succhuamax') - $tongCho,
+                'phongHoanToanTrong' => Phong::whereDoesntHave('danhsachsinhvien')->count(),
+                'phongConCho' => Phong::whereColumn('dango', '<', 'succhuamax')->count(),
+                'giaTrungBinh' => $phongList->avg('giaphong') ?? 1200000,
+                'sinhVienDangO' => $tongCho,
+                'soTang' => $phongList->pluck('tang')->unique()->count(),
+                'phongList' => $phongList,
+                'cauhinh' => Cauhinh::pluck('giatri', 'ten')->toArray(),
+            ];
+        });
     }
 
     public function guiLienHe(array $data): bool

@@ -87,7 +87,41 @@ class TruyVanPhongService implements TruyVanPhongServiceInterface
         $soluongdango_theophong = $danhsachphong->pluck('so_nguoi_dang_o', 'id')->toArray();
         $danhsachphongtrong = $danhsachphong->filter(fn($phong) => $phong->so_nguoi_dang_o < (int)$phong->succhuamax);
 
-        return ['danhsachphongtrong' => $danhsachphongtrong, 'soluongdango_theophong' => $soluongdango_theophong, 'tuKhoa' => $tuKhoa];
+        $phongIds = $danhsachphongtrong->pluck('id')->all();
+        $giuongDaSuDungTheoPhong = Sinhvien::query()
+            ->whereIn('phong_id', $phongIds)
+            ->whereNotNull('giuong_no')
+            ->get()
+            ->groupBy('phong_id')
+            ->map(fn ($items) => $items->pluck('giuong_no')->map(fn ($value) => (int) $value)->all());
+
+        $giuongDangGiuTheoPhong = Dangky::query()
+            ->whereIn('phong_id', $phongIds)
+            ->whereIn('trangthai', [RegistrationStatus::Pending->value, RegistrationStatus::ApprovedPendingPayment->value])
+            ->whereNotNull('giuong_no')
+            ->get()
+            ->groupBy('phong_id')
+            ->map(fn ($items) => $items->pluck('giuong_no')->map(fn ($value) => (int) $value)->all());
+
+        $giuongTrongTheoPhong = [];
+        foreach ($danhsachphongtrong as $phong) {
+            $giuongDaSuDung = $giuongDaSuDungTheoPhong->get($phong->id, []);
+            $giuongDangGiu = $giuongDangGiuTheoPhong->get($phong->id, []);
+            $giuongKhongTrong = array_unique(array_merge($giuongDaSuDung, $giuongDangGiu));
+            $tatCaGiuong = range(1, max(1, (int) $phong->succhuamax));
+
+            $giuongTrongTheoPhong[$phong->id] = array_values(array_filter(
+                $tatCaGiuong,
+                fn (int $soGiuong) => ! in_array($soGiuong, $giuongKhongTrong, true)
+            ));
+        }
+
+        return [
+            'danhsachphongtrong' => $danhsachphongtrong,
+            'soluongdango_theophong' => $soluongdango_theophong,
+            'tuKhoa' => $tuKhoa,
+            'giuongtrong_theophong' => $giuongTrongTheoPhong,
+        ];
     }
 
     public function layChiTietPhong(int $id): array

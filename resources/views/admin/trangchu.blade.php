@@ -23,13 +23,22 @@
         $dangKyChoDuyet = (int) ($dangkychoxuly ?? 0);
         $suCoMo = (int) ($baohongchosua ?? 0);
 
-        $congSuatTheoToa = collect([
-            ['toa' => 'Tòa A', 'value' => min(100, max(0, $tyLeLapDay + 8))],
-            ['toa' => 'Tòa B', 'value' => min(100, max(0, $tyLeLapDay + 3))],
-            ['toa' => 'Tòa C', 'value' => min(100, max(0, $tyLeLapDay - 2))],
-            ['toa' => 'Tòa D', 'value' => min(100, max(0, $tyLeLapDay - 8))],
-            ['toa' => 'Tòa E', 'value' => min(100, max(0, $tyLeLapDay - 16))],
-        ]);
+        $congSuatTheoToa = \App\Models\Phong::query()
+            // Bảng phong không có cột `toa`, nên suy ra tòa từ ký tự đầu của tên phòng (vd: A101 -> Tòa A).
+            ->selectRaw("UPPER(LEFT(tenphong, 1)) as toa, SUM(dango) as so_nguoi_o, SUM(succhuamax) as tong_suc_chua")
+            ->groupByRaw("UPPER(LEFT(tenphong, 1))")
+            ->orderByRaw("UPPER(LEFT(tenphong, 1))")
+            ->get()
+            ->map(function ($toa) {
+                $tongSucChua = (int) ($toa->tong_suc_chua ?? 0);
+                $soNguoiO = (int) ($toa->so_nguoi_o ?? 0);
+                $tyLe = $tongSucChua > 0 ? (int) round(($soNguoiO / $tongSucChua) * 100) : 0;
+
+                return [
+                    'toa' => 'Tòa '.$toa->toa,
+                    'value' => max(0, min(100, $tyLe)),
+                ];
+            });
 
         $nhanBieuDo = collect($nhan ?? []);
         $xuHuongDoanhThu = $nhanBieuDo->map(function ($nhanItem, $index) use ($seriesTongDoanhThu) {
@@ -70,7 +79,7 @@
                     <div class="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 mb-1">Lấp đầy</div>
                     <div class="text-2xl font-display font-black tracking-tighter text-white">{{ $tyLeLapDay }}<span class="text-sm ml-0.5 opacity-60">%</span></div>
                     <div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-white/10">
-                        <div class="h-full bg-brand-emerald transition-all duration-1000" style="---{L{{Day }}%; widh}}v; width: var(--w);ar(--w);"></div>
+                        <div class="h-full bg-brand-emerald transition-all duration-1000" style="width: {{ $tyLeLapDay }}%;"></div>
                     </div>
                 </div>
                 <div class="rounded-lg border border-slate-700 bg-slate-800/70 px-4 py-3">
@@ -108,7 +117,7 @@
                 <div class="flex items-end gap-1.5 h-14 mb-3">
                     @foreach($xuHuongDoanhThu as $item)
                         @php $h = max(10, round(($item['value'] / $maxDoanhThu) * 100)); @endphp
-                        <div class="flex-1 bg-slate-400 rounded-t-sm transition-all duration-300 hover:bg-slate-600 relative group/bar" style="ieightght: {{ $h m['label'] }}: {{ number_format($item['value']) }}đ">
+                        <div class="flex-1 bg-slate-400 rounded-t-sm transition-all duration-300 hover:bg-slate-600 relative group/bar" style="height: {{ $h }}%;" title="{{ $item['label'] }}: {{ number_format($item['value']) }}đ">
                             <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none font-bold tabular-nums whitespace-nowrap">
                                 {{ number_format($item['value']) }}
                             </div>
@@ -301,7 +310,7 @@
                                 <span class="text-ink-primary tabular-nums">{{ $toa['value'] }}%</span>
                             </div>
                             <div class="h-2 rounded-full bg-ui-bg overflow-hidden ring-1 ring-ui-border/50 p-0.5">
-                                <div class="h-full rounded-full bg-slate-700 transition-all duration-700 ease-out" style="didthth: {{ (int)$toa['value'] }
+                                <div class="h-full rounded-full bg-slate-700 transition-all duration-700 ease-out" style="width: {{ (int) $toa['value'] }}%;"></div>
                             </div>
                         </div>
                     @endforeach
@@ -323,7 +332,7 @@
                                 <span class="text-white tabular-nums font-black">{{ number_format($item['value']) }}đ</span>
                             </div>
                             <div class="h-1 rounded-full bg-white/5 overflow-hidden ring-1 ring-white/10">
-                                <div class="h-full rounded-full bg-slate-400 transition-all duration-700" style="didthth: {anTram .  . '%''%'
+                                <div class="h-full rounded-full bg-slate-400 transition-all duration-700" style="width: {{ $phanTram }}%;"></div>
                             </div>
                         </div>
                     @endforeach

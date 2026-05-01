@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\InvoiceStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
@@ -20,35 +21,29 @@ class Hoadon extends Model
     public const LOAI_DEPOSIT  = 'deposit';   // Phí thế chân
     public const LOAI_PENALTY  = 'penalty';   // Phí bồi thường lỗi thiết bị
 
-    public const TRANGTHAI_QUA_HAN = 'Quá hạn';
-
     public static function trangThaiChuaThanhToan(): string
     {
-        return 'Chưa thanh toán';
+        return InvoiceStatus::Pending->value;
     }
 
     public static function trangThaiDaThanhToan(): string
     {
-        return 'Đã thanh toán';
+        return InvoiceStatus::Paid->value;
     }
 
     public static function trangThaiQuaHan(): string
     {
-        return 'Quá hạn';
+        return InvoiceStatus::Pending->value;
     }
 
     private const ALLOWED_TRANSITIONS = [
-        'Chờ xác nhận' => [
-            'Chưa thanh toán',
+        'pending_confirmation' => [
+            'pending',
         ],
-        'Chưa thanh toán' => [
-            'Đã thanh toán',
-            'Quá hạn',
+        'pending' => [
+            'paid',
         ],
-        'Quá hạn' => [
-            'Đã thanh toán',
-        ],
-        'Đã thanh toán' => [],
+        'paid' => [],
     ];
 
     protected $fillable = [
@@ -112,11 +107,6 @@ class Hoadon extends Model
 
     private function normalizeState(string $state): string
     {
-        return match ($state) {
-            'Chua thanh toan' => self::trangThaiChuaThanhToan(),
-            'Da thanh toan' => self::trangThaiDaThanhToan(),
-            'Qua han' => self::TRANGTHAI_QUA_HAN,
-            default => $state,
-        };
+        return $state;
     }
 }

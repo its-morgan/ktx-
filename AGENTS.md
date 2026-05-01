@@ -99,11 +99,9 @@ Nhận prompt về UI / Blade / CSS / Tailwind / giao diện
 
 # ═══════════════════════════════════════════════════
 <!-- gitnexus:start -->
-> ⚡ BẮT BUỘC: Đọc và tuân thủ [WORKFLOW.md](./WORKFLOW.md) trước khi làm bất cứ điều gì. Đây là TIER 1.
-"⚡ WORKFLOW: Mọi tác vụ code BẮT BUỘC đi qua WORKFLOW.md (9 bước)."
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **hethongquanlyktx** (4875 symbols, 9048 relationships, 273 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **hethongquanlyktx** (1886 symbols, 3951 relationships, 36 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -112,81 +110,8 @@ This project is indexed by GitNexus as **hethongquanlyktx** (4875 symbols, 9048 
 - **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
 - **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
 - **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- **SELF-HEALING PROTOCOL:** Nếu một Pre-commit Gate thất bại (ví dụ: máy chém kiến trúc rớt), AI **KHÔNG ĐƯỢC** phép xin lỗi suông. AI phải ngay lập tức chạy lệnh phân tích lỗi, đối chiếu với Tier 1 trong `HIERARCHY.md` và đề xuất phương án sửa lỗi để pass qua máy chém.
 - When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
 - When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
-
-## The Impeccable Check-Gate (MANDATORY — Backend Architecture)
-
-TRƯỚC KHI đề xuất hoặc viết bất kỳ dòng code logic nào, AI Agent BẮT BUỘC phải tự động in ra bảng sau và tự trả lời:
-
-```markdown
-─────────────────────────────────────────
-[IMPECCABLE CHECK-GATE]
-─────────────────────────────────────────
-✅/❌ 1. Controller có vượt quá 8 methods không?
-        → Nếu CÓ: DỪNG. Chuyển logic sang Service.
-
-✅/❌ 2. Logic có Interface để Dependency Injection chưa?
-        → Nếu CHƯA: DỪNG. Tạo Interface trước.
-
-✅/❌ 3. Thay đổi này có vi phạm STANDARDS.md không?
-        → Nếu CÓ: DỪNG. Đề xuất refactor.
-─────────────────────────────────────────
-```
-
-**QUY TẮC CỨNG:**
-- Nếu bất kỳ check nào = ❌ → KHÔNG được viết code.
-- Thay vào đó, phản hồi: "Vi phạm kiến trúc tại [điểm X]. Đề xuất: [phương án]."
-- Chỉ được viết code/chỉnh sửa file khi TẤT CẢ check = ✅.
-
-## The Impeccable UI Check-Gate (MANDATORY — Blade / CSS / Tailwind)
-
-KHI chạm vào bất kỳ file `.blade.php`, CSS, Tailwind, hoặc JS frontend nào,
-AI Agent BẮT BUỘC in bảng sau TRƯỚC KHI viết HTML/CSS:
-
-```markdown
-─────────────────────────────────────────
-[IMPECCABLE UI CHECK-GATE]
-─────────────────────────────────────────
-✅/❌ 0. Đã đọc tools/impeccable/CLAUDE.md và tham khảo tools/impeccable/source/skills/ chưa?
-        → Nếu CHƯA: ĐỌC NGAY. Không tiếp tục.
-
-✅/❌ 1. Đây là trang Brand (landing/marketing) hay Product (app/dashboard)?
-        → Áp dụng nguyên tắc tương ứng dựa trên context của Impeccable.
-
-✅/❌ 2. Có dùng Inter font không?
-        → Nếu CÓ: DỪNG. Thay bằng Quicksand (brand) hoặc Geist Sans (product).
-
-✅/❌ 3. Có dùng purple gradient hoặc gradient text không?
-        → Nếu CÓ: DỪNG. Đây là AI slop tell số 1. Xóa.
-
-✅/❌ 4. Có nested cards (card trong card trong card) không?
-        → Nếu CÓ: DỪNG. Flatten hierarchy, dùng Bento Grid.
-
-✅/❌ 5. Màu sắc có dùng #000 hoặc #fff không?
-        → Nếu CÓ: DỪNG. Dùng OKLCH. Tint neutral về brand hue.
-
-✅/❌ 6. Animation có dùng bounce easing không?
-        → Nếu CÓ: DỪNG. Xóa. Dùng ease-out hoặc custom cubic-bezier.
-
-✅/❌ 7. Có dark glow / neon shadow trên dark background không?
-        → Nếu CÓ: DỪNG. Đây là AI slop. Xóa hoặc giảm mạnh opacity.
-
-✅/❌ 8. Touch targets có đủ ≥ 44px không? (mobile)
-        → Nếu CHƯA: DỪNG. Tăng kích thước.
-
-✅/❌ 9. Line length có vượt 75 chars không? (text blocks)
-        → Nếu CÓ: Giới hạn max-w-prose hoặc tương đương.
-─────────────────────────────────────────
-Kết quả: [PASS ✅ / FAIL ❌ + anti-pattern cụ thể + file]
-─────────────────────────────────────────
-```
-
-**QUY TẮC CỨNG:**
-- Nếu bất kỳ check nào = ❌ → KHÔNG render/commit UI đó.
-- Sau khi sửa xong → chạy: `npx impeccable detect resources/views/[tên-view]`
-- Nếu detector báo issue: DỪNG, fix trước khi tiếp tục.
 
 ## Never Do
 

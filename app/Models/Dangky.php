@@ -3,20 +3,26 @@
 namespace App\Models;
 
 use App\Enums\RegistrationStatus;
+use App\Enums\RegistrationType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Dangky extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'dangky';
 
-    public const LOAI_THUE_PHONG = 'Thuê phòng';
-    public const LOAI_TRA_PHONG = 'Trả phòng';
-    public const LOAI_DOI_PHONG = 'Doi phong';
+    public const LOAI_THUE_PHONG = 'rental';
+    public const LOAI_TRA_PHONG = 'return';
+    public const LOAI_DOI_PHONG = 'change';
+    public const TRANGTHAI_CHO_XU_LY = 'pending';
+    public const TRANGTHAI_DA_DUYET = 'approved';
+    public const TRANGTHAI_CHO_THANH_TOAN = 'approved_pending_payment';
+    public const TRANGTHAI_HOAN_TAT = 'completed';
+    public const TRANGTHAI_TU_CHOI = 'rejected';
 
     public static function trangThaiChoXuLy(): string
     {
@@ -34,19 +40,20 @@ class Dangky extends Model
     }
 
     private const ALLOWED_TRANSITIONS = [
-        'Chờ xử lý' => [
-            'Chờ thanh toán',
-            'Từ chối',
+        self::TRANGTHAI_CHO_XU_LY => [
+            self::TRANGTHAI_CHO_THANH_TOAN,
+            self::TRANGTHAI_DA_DUYET,
+            self::TRANGTHAI_TU_CHOI,
         ],
-        'Chờ thanh toán' => [
-            'Hoàn tất',
-            'Từ chối',
+        self::TRANGTHAI_CHO_THANH_TOAN => [
+            self::TRANGTHAI_HOAN_TAT,
+            self::TRANGTHAI_TU_CHOI,
         ],
-        'Đã duyệt' => [
-            'Hoàn tất',
+        self::TRANGTHAI_DA_DUYET => [
+            self::TRANGTHAI_HOAN_TAT,
         ],
-        'Hoàn tất' => [],
-        'Từ chối' => [],
+        self::TRANGTHAI_HOAN_TAT => [],
+        self::TRANGTHAI_TU_CHOI => [],
     ];
 
     protected $fillable = [
@@ -68,6 +75,7 @@ class Dangky extends Model
 
     protected $casts = [
         'expires_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     public function getHoTenAttribute($value)
@@ -213,13 +221,6 @@ class Dangky extends Model
 
     private function normalizeState(string $state): string
     {
-        return match ($state) {
-            'Cho xu ly' => self::trangThaiChoXuLy(),
-            'Cho thanh toan' => RegistrationStatus::ApprovedPendingPayment->value,
-            'Da duyet' => self::trangThaiDaDuyet(),
-            'Hoan tat' => RegistrationStatus::Completed->value,
-            'Tu choi' => self::trangThaiTuChoi(),
-            default => $state,
-        };
+        return $state;
     }
 }

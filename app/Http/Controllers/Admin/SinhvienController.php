@@ -14,7 +14,7 @@ class SinhvienController extends Controller
 
     public function lietKeSinhVien(Request $request)
     {
-        $data = $this->sinhvienService->listStudents($request);
+        $data = $this->sinhvienService->lietKeSinhVien($request);
         return view('admin.sinhvien.danhsach', $data);
     }
 
@@ -28,20 +28,20 @@ class SinhvienController extends Controller
             'gioitinh' => ['required', 'in:Nam,Nữ'],
         ]);
 
-        $result = $this->sinhvienService->updateStudent($id, $dulieu);
+        $result = $this->sinhvienService->capNhatSinhVien($id, $dulieu);
         return redirect()->back()->with(['toast_loai' => $result['toast_loai'], 'toast_noidung' => $result['toast_noidung']]);
     }
 
     public function chuyenPhong(Request $request, int $id)
     {
         $dulieu = $request->validate(['phong_id' => ['nullable', 'numeric']]);
-        $result = $this->sinhvienService->assignRoom($id, $dulieu['phong_id'] ?? null);
+        $result = $this->sinhvienService->xepPhong($id, $dulieu['phong_id'] ?? null);
         return redirect()->back()->with(['toast_loai' => $result['toast_loai'], 'toast_noidung' => $result['toast_noidung']]);
     }
 
     public function choRoiOPhong(int $id)
     {
-        $result = $this->sinhvienService->removeFromRoom($id);
+        $result = $this->sinhvienService->choRoiOPhong($id);
         return redirect()->back()->with(['toast_loai' => $result['toast_loai'], 'toast_noidung' => $result['toast_noidung']]);
     }
 }

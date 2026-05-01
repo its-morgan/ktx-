@@ -9,20 +9,20 @@ interface SinhvienServiceInterface
     /**
      * Lấy danh sách sinh viên.
      */
-    public function listStudents(Request $request): array;
+    public function lietKeSinhVien(Request $request): array;
 
     /**
      * Cập nhật thông tin sinh viên.
      */
-    public function updateStudent(int $id, array $data): array;
+    public function capNhatSinhVien(int $id, array $data): array;
 
     /**
      * Xếp phòng cho sinh viên.
      */
-    public function assignRoom(int $id, ?int $phongId): array;
+    public function xepPhong(int $id, ?int $phongId): array;
 
     /**
      * Cho sinh viên rời phòng.
      */
-    public function removeFromRoom(int $id): array;
+    public function choRoiOPhong(int $id): array;
 }

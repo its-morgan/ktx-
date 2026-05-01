@@ -23,6 +23,7 @@ class LuuDangKyMoiRequest extends FormRequest
     {
         return [
             'phong_id' => \App\Rules\CommonRules::phongId(),
+            'giuong_no' => ['required', 'integer', 'min:1'],
         ];
     }
 
@@ -32,6 +33,9 @@ class LuuDangKyMoiRequest extends FormRequest
             'phong_id.required' => 'Ban chua chon phong.',
             'phong_id.numeric' => 'Phong khong hop le.',
             'phong_id.exists' => 'Phong khong ton tai.',
+            'giuong_no.required' => 'Ban chua chon giuong.',
+            'giuong_no.integer' => 'Giuong khong hop le.',
+            'giuong_no.min' => 'Giuong khong hop le.',
         ];
     }
 }

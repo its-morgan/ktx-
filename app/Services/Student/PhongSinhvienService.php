@@ -42,6 +42,7 @@ class PhongSinhvienService implements PhongSinhvienServiceInterface
             'diemTrungBinh' => round(Danhgia::where('phong_id', $sinhvien->phong_id)->avg('diem') ?? 0, 1),
             'thongbaoMoiNhat' => Thongbao::where('doituong', 'sinhvien')->orWhereNull('doituong')->orderByDesc('ngaydang')->limit(5)->get(),
             'canhBaoHetHan' => $this->layCanhBaoHetHan($hopdong),
+            'phongDeXuatDoi' => $this->layDanhSachPhongPhuHop($sinhvien)->where('id', '!=', $sinhvien->phong_id)->values(),
         ];
     }
 

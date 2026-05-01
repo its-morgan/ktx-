@@ -147,6 +147,7 @@
                                 <div class="flex items-center gap-3">
                                     <button data-modal-target="modal-giahan" data-modal-toggle="modal-giahan" class="h-8 rounded-lg bg-{{ $alertColor }}-600 px-4 text-[10px] font-bold uppercase tracking-widest text-white shadow-sm hover:bg-{{ $alertColor }}-700 transition-colors">Gia hạn ngay</button>
                                     <button data-modal-target="modal-traphong" data-modal-toggle="modal-traphong" class="h-8 rounded-lg border border-{{ $alertColor }}-200 bg-white px-4 text-[10px] font-bold uppercase tracking-widest text-{{ $alertColor }}-700 shadow-sm hover:bg-{{ $alertColor }}-50 transition-colors">Yêu cầu trả phòng</button>
+                                    <button data-modal-target="modal-doiphong" data-modal-toggle="modal-doiphong" class="h-8 rounded-lg border border-{{ $alertColor }}-200 bg-white px-4 text-[10px] font-bold uppercase tracking-widest text-{{ $alertColor }}-700 shadow-sm hover:bg-{{ $alertColor }}-50 transition-colors">Yêu cầu đổi phòng</button>
                                 </div>
                             </div>
                         </div>
@@ -393,6 +394,45 @@
                     
                     <button type="submit" class="w-full flex h-11 items-center justify-center rounded-xl bg-ink-primary px-4 text-xs font-bold uppercase tracking-widest text-white shadow-sm hover:bg-brand-emerald active:scale-[0.98] transition-all">
                         Gửi đánh giá
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modal Đổi phòng --}}
+    @if($coPhong)
+        <div id="modal-doiphong" tabindex="-1" aria-hidden="true" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
+            <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl ring-1 ring-ui-border">
+                <div class="mb-6 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-bold text-ink-primary">Yêu cầu đổi phòng</h3>
+                        <p class="text-xs font-medium text-ink-secondary/70 mt-1">Chọn phòng mới khác phòng hiện tại</p>
+                    </div>
+                    <button type="button" class="flex h-8 w-8 items-center justify-center rounded-full bg-ui-bg text-ink-secondary hover:bg-ui-border hover:text-ink-primary transition-colors" data-modal-hide="modal-doiphong">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <form method="POST" action="{{ route('student.yeucaudoiphong') }}" class="space-y-4">
+                    @csrf
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-ink-secondary mb-2">Phòng mới</label>
+                        <select name="phong_moi_id" class="w-full rounded-xl border-ui-border bg-white px-4 py-3 text-sm text-ink-primary" required>
+                            <option value="">-- Chọn phòng --</option>
+                            @forelse(($phongDeXuatDoi ?? collect()) as $phongMoi)
+                                <option value="{{ $phongMoi->id }}">{{ $phongMoi->tenphong }} - Tầng {{ $phongMoi->tang }} ({{ max(0, $phongMoi->succhuamax - $phongMoi->dango) }} giường trống)</option>
+                            @empty
+                                <option value="" disabled>Hiện chưa có phòng phù hợp để đổi</option>
+                            @endforelse
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-ink-secondary mb-2">Lý do</label>
+                        <textarea name="lydo" rows="3" class="w-full rounded-xl border-ui-border bg-white px-4 py-3 text-sm text-ink-primary" required placeholder="Nhập lý do đổi phòng..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full flex h-11 items-center justify-center rounded-xl bg-ink-primary px-4 text-xs font-bold uppercase tracking-widest text-white shadow-sm hover:bg-brand-emerald active:scale-[0.98] transition-all">
+                        Gửi yêu cầu đổi phòng
                     </button>
                 </form>
             </div>

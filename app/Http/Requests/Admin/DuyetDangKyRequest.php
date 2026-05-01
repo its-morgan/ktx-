@@ -29,8 +29,8 @@ class DuyetDangKyRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'ngay_het_han.date' => 'Ngay het han khong hop le.',
-            'ngay_het_han.after_or_equal' => 'Ngay het han phai lon hon hoac bang hom nay.',
+            'ngay_het_han.date' => 'Ngày hết hạn không hợp lệ.',
+            'ngay_het_han.after_or_equal' => 'Ngày hết hạn phải lớn hơn hoặc bằng hôm nay.',
         ];
     }
 }

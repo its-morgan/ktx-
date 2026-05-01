@@ -50,7 +50,11 @@
                                     <div class="flex items-center gap-2 mt-0.5">
                                         <span class="text-[10px] font-bold uppercase tracking-widest text-ink-secondary">{{ $dangky->email ?? $dangky->sinhvien?->taikhoan?->email ?? 'N/A' }}</span>
                                         <span class="h-1 w-1 rounded-full bg-ui-border"></span>
-                                        <span class="text-[10px] font-bold uppercase tracking-widest text-ink-secondary">{{ $dangky->so_dien_thoai ?? $dangky->sinhvien?->sodienthoai ?? '' }}</span>
+                                        @php
+                                            $soDienThoai = preg_replace('/\D+/', '', (string) ($dangky->so_dien_thoai ?? $dangky->sinhvien?->sodienthoai ?? ''));
+                                            $soDienThoaiMask = strlen($soDienThoai) >= 7 ? substr($soDienThoai, 0, 4).'***'.substr($soDienThoai, -3) : $soDienThoai;
+                                        @endphp
+                                        <span class="text-[10px] font-bold uppercase tracking-widest text-ink-secondary">{{ $soDienThoaiMask }}</span>
                                     </div>
                                 </div>
                             </td>
@@ -63,7 +67,7 @@
                                     @if($dangky->giuong_no)
                                         <span class="text-[10px] font-bold uppercase tracking-[0.1em] text-ink-secondary/60">Giường #{{ $dangky->giuong_no }}</span>
                                     @endif
-                                    <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-brand-emerald/80">{{ $dangky->loaidangky }}</span>
+                                    <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-brand-emerald/80">{{ \App\Enums\RegistrationType::tryFrom($dangky->loaidangky)?->label() ?? $dangky->loaidangky }}</span>
                                 </div>
                             </td>
                             <td class="px-6 py-5 text-center">
@@ -78,7 +82,7 @@
                                     };
                                 @endphp
                                 <span class="inline-flex items-center rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider {{ $badgeClass }}">
-                                    {{ $dangky->trangthai }}
+                                    {{ \App\Enums\RegistrationStatus::tryFrom($dangky->trangthai)?->label() ?? $dangky->trangthai }}
                                 </span>
                                 @if($dangky->expires_at && $dangky->trangthai === \App\Enums\RegistrationStatus::ApprovedPendingPayment->value)
                                     <div class="mt-1.5 text-[9px] font-bold text-rose-500 uppercase tracking-tighter tabular-nums">
@@ -98,10 +102,17 @@
                             <td class="px-6 py-5 text-right">
                                 <div class="flex justify-end gap-2">
                                     @if ($dangky->trangthai === \App\Enums\RegistrationStatus::Pending->value)
-                                        <form method="POST" action="{{ route('admin.xulyduyetdangky', ['id' => $dangky->id]) }}" x-data="{ showConfirm: false }" @confirmed="$el.submit()">
-                                            @csrf
-                                            <button type="button" @click="$dispatch('open-confirm', { message: 'Xác nhận duyệt hồ sơ cho ứng viên này?', action: () => showConfirm = true })" class="h-8 flex items-center justify-center rounded-lg bg-ink-primary px-3 text-[10px] font-bold uppercase tracking-widest text-white shadow-sm transition-all hover:bg-brand-emerald active:scale-[0.98]">Duyệt</button>
-                                        </form>
+                                        @if($dangky->loaidangky === \App\Enums\RegistrationType::Rental->value)
+                                            <form method="POST" action="{{ route('admin.duyethoso', ['id' => $dangky->id]) }}" x-data="{ showConfirm: false }" @confirmed="$el.submit()">
+                                                @csrf
+                                                <button type="button" @click="$dispatch('open-confirm', { message: 'Xác nhận duyệt hồ sơ và chuyển sang bước chờ thanh toán?', action: () => showConfirm = true })" class="h-8 flex items-center justify-center rounded-lg bg-ink-primary px-3 text-[10px] font-bold uppercase tracking-widest text-white shadow-sm transition-all hover:bg-brand-emerald active:scale-[0.98]">Duyệt hồ sơ</button>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="{{ route('admin.xulyduyetdangky', ['id' => $dangky->id]) }}" x-data="{ showConfirm: false }" @confirmed="$el.submit()">
+                                                @csrf
+                                                <button type="button" @click="$dispatch('open-confirm', { message: 'Xác nhận duyệt yêu cầu này?', action: () => showConfirm = true })" class="h-8 flex items-center justify-center rounded-lg bg-ink-primary px-3 text-[10px] font-bold uppercase tracking-widest text-white shadow-sm transition-all hover:bg-brand-emerald active:scale-[0.98]">Duyệt</button>
+                                            </form>
+                                        @endif
                                     @elseif($dangky->trangthai === \App\Enums\RegistrationStatus::ApprovedPendingPayment->value)
                                         <form method="POST" action="{{ route('admin.dangky.xacnhanthanhtoan', ['id' => $dangky->id]) }}" x-data="{ showConfirm: false }" @confirmed="$el.submit()">
                                             @csrf

@@ -61,9 +61,11 @@
                                     <div class="relative">
                                         <select name="giuong_no" required class="w-full bg-white border border-ui-border text-ink-primary text-sm font-bold rounded-none focus:ring-0 focus:border-ink-primary p-3 transition-colors cursor-pointer @error('giuong_no') border-red-500 @enderror">
                                             <option value="">-- Chọn vị trí giường --</option>
-                                            @for($i = 1; $i <= $phong->succhuamax; $i++)
-                                                <option value="{{ $i }}">Giường số {{ $i }}</option>
-                                            @endfor
+                                            @forelse(($giuong_trong ?? []) as $soGiuong)
+                                                <option value="{{ $soGiuong }}" @selected(old('giuong_no') == $soGiuong)>Giường số {{ $soGiuong }}</option>
+                                            @empty
+                                                <option value="" disabled>Không còn giường trống</option>
+                                            @endforelse
                                         </select>
                                         @error('giuong_no') <p class="mt-2 text-[10px] font-bold text-red-500">{{ $message }}</p> @enderror
                                     </div>

@@ -46,6 +46,9 @@
                     <div class="text-[10px] font-bold text-ink-secondary/60 uppercase tracking-widest">
                         {{ $phonghientai ? ('Tòa '.$phonghientai->toa.' • Tầng '.$phonghientai->tang) : 'Chưa có thông tin' }}
                     </div>
+                    @if(!$phonghientai && !$isAlumni)
+                        <a href="{{ route('student.danhsachphong') }}" class="mt-2 inline-block text-[10px] font-black uppercase tracking-widest text-brand-emerald">Đăng ký phòng ngay →</a>
+                    @endif
                 </div>
             </article>
 
@@ -96,30 +99,42 @@
 
                     <div class="divide-y divide-ui-border">
                         @forelse ($hoaDonGanNhat as $hoadon)
-                            <div class="group flex items-center justify-between p-4 transition-colors hover:bg-ui-bg/30">
+                            <a href="{{ route('student.phongcuatoi.hoadon.chitiet', $hoadon->id) }}" class="group flex items-center justify-between p-4 transition-colors hover:bg-ui-bg/30">
                                 <div class="flex items-center gap-4 min-w-0">
                                     <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ui-bg text-ink-secondary group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors">
-                                        @if($hoadon->loai_hoadon === 'dien_nuoc')
+                                        @if($hoadon->loai_hoadon === \App\Models\Hoadon::LOAI_MONTHLY)
                                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                        @elseif($hoadon->loai_hoadon === \App\Models\Hoadon::LOAI_DEPOSIT)
+                                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8m0 0v1m0-1H9m3 0h3"/></svg>
                                         @else
-                                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.062 19h13.876c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.33 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                         @endif
                                     </div>
                                     <div class="min-w-0">
-                                        <h4 class="font-bold text-ink-primary text-sm truncate tracking-tight">{{ $hoadon->loai_hoadon === 'dien_nuoc' ? 'Tiền điện nước' : 'Phí cư trú' }}</h4>
+                                        <h4 class="font-bold text-ink-primary text-sm truncate tracking-tight">
+                                            @if($hoadon->loai_hoadon === \App\Models\Hoadon::LOAI_MONTHLY)
+                                                Tiền phòng + dịch vụ
+                                            @elseif($hoadon->loai_hoadon === \App\Models\Hoadon::LOAI_DEPOSIT)
+                                                Tiền thế chân
+                                            @elseif($hoadon->loai_hoadon === \App\Models\Hoadon::LOAI_PENALTY)
+                                                Hóa đơn vi phạm
+                                            @else
+                                                Hóa đơn khác
+                                            @endif
+                                        </h4>
                                         <div class="text-[9px] font-bold text-ink-secondary/40 uppercase tracking-widest">Tháng {{ $hoadon->thang }}/{{ $hoadon->nam }}</div>
                                     </div>
                                 </div>
                                 <div class="text-right shrink-0 pl-4">
                                     <div class="font-display text-sm font-black text-ink-primary tabular-nums tracking-tight">{{ number_format($hoadon->tongtien) }}đ</div>
                                     @php
-                                        $isPaid = $hoadon->trangthaithanhtoan === 'paid';
+                                        $isPaid = $hoadon->trangthaithanhtoan === \App\Enums\InvoiceStatus::Paid->value;
                                     @endphp
                                     <span class="inline-flex items-center rounded-full {{ $isPaid ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20' : 'bg-rose-50 text-rose-700 ring-1 ring-rose-600/20 animate-pulse' }} px-2 py-0.5 text-[8px] font-black uppercase tracking-widest">
                                         {{ $isPaid ? 'Đã trả' : 'Chưa trả' }}
                                     </span>
                                 </div>
-                            </div>
+                            </a>
                         @empty
                             <div class="py-16 flex flex-col items-center justify-center text-ink-secondary/20">
                                 <svg class="h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>

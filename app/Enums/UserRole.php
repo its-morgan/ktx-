@@ -5,15 +5,21 @@ namespace App\Enums;
 enum UserRole: string
 {
     case Admin = 'admin';
-    case Student = 'student';
-    case Manager = 'manager';
+    case AdminTruong = 'admin_truong';
+    case AdminToaNha = 'admin_toanha';
+    case LeTan = 'le_tan';
+    case SinhVien = 'sinhvien';
+    case CuuSinhVien = 'cuu_sinhvien';
 
     public function label(): string
     {
         return match($this) {
             self::Admin => 'Quản trị viên',
-            self::Student => 'Sinh viên',
-            self::Manager => 'Quản lý',
+            self::AdminTruong => 'Admin trường',
+            self::AdminToaNha => 'Admin tòa nhà',
+            self::LeTan => 'Lễ tân',
+            self::SinhVien => 'Sinh viên',
+            self::CuuSinhVien => 'Cựu sinh viên',
         };
     }
 

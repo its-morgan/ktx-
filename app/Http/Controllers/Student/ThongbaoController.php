@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Contracts\Shared\ThongbaoServiceInterface;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ThongbaoController extends Controller
@@ -26,5 +27,14 @@ class ThongbaoController extends Controller
         }
 
         return view('student.thongbao.chitiet', $ketQua);
+    }
+
+    public function unreadCount(): JsonResponse
+    {
+        $soThongBaoChuaDoc = auth()->user()?->unreadNotifications()->count() ?? 0;
+
+        return response()->json([
+            'unread_count' => $soThongBaoChuaDoc,
+        ]);
     }
 }

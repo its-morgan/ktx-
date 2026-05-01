@@ -48,6 +48,18 @@
 
             {{-- Result Found --}}
             @if($dangky)
+                @php
+                    $trangThaiDangKy = \App\Enums\RegistrationStatus::tryFrom($dangky->trangthai);
+                    $nhanTrangThai = $trangThaiDangKy?->label() ?? $dangky->trangthai;
+                    $hoTenMask = \Illuminate\Support\Str::mask((string) $dangky->ho_ten, '*', 2);
+                    $emailGoc = (string) $dangky->email;
+                    $viTriCong = strpos($emailGoc, '@');
+                    $emailMask = $viTriCong !== false
+                        ? substr($emailGoc, 0, min(2, $viTriCong)).str_repeat('*', max(1, $viTriCong - 2)).substr($emailGoc, $viTriCong)
+                        : \Illuminate\Support\Str::mask($emailGoc, '*', 2);
+                    $sdt = preg_replace('/\D+/', '', (string) $dangky->so_dien_thoai);
+                    $sdtMask = strlen($sdt) >= 7 ? substr($sdt, 0, 4).'***'.substr($sdt, -3) : $dangky->so_dien_thoai;
+                @endphp
                 <div class="space-y-8">
                     <div class="bg-white border border-ui-border shadow-sm">
                         {{-- Card Header --}}
@@ -60,8 +72,8 @@
                                     </div>
                                     <h3 class="text-4xl font-display font-bold tracking-tight">Hồ sơ #{{ $dangky->id }}</h3>
                                 </div>
-                                <div class="px-5 py-2.5 text-sm font-bold uppercase tracking-widest border {{ $dangky->trangthai === 'Hoàn tất' ? 'bg-brand-emerald text-white border-brand-emerald' : 'bg-white text-ink-primary border-white' }}">
-                                    {{ $dangky->trangthai }}
+                                <div class="px-5 py-2.5 text-sm font-bold uppercase tracking-widest border {{ $dangky->trangthai === \App\Enums\RegistrationStatus::Completed->value ? 'bg-brand-emerald text-white border-brand-emerald' : 'bg-white text-ink-primary border-white' }}">
+                                    {{ $nhanTrangThai }}
                                 </div>
                             </div>
                         </div>
@@ -76,21 +88,21 @@
                                             <div class="w-10 h-10 bg-ui-bg border border-ui-border flex items-center justify-center text-ink-primary shrink-0 opacity-50">👤</div>
                                             <div class="pt-0.5">
                                                 <p class="text-[10px] font-bold text-ink-secondary uppercase tracking-widest mb-1">Chủ hồ sơ</p>
-                                                <p class="text-base font-bold text-ink-primary">{{ $dangky->ho_ten }}</p>
+                                                <p class="text-base font-bold text-ink-primary">{{ $hoTenMask }}</p>
                                             </div>
                                         </div>
                                         <div class="flex items-start gap-4">
                                             <div class="w-10 h-10 bg-ui-bg border border-ui-border flex items-center justify-center text-ink-primary shrink-0 opacity-50">📧</div>
                                             <div class="pt-0.5">
                                                 <p class="text-[10px] font-bold text-ink-secondary uppercase tracking-widest mb-1">Hòm thư liên hệ</p>
-                                                <p class="text-base font-bold text-ink-primary">{{ $dangky->email }}</p>
+                                                <p class="text-base font-bold text-ink-primary">{{ $emailMask }}</p>
                                             </div>
                                         </div>
                                         <div class="flex items-start gap-4">
                                             <div class="w-10 h-10 bg-ui-bg border border-ui-border flex items-center justify-center text-ink-primary shrink-0 opacity-50">📱</div>
                                             <div class="pt-0.5">
                                                 <p class="text-[10px] font-bold text-ink-secondary uppercase tracking-widest mb-1">Số điện thoại</p>
-                                                <p class="text-base font-bold text-ink-primary">{{ $dangky->so_dien_thoai }}</p>
+                                                <p class="text-base font-bold text-ink-primary">{{ $sdtMask }}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -132,9 +144,9 @@
                                     @php
                                         $statuses = [
                                             ['label' => 'Đã tiếp nhận', 'desc' => 'Hệ thống đã nhận đơn', 'active' => true],
-                                            ['label' => 'Đang thẩm định', 'desc' => 'Admin đang kiểm tra thông tin', 'active' => in_array($dangky->trangthai, ['Đã duyệt', 'Chờ thanh toán', 'Hoàn tất'])],
-                                            ['label' => 'Chờ thanh toán', 'desc' => 'Vui lòng nộp phí giữ chỗ', 'active' => in_array($dangky->trangthai, ['Chờ thanh toán', 'Hoàn tất'])],
-                                            ['label' => 'Hoàn tất', 'desc' => 'Đã sẵn sàng nhận phòng', 'active' => $dangky->trangthai === 'Hoàn tất'],
+                                            ['label' => 'Đang thẩm định', 'desc' => 'Admin đang kiểm tra thông tin', 'active' => in_array($dangky->trangthai, [\App\Enums\RegistrationStatus::Approved->value, \App\Enums\RegistrationStatus::ApprovedPendingPayment->value, \App\Enums\RegistrationStatus::Completed->value], true)],
+                                            ['label' => 'Chờ thanh toán', 'desc' => 'Vui lòng nộp phí giữ chỗ', 'active' => in_array($dangky->trangthai, [\App\Enums\RegistrationStatus::ApprovedPendingPayment->value, \App\Enums\RegistrationStatus::Completed->value], true)],
+                                            ['label' => 'Hoàn tất', 'desc' => 'Đã sẵn sàng nhận phòng', 'active' => $dangky->trangthai === \App\Enums\RegistrationStatus::Completed->value],
                                         ];
                                         $currentStep = 0;
                                         foreach($statuses as $idx => $s) if($s['active']) $currentStep = $idx;
@@ -171,7 +183,7 @@
                                 </div>
 
                                 {{-- Action Box --}}
-                                @if($dangky->trangthai === 'Chờ thanh toán')
+                                @if($dangky->trangthai === \App\Enums\RegistrationStatus::ApprovedPendingPayment->value)
                                     <div class="mt-16 p-8 bg-brand-emerald/5 border border-brand-emerald/20">
                                         <div class="flex items-center gap-3 mb-4">
                                             <div class="w-8 h-8 bg-brand-emerald text-white flex items-center justify-center text-sm">ℹ</div>
@@ -189,6 +201,24 @@
                                                 Sao chép
                                             </button>
                                         </div>
+                                    </div>
+                                @endif
+
+                                @if($dangky->trangthai === \App\Enums\RegistrationStatus::Completed->value)
+                                    <div class="mt-8 p-8 bg-brand-emerald/5 border border-brand-emerald/20">
+                                        <h5 class="text-lg font-display font-bold text-ink-primary uppercase tracking-wide">Hồ sơ đã hoàn tất</h5>
+                                        <p class="mt-3 text-ink-secondary">Bạn có thể đăng nhập cổng sinh viên để sử dụng các tiện ích nội trú và theo dõi hóa đơn/hợp đồng.</p>
+                                        <a href="{{ route('login') }}" class="mt-4 inline-block bg-ink-primary text-white px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-brand-emerald transition-colors">
+                                            Đăng nhập cổng sinh viên
+                                        </a>
+                                    </div>
+                                @endif
+
+                                @if($dangky->trangthai === \App\Enums\RegistrationStatus::Rejected->value)
+                                    <div class="mt-8 p-8 bg-rose-50 border border-rose-200">
+                                        <h5 class="text-lg font-display font-bold text-rose-700 uppercase tracking-wide">Hồ sơ bị từ chối</h5>
+                                        <p class="mt-3 text-ink-secondary">Lý do: {{ $dangky->ghichu ?: 'Không có ghi chú từ quản trị viên.' }}</p>
+                                        <a href="{{ route('guest.dangky.create', ['phong_id' => $dangky->phong_id]) }}" class="mt-4 inline-block text-rose-700 font-bold border-b border-rose-700">Đăng ký lại</a>
                                     </div>
                                 @endif
                             </div>

@@ -29,11 +29,29 @@ class HoadonService implements HoadonServiceInterface
 
     public function lietKeHoaDonAdmin(Request $request): array
     {
+        $trangThai = $request->query('trang_thai');
+        $loaiHoaDon = $request->query('loai_hoadon');
+        $thang = $request->query('thang');
+        $nam = $request->query('nam');
+
         return [
-            'danhsachhoadon' => Hoadon::with('phong')->orderByDesc('created_at')->paginate(20)->withQueryString(),
+            'danhsachhoadon' => Hoadon::with('phong')
+                ->when($trangThai, fn ($query) => $query->where('trangthaithanhtoan', $trangThai))
+                ->when($loaiHoaDon, fn ($query) => $query->where('loai_hoadon', $loaiHoaDon))
+                ->when($thang, fn ($query) => $query->where('thang', (int) $thang))
+                ->when($nam, fn ($query) => $query->where('nam', (int) $nam))
+                ->orderByDesc('created_at')
+                ->paginate(20)
+                ->withQueryString(),
             'danhsachphong' => Phong::all(),
             'dongiadien' => $this->layBangGia()['dongiadien'],
             'dongianuoc' => $this->layBangGia()['dongianuoc'],
+            'boLoc' => [
+                'trang_thai' => $trangThai,
+                'loai_hoadon' => $loaiHoaDon,
+                'thang' => $thang,
+                'nam' => $nam,
+            ],
         ];
     }
 
@@ -104,6 +122,8 @@ class HoadonService implements HoadonServiceInterface
             'thang' => $data['thang'],
             'nam' => $data['nam'],
         ], [
+            // Hóa đơn tháng ở luồng này là hóa đơn theo phòng, không gắn riêng từng sinh viên.
+            'sinhvien_id' => null,
             'chisodiencu' => $data['chisodiencu'],
             'chisodienmoi' => $data['chisodienmoi'],
             'chisonuoccu' => $data['chisonuoccu'],

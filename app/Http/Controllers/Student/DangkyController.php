@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Contracts\Admin\DangkyServiceInterface;
 use App\Http\Requests\Student\LuuDangKyMoiRequest;
 use App\Http\Requests\Student\YeuCauDoiPhongRequest;
-use Illuminate\Http\Request;
 
 class DangkyController extends Controller
 {
